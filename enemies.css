@@ -1,0 +1,123 @@
+/* Geometric silhouettes; all detail stays inside the existing battlefield. */
+.creature{--impact-color:#d4f77d;isolation:isolate}
+.creature>span:not(.eyes){position:absolute;display:block;pointer-events:none}
+.creature .eyes{z-index:6;text-shadow:0 0 9px currentColor;animation:eye-glow 3.2s ease-in-out infinite}
+.enemy-core{z-index:5}.enemy-crest,.enemy-tail{z-index:3}.enemy-aura{z-index:-1;inset:-28px;border-radius:50%;opacity:.17;animation:aura-breathe 4s ease-in-out infinite}
+.enemy-sparks{inset:-18px;opacity:0;z-index:8;background:repeating-conic-gradient(from 15deg,transparent 0 36deg,var(--impact-color) 37deg 40deg,transparent 41deg 60deg);mask:radial-gradient(circle,transparent 48%,#000 50% 54%,transparent 56%)}
+/* Moss guardian: broad shoulders, layered rock, luminous fissures and a moss crown. */
+.stone{width:118px;height:114px;animation:stone-breathe 4.6s ease-in-out infinite}
+.stone i:nth-child(1){width:98px;height:76px;left:10px;top:32px;background:linear-gradient(112deg,transparent 48%,#b2d66a 49% 51%,transparent 52%),linear-gradient(25deg,#4b5d3e 45%,#70835a 46%);border-color:#97a67c}
+.stone i:nth-child(2){left:30px;background:linear-gradient(145deg,#a0ae7e 45%,#7a8e60 46%)}
+.stone i:nth-child(3),.stone i:nth-child(4){width:39px;height:65px;top:34px;background:linear-gradient(165deg,#a5ae87 20%,#60734c 21% 70%,#8c9b71 71%)}
+.stone i:nth-child(3){left:-22px}.stone i:nth-child(4){right:-22px}
+.stone i:nth-child(5),.stone i:nth-child(6){width:37px;background:#536643}
+.stone .eyes{left:45px}.stone .enemy-crest{left:22px;top:-10px;width:68px;height:27px;background:#8dba64;clip-path:polygon(0 100%,8% 35%,23% 60%,31% 0,49% 50%,70% 12%,76% 58%,95% 37%,100% 100%)}
+.stone .enemy-core{left:52px;top:54px;width:13px;height:24px;background:#d4f77d;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:0 0 15px #c6f68a;animation:eye-glow 4s infinite}
+.stone .enemy-tail{left:21px;top:88px;width:80px;height:6px;background:linear-gradient(90deg,#98bd62 30%,transparent 31% 44%,#98bd62 45% 70%,transparent 71%)}
+.stone .enemy-aura{background:radial-gradient(ellipse,#a2b75d,transparent 68%)}
+/* Wing beast: narrow torso, swept feathered wings, forked tail and a crest. */
+.fly{width:90px;height:106px;animation:wing-hover 2.7s ease-in-out infinite}
+.fly i{border-color:#b2e9e7!important}
+.fly i:nth-child(1){left:24px;top:29px;width:44px;height:72px;background:linear-gradient(90deg,#376f82,#8cc6ce);clip-path:polygon(50% 0,100% 27%,70% 90%,50% 100%,25% 80%,0 27%)}
+.fly i:nth-child(2){left:25px;top:3px;width:43px;height:37px;background:#89c3ce;clip-path:polygon(15% 15%,75% 0,100% 58%,55% 100%,0 65%)}
+.fly i:nth-child(3),.fly i:nth-child(4){top:20px;width:100px;height:66px;background:repeating-linear-gradient(22deg,transparent 0 11px,#b6eee55c 12px 14px),linear-gradient(150deg,#a0d5dc,#356d83);clip-path:polygon(0 0,100% 35%,92% 57%,78% 49%,80% 77%,60% 60%,51% 95%,35% 72%,17% 83%);transform-origin:90% 35%;animation:wing-left 1.35s ease-in-out infinite}
+.fly i:nth-child(3){left:-83px}.fly i:nth-child(4){right:-84px;transform-origin:10% 35%;clip-path:polygon(100% 0,0 35%,8% 57%,22% 49%,20% 77%,40% 60%,49% 95%,65% 72%,83% 83%);animation-name:wing-right}
+.fly i:nth-child(5),.fly i:nth-child(6){width:10px;height:23px;bottom:-2px;background:#c6dc9f;clip-path:polygon(0 0,100% 10%,70% 65%,100% 100%,0 80%)}
+.fly i:nth-child(5){left:30px}.fly i:nth-child(6){right:26px}
+.fly .eyes{top:10px;left:35px;font-size:14px;color:#efffa8}
+.fly .enemy-crest{top:-14px;left:38px;width:38px;height:42px;background:#93dfd8;clip-path:polygon(0 100%,12% 35%,50% 0,40% 45%,100% 22%,65% 80%)}
+.fly .enemy-core{top:28px;left:35px;width:21px;height:15px;background:#e3d598;clip-path:polygon(0 0,100% 0,50% 100%)}
+.fly .enemy-tail{top:80px;left:24px;width:48px;height:59px;background:linear-gradient(#70c0cc,#a6e6db);clip-path:polygon(25% 0,70% 0,100% 100%,50% 68%,0 100%)}
+.fly .enemy-aura{background:radial-gradient(ellipse,#74cbd0,transparent 70%)}
+/* Automaton: square chassis, segmented limbs, a scanning visor and a rotating reactor. */
+.machine{width:112px;height:119px;animation:machine-idle 3.2s steps(24) infinite}
+.machine i{border-color:#a8a1c4!important;background:#5e6175}
+.machine i:nth-child(1){left:9px;top:33px;width:94px;height:75px;background:repeating-linear-gradient(0deg,transparent 0 11px,#b7c7dc33 12px 13px),linear-gradient(135deg,#6f778a,#3b3f51)}
+.machine i:nth-child(2){left:22px;top:1px;width:68px;height:37px;background:linear-gradient(#8b91a5 45%,#34394a 46% 76%,#8b91a5 77%)}
+.machine i:nth-child(3),.machine i:nth-child(4){top:40px;width:27px;height:66px;background:repeating-linear-gradient(0deg,#7e8598 0 15px,#333849 16px 20px);transform:rotate(0)}
+.machine i:nth-child(3){left:-24px}.machine i:nth-child(4){right:-24px}
+.machine i:nth-child(5),.machine i:nth-child(6){bottom:-16px;height:32px;background:linear-gradient(#4b5067 50%,#9997ad 51%)}
+.machine .eyes{left:39px;top:8px;font-size:15px;color:#ffd280;animation:visor-scan 2.8s ease-in-out infinite}
+.machine .enemy-core{left:38px;top:51px;width:36px;height:36px;border:4px solid #9d9aba;border-top-color:#ffd280;border-bottom-color:#ffd280;border-radius:50%;background:radial-gradient(circle,#fff0b9 0 15%,#eaaa4b 18% 30%,#3b4054 35%);box-shadow:0 0 15px #ffb44855;animation:reactor-spin 8s linear infinite}
+.machine .enemy-crest{left:72px;top:-19px;width:5px;height:25px;background:#c6bfd9}.machine .enemy-crest:after{content:'';position:absolute;left:-3px;top:0;width:11px;height:8px;background:#ffc175;box-shadow:0 0 9px #ffc175;animation:eye-glow 1.6s infinite}
+.machine .enemy-tail{left:20px;top:95px;width:73px;height:6px;background:repeating-linear-gradient(90deg,#c3bbd2 0 5px,transparent 6px 12px)}
+.machine .enemy-aura{background:radial-gradient(ellipse,#b4a0e9,transparent 70%)}
+/* Event reactions run on the wrapper; wing/core idle animation continues inside it. */
+.creature.react-hit{animation:enemy-impact .28s ease-out!important;filter:brightness(1.55)}
+.creature.react-weak{animation:weak-impact .38s ease-out!important;filter:brightness(1.9) drop-shadow(0 0 15px var(--impact-color))}
+.react-weak .enemy-sparks{opacity:.9;animation:weak-ring .38s ease-out}
+.creature.react-dodge{animation:enemy-dodge .38s ease-in-out!important;opacity:.65}
+.creature.react-strike{animation:enemy-strike .38s ease-in-out!important}
+.creature.react-evaded{animation:enemy-whiff .38s ease-in-out!important}
+.creature.react-stun{animation:enemy-stun .12s steps(2) 6!important;filter:drop-shadow(0 0 12px #c6b0ff)}
+.react-stun .enemy-core,.react-stun .eyes{animation:eye-glow .12s steps(2) infinite;color:#e1d5ff}
+.react-stun .enemy-sparks{opacity:.9;--impact-color:#c6b0ff;animation:weak-ring .25s steps(2) 3}
+.creature.react-burn{animation:enemy-impact .3s ease-out!important;filter:sepia(.5) saturate(2) drop-shadow(0 -7px 13px #ff8a42)}
+.react-burn .enemy-aura{opacity:.7;background:radial-gradient(ellipse,#ff9846,transparent 65%)}
+.creature.react-guard{animation:enemy-strike .38s ease-in-out!important;filter:drop-shadow(0 0 10px #d4f77d)}
+@keyframes eye-glow{50%{opacity:.55}}
+@keyframes aura-breathe{50%{opacity:.3;transform:scale(1.1)}}
+@keyframes stone-breathe{50%{translate:0 -3px;rotate:-1deg}}
+@keyframes wing-hover{50%{translate:0 -13px;rotate:2deg}}
+@keyframes wing-left{50%{transform:rotate(-15deg) scaleY(.75)}}
+@keyframes wing-right{50%{transform:rotate(15deg) scaleY(.75)}}
+@keyframes machine-idle{50%{translate:0 -4px}}
+@keyframes visor-scan{50%{translate:5px 0;opacity:.65}}
+@keyframes reactor-spin{to{rotate:360deg}}
+@keyframes enemy-impact{25%{translate:9px -2px;rotate:4deg}65%{translate:-5px 0;rotate:-2deg}}
+@keyframes weak-impact{20%{translate:15px -6px;rotate:8deg;transform:scale(.93)}60%{translate:-8px 0;rotate:-4deg}}
+@keyframes weak-ring{from{transform:scale(.65);opacity:1}to{transform:scale(1.8);opacity:0}}
+@keyframes enemy-dodge{40%{translate:45px -12px;transform:skewX(-10deg)}}
+@keyframes enemy-strike{40%{translate:-23px 8px;rotate:-7deg}}
+@keyframes enemy-whiff{45%{translate:-36px 4px;rotate:-13deg}70%{translate:-10px 0;rotate:5deg}}
+@keyframes enemy-stun{50%{translate:3px -2px;rotate:2deg}}
+/* Thorn flower: serrated petals, an open maw and jointed root tendrils. */
+.plant{width:112px;height:128px;animation:vine-sway 3.6s ease-in-out infinite}
+.plant i{border-color:#aec477;background:#64804a}
+.plant i:nth-child(1){left:38px;top:46px;width:37px;height:79px;background:linear-gradient(90deg,#405d36 48%,#85a560 49%);clip-path:polygon(20% 0,85% 0,69% 48%,100% 100%,0 100%,30% 50%)}
+.plant i:nth-child(2){left:10px;top:-15px;width:94px;height:94px;background:repeating-conic-gradient(from 0deg,#d391a3 0 35deg,#92677e 36deg 60deg);border:0;clip-path:polygon(50% 0,63% 20%,88% 6%,86% 34%,100% 50%,82% 64%,88% 94%,61% 83%,50% 100%,37% 82%,12% 94%,17% 66%,0 50%,18% 36%,12% 6%,39% 20%)}
+.plant i:nth-child(3),.plant i:nth-child(4){top:54px;width:53px;height:65px;background:linear-gradient(140deg,#a9c67c,#4b7445);border:0;clip-path:polygon(0 0,85% 20%,100% 55%,72% 100%,58% 66%,71% 40%,25% 25%);animation:vine-curl 2.4s ease-in-out infinite}
+.plant i:nth-child(3){left:-24px;transform:rotate(-20deg)}.plant i:nth-child(4){right:-24px;transform:scaleX(-1) rotate(-20deg);animation-delay:-1.2s}
+.plant i:nth-child(5),.plant i:nth-child(6){bottom:-8px;width:60px;height:26px;background:#6e9553;border:0;clip-path:polygon(25% 0,75% 0,100% 100%,64% 65%,55% 100%,32% 70%,0 100%)}
+.plant i:nth-child(5){left:0}.plant i:nth-child(6){right:0}
+.plant .eyes{left:39px;top:11px;color:#fff0bc;font-size:16px}
+.plant .enemy-core{left:33px;top:25px;width:48px;height:29px;border:4px solid #e7b8b1;background:repeating-linear-gradient(100deg,transparent 0 8px,#eed7af 9px 12px),#34283b;clip-path:polygon(0 20%,50% 0,100% 20%,85% 80%,50% 100%,15% 80%)}
+.plant .enemy-crest{left:35px;top:-33px;width:45px;height:29px;background:#b3cd7e;clip-path:polygon(0 100%,15% 25%,40% 55%,55% 0,70% 60%,100% 35%,85% 100%)}
+.plant .enemy-tail{left:50px;top:71px;width:55px;height:29px;background:#93b867;clip-path:polygon(0 90%,45% 0,100% 15%,65% 80%);rotate:-18deg}
+.plant .enemy-aura{background:radial-gradient(ellipse,#ba88a5,transparent 68%)}
+/* Echo spirit: hollow hood, fragmented robe and drifting wisps. */
+.ghost{width:108px;height:124px;animation:ghost-drift 4.2s ease-in-out infinite;filter:drop-shadow(0 0 12px #bba9ed44)}
+.ghost i{border:0;background:linear-gradient(#a5a1d6,#76669999)}
+.ghost i:nth-child(1){left:10px;top:28px;width:89px;height:106px;background:linear-gradient(105deg,#d5c9ebaa,#8076b388 55%,#413e6855);clip-path:polygon(25% 0,75% 0,85% 38%,100% 100%,77% 83%,63% 100%,48% 81%,28% 100%,12% 80%,0 100%,15% 38%)}
+.ghost i:nth-child(2){left:22px;top:-7px;width:66px;height:69px;background:radial-gradient(ellipse at 50% 65%,#202139 0 40%,#c6b9e3 43% 57%,#7870a4 59%);clip-path:polygon(50% 0,88% 25%,100% 87%,58% 100%,0 87%,12% 25%)}
+.ghost i:nth-child(3),.ghost i:nth-child(4){top:42px;width:49px;height:66px;background:linear-gradient(#bfb7dfaa,#8a80bb22);clip-path:polygon(0 0,80% 20%,100% 75%,55% 100%,75% 55%,25% 35%)}
+.ghost i:nth-child(3){left:-31px;rotate:15deg}.ghost i:nth-child(4){right:-31px;transform:scaleX(-1);rotate:-15deg}
+.ghost i:nth-child(5),.ghost i:nth-child(6){bottom:-23px;width:18px;height:38px;background:linear-gradient(#b9a9e6aa,transparent);clip-path:polygon(50% 0,100% 45%,50% 100%,0 50%);animation:wisp-flow 2.6s ease-in-out infinite}
+.ghost i:nth-child(5){left:12px}.ghost i:nth-child(6){right:8px;animation-delay:-1.3s}
+.ghost .eyes{left:40px;top:23px;font-size:15px;color:#a9f2e1}
+.ghost .enemy-core{left:49px;top:70px;width:12px;height:22px;background:#b7eadd;clip-path:polygon(50% 0,100% 35%,50% 100%,0 35%);animation:eye-glow 2s infinite}
+.ghost .enemy-crest{left:9px;top:-22px;width:91px;height:24px;border:2px solid #b6a5db88;border-radius:50%;rotate:-13deg}
+.ghost .enemy-tail{left:29px;top:111px;width:52px;height:30px;background:linear-gradient(#aaa0d566,transparent);clip-path:polygon(0 0,100% 0,65% 100%,40% 55%,10% 100%)}
+.ghost .enemy-aura{background:radial-gradient(ellipse,#9d8fc8,transparent 66%);inset:-37px}
+/* Crystal beetle: faceted split shell, forked horn and angular legs. */
+.crystal{width:120px;height:118px;animation:crystal-breathe 3.1s ease-in-out infinite}
+.crystal i{border-color:#b0d9e5;background:#6597ae}
+.crystal i:nth-child(1){left:5px;top:28px;width:110px;height:87px;background:linear-gradient(90deg,transparent 49%,#e1edff 50% 52%,transparent 53%),conic-gradient(from 30deg,#73b1c7,#bc9fd0,#5b88a5,#bddce6,#73b1c7);clip-path:polygon(20% 0,80% 0,100% 37%,85% 85%,50% 100%,15% 85%,0 37%)}
+.crystal i:nth-child(2){left:37px;top:6px;width:48px;height:36px;background:#7295b3;clip-path:polygon(25% 0,75% 0,100% 65%,50% 100%,0 65%)}
+.crystal i:nth-child(3),.crystal i:nth-child(4){top:44px;width:39px;height:68px;background:#acc8dc;border:0;clip-path:polygon(65% 0,100% 15%,70% 35%,45% 38%,65% 57%,45% 75%,15% 100%,0 85%,30% 57%,15% 35%)}
+.crystal i:nth-child(3){left:-24px;transform:rotate(5deg)}.crystal i:nth-child(4){right:-24px;transform:scaleX(-1) rotate(5deg)}
+.crystal i:nth-child(5),.crystal i:nth-child(6){bottom:-10px;width:33px;height:33px;background:#8cb3c9;clip-path:polygon(15% 0,85% 0,100% 65%,15% 100%,0 65%)}
+.crystal i:nth-child(5){left:7px;rotate:20deg}.crystal i:nth-child(6){right:7px;rotate:-20deg}
+.crystal .eyes{left:48px;top:12px;font-size:13px;color:#ffedb0}
+.crystal .enemy-crest{left:46px;top:-34px;width:32px;height:47px;background:linear-gradient(90deg,#9cb8cf,#e7d6ee);clip-path:polygon(0 0,40% 15%,50% 57%,60% 15%,100% 0,85% 58%,65% 100%,35% 100%,15% 58%)}
+.crystal .enemy-core{left:44px;top:52px;width:34px;height:34px;background:conic-gradient(#d4edfa,#af7ebe,#ecddff,#8fbed8,#d4edfa);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);animation:crystal-glint 2.8s ease-in-out infinite}
+.crystal .enemy-tail{left:51px;top:100px;width:20px;height:27px;background:#c6e8eb;clip-path:polygon(0 0,100% 0,50% 100%)}
+.crystal .enemy-aura{background:radial-gradient(ellipse,#9cc9e4,transparent 68%)}
+@keyframes vine-sway{50%{rotate:3deg;translate:0 -3px}}
+@keyframes vine-curl{50%{translate:0 -8px}}
+@keyframes ghost-drift{25%{translate:-6px -8px}75%{translate:6px -13px}}
+@keyframes wisp-flow{50%{translate:0 9px;opacity:.4}}
+@keyframes crystal-breathe{50%{translate:0 -4px;rotate:-1deg}}
+@keyframes crystal-glint{50%{filter:brightness(1.7)}}
+@media(max-width:740px) and (max-height:660px) and (orientation:portrait){.creature.plant,.creature.ghost,.creature.crystal{scale:.35}}
+@media(prefers-reduced-motion:reduce){.creature,.creature *{animation:none!important;transition:none!important}.creature.react-hit,.creature.react-weak{filter:brightness(1.6) drop-shadow(0 0 10px var(--impact-color))}}

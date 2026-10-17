@@ -69,3 +69,55 @@ test('random offsets relative to steady Hat are not rewarded as reproducible dru
  const g=G.analyzeRelations(input,hats(120),120,4);
  assert.ok(g.unstable>.5);assert.ok(g.drunk<.25);
 });
+
+test('consistent leading Snare is independent of pushed Kick, drunk and instability at all enemy tempos',()=>{
+ for(const bpm of [82,120,150]){
+  const g=G.analyzeRelations(parts(bpm,0,-.03),hats(bpm),bpm,480/bpm);
+  assert.ok(g.snarePushed>.5);assert.ok(g.pushed<.01);assert.ok(g.laidBack<.01);assert.ok(g.pocket<.01);assert.ok(g.drunk<.01);assert.ok(g.unstable<.01);
+  assert.match(G.describe(g),/SnareがHatより平均30ms前 → 前ノリスネア/);
+ }
+});
+test('raw input governs groove even when playback copies were quantized',()=>{
+ const Q=require('./quantize.js');
+ const raw=parts(120,0,-.03).map(n=>({...n,inputT:n.rawT,quantize:'just'}));
+ const hat=hats(120).map(n=>({...n,inputT:n.rawT,quantize:'just'}));
+ const played=Q.render(raw,120,4),g=G.analyzeRelations(played,Q.render(hat,120,4),120,4);
+ assert.ok(played.filter(n=>n.type==='snare').every(n=>n.rawT===Math.round(n.rawT/.125)*.125));
+ assert.ok(Math.abs(g.snareMean+.03)<1e-9);assert.ok(g.snarePushed>.5);
+ const straight=parts(120,0,0).map(n=>({...n,inputT:n.rawT,quantize:'snarePushed'}));
+ assert.ok(G.analyzeRelations(Q.render(straight,120,4),hat,120,4).snarePushed<.01);
+});
+test('random or insufficient Snare anticipation is not rewarded as a stable leading Snare',()=>{
+ const offsets=[-.06,.02,-.01,.055,-.04,.03,-.055,.01];
+ const random=Array.from({length:8},(_,i)=>({type:'snare',rawT:i*.5+offsets[i]}));
+ const g=G.analyzeRelations(random,hats(120),120,4);
+ assert.ok(g.snarePushed<.15);assert.ok(g.unstable>.4);
+ assert.equal(G.analyzeRelations([{type:'snare',rawT:.47}],hats(120),120,4).snarePushed,0);
+});
+test('leading Snare has real matching combat affinity, feedback and note-specific cause marks',()=>{
+ const notes=parts(120,0,-.03),g=G.analyzeRelations(notes,hats(120),120,4);
+ const a=G.enrich(R.analyze(notes),g),enemy={kind:'fly'},result=R.resolve(a,enemy,()=>0);
+ const without=R.resolve({...a,groove:{...g,snarePushed:0}},enemy,()=>0);
+ assert.ok(result.affinity>without.affinity);assert.ok(a.groovePower>0);
+ const report=F.explain(a,result,enemy);assert.ok(report.weaknesses.some(w=>w.id==='snarePushed'));
+ assert.ok(report.factors.some(f=>/30ms前 → 前ノリスネア/.test(f.text)));
+ const marks=F.marks(a,report.factors).find(m=>m.source==='groove-snarePushed');assert.ok(marks.cells.length);assert.ok(marks.cells.every(n=>n.type==='snare'));
+ const discovered=F.discover({},'fly',report);assert.ok(discovered.fresh.includes('snarePushed'));
+ const factors=G.affinity(g,'fly').reduce((p,b)=>p*b.multiplier,1);
+ assert.ok(Math.abs(result.affinity/without.affinity-(1+.2*g.snarePushed))<1e-9);
+ assert.ok(Number.isFinite(factors));
+});
+
+test('new enemy elemental and groove affinities match feedback and real combat',()=>{
+ const groove=G.analyzeRelations(parts(120),hats(120),120,4);
+ const base=G.enrich(R.analyze(parts(120)),groove);
+ for(const [kind,element,id] of [['plant','fire','fire'],['ghost','lightning','lightning'],['crystal','earth','earth']]){
+  const a={...base,element,alternation:1},enemy={kind},r=R.resolve(a,enemy,()=>0),f=F.explain(a,r,enemy);
+  assert.ok(r.total>0);assert.ok(f.weaknesses.some(w=>w.id===id));
+  const expected=(kind==='plant'?1.5:kind==='ghost'?1.3:1.25*1.2)*G.affinity(groove,kind).reduce((s,b)=>s*b.multiplier,1);
+  assert.ok(Math.abs(r.affinity-expected)<1e-9);
+  assert.equal(r.breakdown.base+r.breakdown.form+r.breakdown.affinity,r.total);
+ }
+ const a={...base,element:'wind',alternation:1},enemy={kind:'crystal'},r=R.resolve(a,enemy,()=>0),f=F.explain(a,r,enemy);
+ assert.ok(f.weaknesses.some(w=>w.id==='chain'));assert.ok(F.discover({},'crystal',f).fresh.includes('chain'));
+});

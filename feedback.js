@@ -2,12 +2,15 @@
 (function(root){
 const grooveEngine=typeof module!=='undefined'?require('./groove.js'):root.Groove;
 const names={earth:'土',wind:'風',fire:'火',lightning:'雷'};
-const discoveryNames={earth:'土属性が有効',heavy:'重い一撃が有効',wind:'風属性が有効',dense:'高密度の攻撃が有効',lightning:'雷属性が有効',fire:'火属性が有効',laidBack:'レイドバックが有効',pocket:'ポケットが有効',pushed:'前ノリが有効',swing:'スウィングが有効',tight:'タイトな演奏が有効',drunk:'再現する揺れが有効'};
+const discoveryNames={earth:'土属性が有効',heavy:'重い一撃が有効',chain:'交互の入力が有効',wind:'風属性が有効',dense:'高密度の攻撃が有効',lightning:'雷属性が有効',fire:'火属性が有効',laidBack:'レイドバックが有効',pocket:'ポケットが有効',pushed:'前ノリが有効',snarePushed:'前ノリスネアが有効',swing:'スウィングが有効',tight:'タイトな演奏が有効',drunk:'再現する揺れが有効'};
 function matchups(a,enemy){
  const list=[];const add=(id,multiplier)=>{if(multiplier>1.015)list.push({id,multiplier,label:discoveryNames[id]});};
  if(enemy.kind==='stone'){if(a.element==='earth')add('earth',1.35);add('heavy',.8+.45*a.weight);if(a.element==='fire')add('fire',1.12);}
  if(enemy.kind==='fly'){if(a.element==='wind')add('wind',1.4);add('dense',.9+.25*Math.min(1,a.density/6));}
  if(enemy.kind==='machine'&&a.element==='lightning')add('lightning',1.45);
+ if(enemy.kind==='plant'&&a.element==='fire')add('fire',1.5);
+ if(enemy.kind==='ghost'&&a.element==='lightning')add('lightning',1.3);
+ if(enemy.kind==='crystal'){if(a.element==='earth')add('earth',1.25);add('chain',.9+.3*a.alternation);}
  for(const bonus of grooveEngine.affinity(a.groove,enemy.kind))add(bonus.id,bonus.multiplier);
  return list;
 }
@@ -28,11 +31,11 @@ function explain(a,result,enemy,voice='drums'){
  if(effective.length){
   const m=effective[0];
   const shown=effective.slice(0,2);
-  candidates.push({id:'weak-'+m.id,priority:1,score:effective.reduce((s,w)=>s+result.total*(1-1/w.multiplier),0),text:shown.map(w=>w.label.replace('が有効','')).join('・')+'が有効 → ダメージ増加',source:a.groove&&m.id in a.groove?'groove-'+m.id:m.id==='heavy'?(a.charged>.3?'charge':'heavy'):m.id==='dense'?'burst':cause.source,tag:'弱点！'});
+  candidates.push({id:'weak-'+m.id,priority:1,score:effective.reduce((s,w)=>s+result.total*(1-1/w.multiplier),0),text:shown.map(w=>w.label.replace('が有効','')).join('・')+'が有効 → ダメージ増加',source:a.groove&&m.id in a.groove?'groove-'+m.id:m.id==='heavy'?(a.charged>.3?'charge':'heavy'):m.id==='dense'?'burst':m.id==='chain'?'chain':cause.source,tag:'弱点！'});
  }
  if(a.groove&&a.groove.confidence>.15){
-  const g=a.groove,id=['pocket','laidBack','pushed','swing','drunk','tight'].sort((x,y)=>g[y]-g[x])[0];
-  const labels={pocket:'ポケット',laidBack:'レイドバック',pushed:'前ノリ',swing:'スウィング',drunk:'再現する揺れ',tight:'タイト'};
+  const g=a.groove,id=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
+  const labels={pocket:'ポケット',laidBack:'レイドバック',pushed:'前ノリ',snarePushed:'前ノリスネア',swing:'スウィング',drunk:'再現する揺れ',tight:'タイト'};
   if(g[id]>.15)candidates.push({id:'groove',priority:2,score:(b.groove??0)+result.total*.18*g[id],text:labels[id]+(id==='tight'?' → 命中が安定':id==='laidBack'?' → 重撃を強化':id==='drunk'?' → 属性効果を強化':' → 攻撃を強化'),source:'groove-'+id,tag:labels[id]+'！'});
  }
  const low=voice==='drums'?'Kick':'低音';
@@ -47,10 +50,10 @@ function explain(a,result,enemy,voice='drums'){
  for(const f of sorted){if(factors.some(x=>x.priority===f.priority))continue;factors.push(f);if(factors.length===3)break;}
  const g=a.groove;
  if(g&&g.confidence>.15){
-  const dominant=['pocket','laidBack','pushed','swing','drunk','tight'].sort((x,y)=>g[y]-g[x])[0];
+  const dominant=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
   const id=g.unstable>.55?'unstable':dominant;
   if(g[id]>.15){
-   const detail={id:'groove',priority:2,score:(b.groove??0),text:grooveEngine.describe(g),source:'groove-'+id,tag:{pocket:'ポケット！',laidBack:'後ノリ！',pushed:'前ノリ！',swing:'スウィング！',drunk:'揺れ！',tight:'タイト！',unstable:'揺らぎ'}[id]};
+   const detail={id:'groove',priority:2,score:(b.groove??0),text:grooveEngine.describe(g),source:'groove-'+id,tag:{pocket:'ポケット！',laidBack:'後ノリ！',pushed:'前ノリ！',snarePushed:'前ノリスネア！',swing:'スウィング！',drunk:'揺れ！',tight:'タイト！',unstable:'揺らぎ'}[id]};
    const existing=factors.findIndex(f=>f.id==='groove');
    if(existing>=0)factors[existing]=detail;
    else if(factors.length<3)factors.push(detail);
@@ -62,6 +65,9 @@ function explain(a,result,enemy,voice='drums'){
  if(!a.count)hint='今回は入力なし。一音から試してみよう。';
  else if(enemy.kind==='stone'&&a.weight<.45)hint='軽い連打は岩の体に通りにくい。間を空けた低音も試そう。';
  else if(enemy.kind==='fly'&&a.weight>.5)hint='重い一撃は飛行敵に当たりにくい。細かな刻みも試そう。';
+ else if(enemy.kind==='plant'&&a.element==='wind')hint='風はしなる蔓に流されやすい。別の属性も試そう。';
+ else if(enemy.kind==='ghost'&&(!hitCount||a.element==='earth'))hint='揺れる輪郭を捉えにくい。同じズレ方を繰り返すノリも試そう。';
+ else if(enemy.kind==='crystal'&&a.alternation<.34)hint='同じ音だけでは晶殻に響きにくい。低音と高音を交互に試そう。';
  else if(!hitCount)hint='今回は命中なし。一定の間隔や反復で当てやすくなる。';
  else if(hitCount<result.damages.length)hint='一部が外れた。一定の間隔や反復で命中が安定する。';
  else if(effective.length)hint='この叩き方は敵に有効。違う刻みとも比べてみよう。';
@@ -78,16 +84,16 @@ function marks(a,factors){
   if(source.startsWith('groove-')){
    const id=source.slice(7),g=a.groove;
    for(const e of g?.events??[]){
-    const yes=id==='laidBack'?e.offset>.008:id==='pushed'?e.offset<-.008:id==='pocket'?(e.type==='kick'?e.offset<-.008:e.offset>.008):id==='tight'?Math.abs(e.offset)<.018:id==='swing'?e.q%4>=2:Math.abs(e.offset)>.008;
+    const yes=id==='laidBack'?e.offset>.008:id==='pushed'?e.type==='kick'&&e.offset<-.008:id==='snarePushed'?e.type==='snare'&&e.offset<-.008:id==='pocket'?(e.type==='kick'?e.offset<-.008:e.offset>.008):id==='tight'?Math.abs(e.offset)<.018:id==='swing'?e.q%4>=2:Math.abs(e.offset)>.008;
     if(yes)group.push({q:Math.max(0,Math.min(a.slots-1,e.q)),type:e.type});
    }
    if(g&&['laidBack','pushed','drunk','swing'].includes(id)&&g.hat[id]>.7*g[id]){
     for(const e of g.hat.events){
-     const yes=id==='laidBack'?e.offset>.008:id==='pushed'?e.offset<-.008:id==='swing'?e.q%4!==0:Math.abs(e.offset)>.008;
+     const yes=id==='laidBack'?e.offset>.008:id==='pushed'?e.type==='kick'&&e.offset<-.008:id==='snarePushed'?e.type==='snare'&&e.offset<-.008:id==='swing'?e.q%4!==0:Math.abs(e.offset)>.008;
      if(yes)group.push({q:Math.max(0,Math.min(a.slots-1,e.q)),type:'hat'});
     }
    }
-   const label={laidBack:'後ろ',pushed:'前',pocket:'前／後',tight:'同期',swing:'裏の揺れ',drunk:'再現',unstable:'揺らぎ'}[id];
+   const label={laidBack:'後ろ',pushed:'前',snarePushed:'スネア前',pocket:'前／後',tight:'同期',swing:'裏の揺れ',drunk:'再現',unstable:'揺らぎ'}[id];
    if(group.length)all.push({source,label,cells:group});
    continue;
   }

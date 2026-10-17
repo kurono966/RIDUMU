@@ -3,7 +3,7 @@ let knownWeaknesses={},discoveryStorageAvailable=true,activeReport=null,discover
 try{
  const stored=JSON.parse(localStorage.getItem(discoveryKey)||'{}');
  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
-  for(const kind of ['stone','fly','machine'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
+  for(const kind of ['stone','fly','machine','plant','ghost','crystal'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
  }
 }catch{discoveryStorageAvailable=false;}
 function renderDiscoveries(){
@@ -29,7 +29,7 @@ function discoverOnHit(){
  if(!discovered.fresh.length)return;
  try{localStorage.setItem(discoveryKey,JSON.stringify(knownWeaknesses));}catch{discoveryStorageAvailable=false;}
  renderDiscoveries();
- const short={earth:'土属性',heavy:'重撃',wind:'風属性',dense:'高密度',fire:'火属性',lightning:'雷属性',laidBack:'レイドバック',pocket:'ポケット',pushed:'前ノリ',swing:'スウィング',tight:'タイト',drunk:'再現する揺れ'};
+ const short={earth:'土属性',heavy:'重撃',chain:'交互入力',wind:'風属性',dense:'高密度',fire:'火属性',lightning:'雷属性',laidBack:'レイドバック',pocket:'ポケット',pushed:'前ノリ',snarePushed:'前ノリスネア',swing:'スウィング',tight:'タイト',drunk:'再現する揺れ'};
  $('discoveryToast').textContent='弱点発見：'+discovered.fresh.slice(0,2).map(id=>short[id]).join('・');
  $('discoveryToast').classList.add('visible');
  clearTimeout(discoveryTimer);discoveryTimer=setTimeout(()=>$('discoveryToast').classList.remove('visible'),2000);

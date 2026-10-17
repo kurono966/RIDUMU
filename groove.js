@@ -3,7 +3,7 @@
 const clamp=v=>Math.max(0,Math.min(1,v));
 const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
 const sd=a=>Math.sqrt(mean(a.map(x=>(x-mean(a))**2)));
-const raw=n=>typeof n==='number'?n:(n.rawT??n.t);
+const raw=n=>typeof n==='number'?n:(n.inputT??n.rawT??n.t);
 const mod=(n,m)=>(n%m+m)%m;
 function repeated(events,period,tolerance){
  const groups=new Map();
@@ -63,6 +63,8 @@ function analyzeRelations(input,hats,bpm=120,duration=8*60/bpm){
  const tightRelative=Math.exp(-Math.sqrt(mean(events.map(e=>e.offset**2)))/.018)*confidence;
  const laidBack=Math.max(clamp(snareMean/.045)*snareConsistency,hat.laidBack*.65)*confidence;
  const pushed=Math.max(clamp(-kickMean/.035)*kickConsistency,hat.pushed*.65)*confidence;
+ // A consistent leading Snare is its own intention, independent of leading Kick.
+ const snarePushed=clamp((-snareMean-.008)/Math.min(.04,beat*.08))*snareConsistency*confidence;
  const pocket=Math.sqrt(clamp(-kickMean/.03)*clamp(snareMean/.045)*kickConsistency*snareConsistency)*confidence;
  const bestPattern=micro.score>=bars.score?micro:bars;
  const relativeNoise=clamp(bestPattern.noise/.023)*clamp(sd(events.map(e=>e.offset))/.022)*confidence;
@@ -73,15 +75,15 @@ function analyzeRelations(input,hats,bpm=120,duration=8*60/bpm){
  const offbeats=events.filter(e=>mod(e.q,4)>=2).map(e=>e.offset);
  const swing=Math.max(hat.swing,clamp(mean(offbeats)/.05)*consistency(offbeats)*repeat);
  const tight=Math.sqrt(hat.tight*tightRelative);
- return {pocket,laidBack,pushed,swing,drunk,tight,unstable,confidence,hat,kickMean,snareMean,kickConsistency,snareConsistency,barReproducibility:bars.score,microTimingRepetition:micro.score,repetitions:Math.max(hat.repetitions,micro.repeats,bars.repeats),matched:events.length,events};
+ return {pocket,laidBack,pushed,snarePushed,swing,drunk,tight,unstable,confidence,hat,kickMean,snareMean,kickConsistency,snareConsistency,barReproducibility:bars.score,microTimingRepetition:micro.score,repetitions:Math.max(hat.repetitions,micro.repeats,bars.repeats),matched:events.length,events};
 }
 function enrich(analysis,groove){
  const a={...analysis,scores:{...analysis.scores},groove};
  if(!groove||groove.confidence===0)return a;
  const oldWeight=a.weight;
- const intentional=Math.max(groove.laidBack,groove.drunk,groove.pocket,groove.swing);
+ const intentional=Math.max(groove.laidBack,groove.drunk,groove.pocket,groove.swing,groove.snarePushed??0);
  a.weight=clamp(a.weight+.12*groove.laidBack);
- a.groovePower=6*groove.laidBack+4*groove.pocket+3*groove.pushed;
+ a.groovePower=6*groove.laidBack+4*groove.pocket+3*groove.pushed+3*(groove.snarePushed??0);
  a.power+=18*(a.weight-oldWeight)+a.groovePower;
  a.hits=Math.min(8,Math.max(1,a.hits+Math.round(groove.pushed)));
  a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+.12*groove.tight+.08*groove.pocket+.08*intentional-.16*groove.unstable));
@@ -93,13 +95,14 @@ function enrich(analysis,groove){
 }
 function affinity(g,kind){
  if(!g)return [];
- const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:[];
- return choices.map(([id,strength])=>({id,multiplier:1+strength*g[id]}));
+ const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:kind==='plant'?[['swing',.18],['laidBack',.12]]:kind==='ghost'?[['laidBack',.25],['drunk',.25]]:kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
+ return choices.map(([id,strength])=>({id,multiplier:1+strength*(g[id]??0)}));
 }
 function describe(g){
  if(!g||!g.matched)return 'Hatとの対応が少ないため、今回は音の特徴から攻撃。';
  const millis=n=>Math.round(Math.abs(n)*1000);
  if(g.unstable>.55)return 'ズレ方が毎回変わっている → 不安定。';
+ if(g.snarePushed>.2&&g.snarePushed>=Math.max(g.pocket,g.laidBack,g.pushed,g.drunk,g.swing))return `SnareがHatより平均${millis(g.snareMean)}ms前 → 前ノリスネア。`;
  if(g.drunk>.35&&g.drunk>Math.max(g.laidBack,g.pushed,g.pocket,g.swing)*1.15)return `同じズレ方を${Math.max(2,g.repetitions)}回再現 → ドランク。`;
  if(g.swing>.6&&g.swing>=Math.max(g.laidBack,g.pushed,g.pocket,g.drunk)*.9)return '裏拍を繰り返し遅らせた → スウィング。';
  if(g.pocket>.25)return `KickがHatより${millis(g.kickMean)}ms前、Snareが${millis(g.snareMean)}ms後ろ → ポケット。`;

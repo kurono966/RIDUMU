@@ -31,23 +31,25 @@ test('rendering merges playback notes without mutating the complete raw recordin
 test('laid-back keeps Hat aligned and places Snare behind it',()=>{
  const hats=Array.from({length:16},(_,i)=>note('hat',i*.25-.01,120,'laidBack'));
  const parts=Array.from({length:8},(_,i)=>note(i%2?'snare':'kick',i*.5-.01,120,'laidBack'));
+ assert.ok(Math.abs(parts[1].rawT-hats[2].rawT-.035)<1e-9);
  const g=G.analyzeRelations(parts,hats,120,4);
- assert.ok(Math.abs(g.snareMean-.035)<1e-9);assert.ok(Math.abs(g.kickMean)<1e-9);
- assert.ok(g.laidBack>.7);assert.ok(g.unstable<.01);
+ assert.ok(Math.abs(g.snareMean)<1e-9);assert.ok(Math.abs(g.kickMean)<1e-9);
+ assert.ok(g.laidBack<.01);assert.ok(g.unstable<.01);
 });
 test('drunk repeats the same shifted pattern every bar instead of randomizing each note',()=>{
  const a=Q.apply('hat',.2,120,'drunk').performedT;
  const b=Q.apply('hat',2.2,120,'drunk').performedT;
  assert.ok(Math.abs(b-a-2)<1e-9);
  const hats=Array.from({length:16},(_,i)=>note('hat',i*.25-.05,120,'drunk'));
- const g=G.analyzeHat(hats,120,4);
+ const playbackHats=hats.map(({inputT,...n})=>n),g=G.analyzeHat(playbackHats,120,4);
+ assert.ok(G.analyzeHat(hats,120,4).drunk<.01);
  assert.ok(g.drunk>.5);assert.ok(g.barReproducibility>.95);assert.ok(g.unstable<.01);
  const parts=Array.from({length:8},(_,i)=>note(i%2?'snare':'kick',i*.5-.04,120,'drunk'));
- assert.match(G.describe(G.analyzeRelations(parts,hats,120,4)),/ドランク/);
+ assert.match(G.describe(G.analyzeRelations(parts.map(({inputT,...n})=>n),playbackHats,120,4)),/ドランク/);
 });
 test('swing produces repeating long-short eighths',()=>{
  const hats=Array.from({length:16},(_,i)=>note('hat',i*.25-.02,120,'swing'));
- const g=G.analyzeHat(hats,120,4);assert.ok(g.swing>.8);
+ const g=G.analyzeHat(hats.map(({inputT,...n})=>n),120,4);assert.ok(g.swing>.8);assert.ok(G.analyzeHat(hats,120,4).swing<.01);
 });
 test('a quantized closing note is not lost from replay or damage timing',()=>{
  const end=Q.apply('snare',3.99,120,'laidBack').performedT;
@@ -57,4 +59,19 @@ test('a quantized closing note is not lost from replay or damage timing',()=>{
  assert.ok(timeline.duration>timeline.events[0].at);
  assert.equal(timeline.events[0].damages[0],20);
  assert.equal(R.analyze([n]).count,1);
+});
+
+test('leading Snare playback preset scales with tempo and leaves Kick and Hat raw',()=>{
+ const offsets=[];
+ for(const bpm of [82,120,150]){
+  const beat=60/bpm,grid=beat*2;
+  const out=Q.apply('snare',grid+.01,bpm,'snarePushed');
+  assert.ok(out.performedT<grid);offsets.push(grid-out.performedT);
+  for(const type of ['kick','hat'])for(const t of [-.03,.013,.49,3.99])assert.equal(Q.apply(type,t,bpm,'snarePushed').performedT,t);
+ }
+ assert.ok(offsets[0]>offsets[1]&&offsets[1]>offsets[2]);
+ assert.ok(offsets.every(n=>n>=.02-1e-9&&n<=.04+1e-9));
+ const raw=[{type:'snare',t:0,rawT:0,inputT:0,quantize:'snarePushed',duration:.4,midi:60}];
+ const before=JSON.stringify(raw),rendered=Q.render(raw,120,4);assert.equal(JSON.stringify(raw),before);assert.ok(rendered[0].rawT<0);assert.equal(rendered[0].duration,.4);
+ const timeline=R.attackTimeline(rendered,[12],4);assert.equal(timeline.events[0].at,0);assert.deepEqual(timeline.events[0].damages,[12]);
 });

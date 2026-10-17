@@ -28,3 +28,8 @@ test('stored discoveries restore and malformed records do not break gameplay',()
  x.run('renderDiscoveries()');assert.match(x.$('discoveries').textContent,/重い一撃/);assert.doesNotMatch(x.$('discoveries').textContent,/invalid/);
  const invalid=ui({getItem:()=>'{broken',setItem(){}});invalid.run('renderDiscoveries()');assert.match(invalid.$('discoveries').textContent,/未発見/);
 });
+
+test('discoveries for new enemy kinds survive browser storage reload',()=>{
+ const x=ui({getItem:()=>JSON.stringify({plant:['fire','invalid'],ghost:['laidBack'],crystal:['earth','chain']}),setItem(){}});
+ assert.equal(x.run('knownWeaknesses.plant.join()'),'fire');assert.equal(x.run('knownWeaknesses.ghost.join()'),'laidBack');assert.equal(x.run('knownWeaknesses.crystal.join()'),'earth,chain');
+});
