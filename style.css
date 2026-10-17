@@ -66,6 +66,58 @@ main>header{grid-area:header;padding:0 0 9px;min-width:0}
 /* Instrument indicators share the existing player HUD. */
 .instrument{margin-left:auto;color:var(--lime);font-size:9px;letter-spacing:1px;white-space:nowrap}#turn{margin-left:0;white-space:nowrap}.player-strip .bar{flex:1;min-width:24px;max-width:130px}.pad b{white-space:nowrap;font-size:15px;letter-spacing:1px}@media(max-width:740px){.instrument{font-size:8px;letter-spacing:.4px}.player-strip{gap:7px}.player-strip b{font-size:9px}.pad b{font-size:13px}}
 
-/* Compact playtest layout: all performance controls fit without page scrolling. */
-@media(min-width:760px){body{height:100dvh;overflow:hidden}main{height:100dvh;max-width:1280px;padding:8px 16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,.75fr);grid-template-rows:auto minmax(0,1fr) auto;gap:8px;overflow:hidden}header{grid-column:1/-1;padding:0 0 5px;gap:8px}.intro,footer{display:none}.arena{grid-column:1;grid-row:2;min-height:0;display:flex;flex-direction:column}.enemy-info{padding:8px 12px 0}.battlefield{flex:1;min-height:80px}.player-strip{padding:8px}.console{grid-column:2;grid-row:2;margin:0;padding:8px;min-height:0;overflow:hidden;display:flex;flex-direction:column}.console .filter-control{flex:1;min-height:100px}.console .filter-pad{flex:1;height:auto;min-height:70px}.result{grid-column:1/-1;grid-row:3;max-height:24dvh;overflow:auto}.console-top,.phase-strip{flex-shrink:0}.timeline{flex-shrink:1;min-height:35px}.console .pad{padding:5px}.console .controls{margin-top:4px}}
-@media(max-width:759px){body{height:100dvh;overflow:hidden}main{height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding:5px;gap:4px}header{flex-shrink:0;padding:3px;gap:4px;flex-wrap:wrap}.brand{font-size:19px}.edition,.intro,footer{display:none}.small{padding:5px;font-size:10px}.arena{flex:0 1 28%;min-height:110px}.enemy-info{padding:6px}.battlefield{height:65px}.player-strip{padding:5px;gap:5px}.console{flex:1;min-height:0;overflow:hidden;margin:0;padding:6px;display:flex;flex-direction:column;gap:3px}.console-top,.phase-strip{flex-shrink:0}.console .filter-control{flex:1;min-height:80px}.console .filter-pad{flex:1;height:auto;min-height:50px}.console .pad{padding:5px}.console .controls{margin-top:0}.result{flex:0 1 20%;min-height:0;overflow:auto}.result[hidden]{display:none}}
+/* Playtest: keep the actual controls visible. The result is an overlay, never a layout row. */
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+main{position:relative;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"header header" "arena console";gap:8px;overflow:hidden}
+main>.intro,main>footer{display:none}
+main>header{grid-area:header;min-width:0;min-height:0;padding:3px 5px;gap:8px;flex-wrap:wrap}
+main>.arena{grid-area:arena;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+main>.arena .enemy-info{padding:8px}
+main>.arena .battlefield{flex:1;min-height:40px;height:auto}
+main>.arena .player-strip{padding:6px}
+main>.console{grid-area:console;min-width:0;min-height:0;margin:0;padding:8px;overflow:hidden;display:flex;flex-direction:column;gap:4px}
+main>.console .console-top,main>.console .phase-strip,main>.console .pads,main>.console .controls{flex-shrink:0}
+main>.console .timeline{flex:0 1 65px;min-height:24px;height:auto;margin:2px 0}
+main>.console .filter-control{flex:1 1 90px;min-height:55px;overflow:hidden}
+main>.console .filter-pad{flex:1 1 auto;min-height:30px;height:auto}
+main>.console .pad{min-height:35px;padding:4px 7px}
+main>.console .pad small{display:none}
+main>.console .controls{margin-top:auto;gap:5px}
+main>.console .controls p{font-size:10px;line-height:1.2;margin:0}
+main>.console .primary{min-height:38px;padding:6px 10px}
+main>.result{position:absolute;z-index:8;left:8px;bottom:8px;width:calc(50% - 12px);max-height:48%;overflow:auto;display:block;padding:9px;background:#191c18f5;border:1px solid #596643;border-radius:8px}
+main>.result[hidden]{display:none!important}
+main>.result .result-content{padding:4px 0}
+main>.result h2{font-size:18px;margin:2px}
+@media(max-width:759px){
+ main{padding:4px;gap:4px;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(90px,27fr) minmax(0,73fr);grid-template-areas:"header" "arena" "console"}
+ main>header{gap:5px;padding:2px;flex-wrap:nowrap}
+ main>header .brand{font-size:18px}
+ main>header .edition{display:none}
+ main>header button{font-size:9px;padding:4px 6px;margin-left:0}
+ main>header #openHistory{margin-left:auto}
+ main>.arena .enemy-info{padding:4px 6px}
+ main>.arena .enemy-info p:not(.eyebrow){display:none}
+ main>.arena .player-strip{padding:3px 6px}
+ main>.arena .creature{scale:.55}
+ main>.console{padding:4px;gap:2px}
+ main>.console .console-top{font-size:9px}
+ main>.console .phase-strip{gap:3px}
+ main>.console .filter-control{flex:1 1 75px;min-height:50px;padding:4px}
+ main>.console .filter-pad{min-height:28px}
+ main>.console .filter-control small{display:none}
+ main>.console .timeline{flex:0 1 44px;min-height:20px}
+ main>.console .pad{min-height:30px;padding:3px 6px}
+ main>.console .pad b{font-size:12px}
+ main>.console .controls{gap:3px}
+ main>.console .controls p{font-size:9px}
+ main>.console .primary{min-height:36px}
+ main>.result{left:4px;right:4px;bottom:auto;top:5%;width:auto;max-height:42%;box-shadow:0 10px 35px #000b}
+}
+@media(max-height:600px){
+ main>.console .timeline{flex-basis:24px}
+ main>.console .filter-control{min-height:40px}
+ main>.console .pad{min-height:27px}
+ main>.console .controls p{display:none}
+ main>.arena .enemy-info p:not(.eyebrow){display:none}
+}
