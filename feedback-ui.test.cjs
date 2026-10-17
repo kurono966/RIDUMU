@@ -8,7 +8,8 @@ test('damage details render real calculation and clear after non-attack results'
  const table=x.$('damageCalculation').children.find(n=>n.children?.[0]?.children?.[0]?.textContent==='打撃');assert.ok(table);
  assert.equal(table.children[0].children.length,2);
  const text=node=>[node.textContent,...(node.children??[]).map(text)].join(' ');
- assert.doesNotMatch(text(x.$('damageCalculation')),/抽選|振れ幅|MISS|variation|命中率/);
+ assert.doesNotMatch(text(x.$('damageCalculation')),/抽選|振れ幅|MISS|variation|命中率|NaN|undefined|演奏の安定度/);
+ assert.match(text(x.$('damageCalculation')),/リズム精度/);
  assert.match(text(x.$('damageCalculation')),/固定倍率/);
  assert.equal(table.children.length,x.run('testReport.calculation.hitDetails.length')+1);
  x.run('renderReport({...testReport,calculation:null})');assert.equal(x.$('damageLabel').disabled,true);assert.equal(x.run('damageCalculation'),null);

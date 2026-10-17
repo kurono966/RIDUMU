@@ -27,7 +27,10 @@ function performanceQuality(input,bpm,duration){
  }
  const score=clamp(Math.max(regularity,repetition)),confidence=clamp((onsets.length-3)/5);
  // Sparse heavy attacks stay neutral: too little evidence is not poor playing.
- const multiplier=clamp(1+confidence*(.4+.8*score-1),.4,1.2);
+ // Add a rising reward only above solid consistency; chaotic input keeps its
+ // existing penalty instead of receiving the same general damage increase.
+ const skillBonus=.4*Math.pow(clamp((score-.65)/.35),2);
+ const multiplier=clamp(1+confidence*(.4+.8*score+skillBonus-1),.4,2.2);
  return {count:events.length,regularity,repetition,timingConsistency,score,confidence,multiplier};
 }
 function analyze(input,duration=4,bpm=120){
@@ -78,8 +81,8 @@ function resolve(a,enemy){
  affinity=clamp(Math.pow(originalAffinity,1.65),.4,3);
  affinitySteps.push({label:'相性メリハリ補正（有効↑・苦手↓）',multiplier:affinity/originalAffinity});
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
- // Accuracy is attack efficiency, not a chance to miss. Instability is a fixed
- // penalty; intentional timing still benefits from Groove's existing analysis.
+ // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality
+ // provides the performance multiplier without a second stability penalty.
  const accuracyMultiplier=clamp(aim),rhythmMultiplier=a.performanceQuality?.multiplier??1,efficiency=accuracyMultiplier*rhythmMultiplier;
  const hitDetails=[];
  const rounded=value=>efficiency===0?0:Math.max(1,Math.round(value));

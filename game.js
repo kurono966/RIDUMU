@@ -58,6 +58,7 @@ function syncNoteMode(){
  $('noteMode').disabled=!['ready','cleared','over'].includes(state);
  $('pitchSetup').disabled=$('noteMode').disabled;
  $('openHistory').disabled=$('noteMode').disabled;
+ $('openDebug').disabled=$('noteMode').disabled;
  $('noteMode').title='ベース・リードの音数。4音：ASKL / 7音：ASDFGHJ / 長押し対応';
  $('melodyPads').setAttribute('aria-label',instrumentForTurn(turn).name+' / '+melodyGuide()+'、長押しで持続');
 }
@@ -315,7 +316,7 @@ function input(type,source,pitch){
 }
 function handleKeyDown(e){
  if(e.repeat||e.ctrlKey||e.altKey||e.metaKey||e.target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;
- if($('codexDialog').open||$('pitchDialog').open||$('historyDialog').open||$('damageDialog').open)return;
+ if($('codexDialog').open||$('pitchDialog').open||$('historyDialog').open||$('damageDialog').open||$('debugDialog').open)return;
  if(e.code==='Space'&&e.target?.tagName==='BUTTON'&&e.target.id!=='start'&&!(e.target.id==='hat'&&phase==='hat'))return;
  if((e.code==='KeyH'&&!(sevenNotes()&&(state==='ready'||phase==='parts')))||(e.code==='Space'&&phase==='hat'&&['countin','recording'].includes(state))){e.preventDefault();input('hat');return;}
  if(e.code==='Space'){
@@ -413,6 +414,7 @@ function renderBattlePlan(){
 
 }
 function rememberSequence(kind,mix=lastMix){
+ globalThis.captureEvaluationDebug?.({parts:Array.from(tracks),hats:hatNotes,bpm:lastBpm,duration:lastDuration,zones:currentZones(),enemy:enemies[stage]});
  const rawTracks=Array.from(tracks,([voice,notes])=>({voice,notes}));if(hatNotes.length)rawTracks.push({voice:'hat',notes:hatNotes});
  globalThis.captureHistory?.({tracks:mix??[],rawTracks,bpm:lastBpm,duration:lastDuration,enemy:enemies[stage].name,turn:battleRound(),kind:'attack',title:instruments.find(i=>i.id===lastInstrument).name+' / '+$('moveName').textContent});
 }

@@ -4,10 +4,13 @@ const notes=(times,type)=>times.map(t=>({t,type}));
 test('raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity',()=>{
  const regular=R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick'));
  const chaotic=R.analyze(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick'));
- assert.equal(regular.performanceQuality.multiplier,1.2);assert.ok(chaotic.performanceQuality.multiplier<.65);
+ assert.equal(regular.performanceQuality.multiplier,1.6);assert.ok(chaotic.performanceQuality.multiplier<.65);
  // Hold all other combat features constant to isolate the new performance layer.
  const common={...regular,power:60,hits:3,accuracy:.9};
  const good=R.resolve(common,{kind:'machine'}),bad=R.resolve({...common,performanceQuality:chaotic.performanceQuality},{kind:'machine'});
+ const previousGood=R.resolve({...common,performanceQuality:{...regular.performanceQuality,multiplier:1.2}},{kind:'machine'});
+ assert.ok(good.total>previousGood.total*1.25,'strong playing gets a meaningful increase over the old bonus');
+ assert.ok(Math.abs(chaotic.performanceQuality.multiplier-(.4+.8*chaotic.performanceQuality.score))<1e-9,'chaotic input keeps its old penalty');
  assert.ok(good.total>bad.total*1.5);assert.equal(good.affinity,bad.affinity);
  assert.deepEqual(R.resolve(common,{kind:'machine'}),good);
 });

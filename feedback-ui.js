@@ -136,7 +136,6 @@ function renderDamageCalculation(c){
  row('最終的な敵相性倍率','×'+number(c.affinity));
  row('多段攻撃の1発あたり配分','÷'+number(c.divisor)+`（${c.hits}段）`);
  row('命中効率（固定倍率）','×'+number(c.accuracyMultiplier));
- row('演奏の安定度（固定倍率）','×'+number(c.stabilityMultiplier));
  row('リズム精度（規則性・反復）','×'+number(c.rhythmMultiplier??1));
  row('総合攻撃効率','×'+number(c.efficiency));
  add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × 命中効率${number(c.accuracyMultiplier)} × リズム精度${number(c.rhythmMultiplier??1)}。四捨五入し、効率が0なら0、それ以外は最低1。`);
