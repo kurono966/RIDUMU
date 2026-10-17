@@ -10,6 +10,13 @@ function game(){
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
 }
+
+test('audio keeps the existing compressor and inserts the waveform analyser path once',()=>{
+ const g=game();g.run(`ctx=null;let waveformConnections=0,voices=[];
+ window={AudioContext:class{constructor(){this.state='running';this.destination={};}createDynamicsCompressor(){return {threshold:{},ratio:{},connect(){throw Error('direct output must be replaced by analyser route')}}}}};
+ BattleWaveform={connect:(context,master,canvas)=>{waveformConnections++;return {setVoice:v=>voices.push(v)}}};audio();audio();`);
+ assert.equal(g.run('waveformConnections'),1);assert.equal(g.run('masterOutput.threshold.value'),-12);assert.equal(g.run('masterOutput.ratio.value'),6);assert.equal(g.run('voices[0]'),'drums');
+});
 test('anticipated downbeat is recorded during count-in with raw timing preserved',()=>{
  const g=game();g.run("ctx.currentTime=9.9;input('kick')");
  assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].t'),0);

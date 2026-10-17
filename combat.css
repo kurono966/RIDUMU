@@ -1,4 +1,5 @@
 .player-strip .shield-value{color:#8edcdd;white-space:nowrap;font-size:10px}
+.battlefield>.battle-waveform{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;opacity:.85}.battlefield .coordinate,.battlefield .field-label{z-index:2}
 #openDebug[hidden]{display:none}.debug-dialog select{background:#242a1d;color:#e5cb82;border:1px solid #596643;border-radius:4px;padding:5px;font:inherit}.debug-dialog label{font-size:11px}.debug-dialog table{margin-top:12px;table-layout:fixed}.debug-dialog td{overflow-wrap:anywhere}.debug-dialog tr:first-child{color:#d4f77d}.debug-dialog .debug-sequence{font-family:monospace;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;letter-spacing:.5px}
 @media(max-width:740px){header:has(#openDebug:not([hidden])){gap:6px}header #openDebug{font-size:9px;padding:5px}}
 .damage-detail-trigger{display:block;margin:3px 0 0 auto;padding:0;border:0;background:none;color:#cbd7b9;font:8px Arial;letter-spacing:.3px;line-height:1.2;text-decoration:underline;text-underline-offset:2px}
