@@ -213,7 +213,7 @@ async function countIn(nextPhase='hat'){
  }
  const timer=setInterval(tick,20);clockTimer=timer;tick();
 }
-function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=ctx.createDynamicsCompressor();masterOutput.threshold.value=-12;masterOutput.ratio.value=6;const filtered=performanceFilter.connect(ctx,ctx.destination);masterOutput.connect(filtered);if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,masterOutput,$('battleWaveform'));battleWaveform.setVoice(instrumentForTurn(turn).id);}}if(ctx.state==='suspended')ctx.resume();}
+function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=ctx.createDynamicsCompressor();masterOutput.threshold.value=-12;masterOutput.ratio.value=6;const filtered=performanceFilter.connect(ctx,ctx.destination);if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,masterOutput,$('battleWaveform'),{output:filtered});battleWaveform.setVoice(instrumentForTurn(turn).id);}else masterOutput.connect(filtered);}if(ctx.state==='suspended')ctx.resume();}
 const heldInputs=new Map(), pitchedVoices=new Set();
 function pitchedSound(type,t,voice,volume=1,duration,pitch,midi){
  const bass=voice==='bass',frequency=Number.isInteger(midi)?440*2**((midi-69)/12):Number.isInteger(pitch)&&pitch>=0&&pitch<7?(bass?65.406:261.626)*2**(melodyScale[pitch]/12):bass?(type==='kick'?65.406:97.999):(type==='kick'?261.626:311.127);
