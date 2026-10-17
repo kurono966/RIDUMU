@@ -176,16 +176,17 @@ function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext
 const heldInputs=new Map(), pitchedVoices=new Set();
 function pitchedSound(type,t,voice,volume=1,duration,pitch,midi){
  const bass=voice==='bass',frequency=Number.isInteger(midi)?440*2**((midi-69)/12):Number.isInteger(pitch)&&pitch>=0&&pitch<7?(bass?65.406:261.626)*2**(melodyScale[pitch]/12):bass?(type==='kick'?65.406:97.999):(type==='kick'?261.626:311.127);
- const gain=ctx.createGain(),filter=ctx.createBiquadFilter(),level=(bass?.25:.12)*volume;
+ if(bass){const handle=BassAudio.get(ctx,masterOutput??ctx.destination).play(frequency,t,volume,duration);pitchedVoices.add(handle);handle.onended=()=>pitchedVoices.delete(handle);return handle;}
+ const gain=ctx.createGain(),filter=ctx.createBiquadFilter(),level=.12*volume;
  gain.gain.setValueAtTime(.001,t);gain.gain.exponentialRampToValueAtTime(Math.max(.001,level),t+.008);
  gain.gain.exponentialRampToValueAtTime(Math.max(.001,level*.65),t+.08);
- filter.type='lowpass';filter.Q.value=bass?1.5:.8;
- filter.frequency.setValueAtTime(bass?1100:3600,t);
- filter.frequency.exponentialRampToValueAtTime(bass?480:1800,t+.12);
+ filter.type='lowpass';filter.Q.value=.8;
+ filter.frequency.setValueAtTime(3600,t);
+ filter.frequency.exponentialRampToValueAtTime(1800,t+.12);
  filter.connect(gain);gain.connect(masterOutput??ctx.destination);
  const oscillator=ctx.createOscillator(),harmony=ctx.createOscillator(),blend=ctx.createGain();
- oscillator.type=bass?'sawtooth':'triangle';oscillator.frequency.setValueAtTime(frequency,t);oscillator.connect(filter);
- harmony.type='sine';harmony.frequency.setValueAtTime(bass?frequency/2:frequency*2,t);blend.gain.value=bass?.45:.18;
+ oscillator.type='triangle';oscillator.frequency.setValueAtTime(frequency,t);oscillator.connect(filter);
+ harmony.type='sine';harmony.frequency.setValueAtTime(frequency*2,t);blend.gain.value=.18;
  harmony.connect(blend);blend.connect(filter);oscillator.start(t);harmony.start(t);
  let releasedAt=Infinity;
  const handle={release(at=ctx.currentTime){
@@ -196,7 +197,7 @@ function pitchedSound(type,t,voice,volume=1,duration,pitch,midi){
  }};
  oscillator.onended=()=>{pitchedVoices.delete(handle);gain.disconnect();filter.disconnect();};
  pitchedVoices.add(handle);
- if(duration!==Infinity)handle.release(t+Math.max(.025,duration??(bass?.2:.17)));
+ if(duration!==Infinity)handle.release(t+Math.max(.025,duration??.17));
  return handle;
 }
 function releaseInput(source,at=ctx?.currentTime??0){
@@ -236,9 +237,15 @@ function chordSound(type,t,volume=1){
  sources[0].onended=()=>{pitchedVoices.delete(handle);gain.disconnect();};pitchedVoices.add(handle);handle.release(t+.32);return handle;
 }
 function sampleSound(type,when,volume=1){
- const samples=globalThis.DrumAudio;if(!samples)return;
- const play=()=>{if(!muted)samples.play(ctx,type,when??ctx.currentTime,volume,masterOutput??ctx.destination);};
- if(!samples.play(ctx,type,when??ctx.currentTime,volume,masterOutput??ctx.destination))samples.ready.then(play);
+ const samples=globalThis.DrumAudio;if(!samples||muted)return;
+ const play=()=>{
+  if(muted)return false;
+  const at=Math.max(ctx.currentTime,when??ctx.currentTime);
+  const played=samples.play(ctx,type,at,volume,masterOutput??ctx.destination);
+  if(played&&type==='kick')BassAudio.get(ctx,masterOutput??ctx.destination).duckForKick(at,volume);
+  return played;
+ };
+ if(!play())samples.ready.then(play);
 }
 function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitch,midi){
  if(muted||!ctx)return;const t=when??ctx.currentTime;

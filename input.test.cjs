@@ -5,7 +5,7 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},Defense:require('./defense.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},BassAudio:require('./bass-audio.js'),Defense:require('./defense.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
@@ -92,11 +92,11 @@ test('space starts only when ready and blocks scrolling and repeat',()=>{
 test('bass and lead synthesize separate pitches at the requested audio time',()=>{
  const g=game();
  g.run(`let frequencies=[],starts=[];
- const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
- ctx={destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f,t){frequencies.push(f)}},connect(){},start(t){starts.push(t)},stop(){}}}};
+ const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f,t){frequencies.push(f)}},connect(){},start(t){starts.push(t)},stop(){}}}};
  pitchedSound('kick',5,'bass');pitchedSound('snare',6,'lead');`);
- assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[2]'),311.127);
- assert.equal(g.run("starts.join(',')"),'5,5,6,6');
+ assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[3]'),311.127);
+ assert.equal(g.run("starts.join(',')"),'5,5,5,6,6');
 });
 test('Hat phase accepts only Hat, then replays its raw offsets in the parts phase',async()=>{
  const g=game();
@@ -208,10 +208,10 @@ test('quantized playback preserves gate length without changing raw recording',(
 });
 
 test('sustained synth keeps oscillators running until release',()=>{
- const g=game();g.run(`let stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
- ctx={currentTime:10,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){},disconnect(){}}},createOscillator(){return {frequency:param,connect(){},start(){},stop(t){stops.push(t)}}}};
+ const g=game();g.run(`let stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:10,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){},disconnect(){}}},createOscillator(){return {frequency:param,connect(){},start(){},stop(t){stops.push(t)}}}};
  let voice=pitchedSound('kick',10,'bass',1,Infinity);`);
- assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),2);assert.ok(Math.abs(g.run('stops[0]')-11.64)<1e-9);
+ assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),3);assert.ok(Math.abs(g.run('stops[0]')-11.605)<1e-9);
 });
 test('mix playback waits for sustained note tails without adding strikes',()=>{
  const timeline=require('./rhythm.js').mixTimeline([{voice:'lead',notes:[{type:'kick',rawT:3.5,t:3.5,duration:1}]}],'lead',[23],4);
@@ -233,11 +233,11 @@ test('seven pitches survive quantization and mix snapshots including simultaneou
  assert.equal(g.run('lastMix[0].notes.length'),2);assert.equal(g.run('lastMix[0].notes.map(n=>n.pitch).join()'),'0,1');assert.equal(g.run('lastMix[0].notes[1].duration'),.5);
 });
 test('seven-note synth uses the selected minor-scale pitch at each octave',()=>{
- const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
- ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
+ const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
  pitchedSound('kick',0,'bass',1,.5,6);pitchedSound('kick',0,'lead',1,.5,6);`);
  assert.ok(Math.abs(g.run('frequencies[0]')-65.406*2**(10/12))<1e-8);
- assert.ok(Math.abs(g.run('frequencies[2]')-261.626*2**(10/12))<1e-8);
+ assert.ok(Math.abs(g.run('frequencies[3]')-261.626*2**(10/12))<1e-8);
 });
 test('note mode cannot change during a recording',()=>{
  const g=game();g.run("noteMode='seven';state='recording';$('noteMode').value='two';$('noteMode').onchange()");
@@ -275,8 +275,8 @@ test('two-note mode also records custom absolute pitches',()=>{
  const g=game();g.run("state='ready';turn=3;setKeyPitch('lead','two',1,74);state='recording';input('snare','key:KeyL')");assert.equal(g.run('notes[0].midi'),74);assert.equal(g.run('notes[0].pitch'),undefined);
 });
 test('absolute MIDI pitch controls replay synthesis independently of slot and settings',()=>{
- const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
- ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
+ const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
  pitchedSound('kick',0,'lead',1,.3,0,69);`);assert.equal(g.run('frequencies[0]'),440);
 });
 
@@ -351,9 +351,14 @@ test('defense mix keeps anticipated notes aligned and waits for sustained backin
  g.run('ctx.currentTime=defenseOrigin+defenseBattle.duration;guardTick()');await done;
 });
 test('defensive keyboard plays a four-note FM chord rather than the bass or lead tone',()=>{
- const g=game();g.run(`let frequencies=[],types=[],stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
+ const g=game();g.run(`let frequencies=[],types=[],stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},set type(t){types.push(t)},connect(){},start(){},stop(t){stops.push(t)}}}};
  chordSound('kick',0,.9);`);
  assert.equal(g.run('frequencies.length'),8);assert.equal(g.run('types.every(t=>t==="sine")'),true);
  assert.ok(Math.abs(g.run('frequencies[0]')-440*2**((60-69)/12))<1e-9);assert.ok(Math.abs(g.run('frequencies[6]')-440*2**((70-69)/12))<1e-9);assert.equal(g.run('stops.length'),8);
+});
+
+test('only successfully played Kick samples duck the bass at their actual scheduled time',()=>{
+ const g=game();g.run("let dips=[];BassAudio={get:()=>({duckForKick:(...args)=>dips.push(args)})};globalThis.DrumAudio={play:()=>true,ready:Promise.resolve(true)};sampleSound('kick',11,.5);sampleSound('snare',11,.5);sampleSound('hat',11,.5);muted=true;sampleSound('kick',11,1)");
+ assert.equal(g.run('dips.length'),1);assert.equal(g.run('dips[0][0]'),11);assert.equal(g.run('dips[0][1]'),.5);
 });

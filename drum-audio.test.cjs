@@ -4,7 +4,7 @@ const {create}=require('./drum-audio.js');
 function samples(){const sandbox=vm.createContext({});vm.runInContext(fs.readFileSync('assets/drum-samples.js','utf8'),sandbox);return sandbox.DrumSamples;}
 test('embedded drum samples are byte-for-byte copies of the original WAV assets',()=>{
  const library=samples();assert.deepEqual(Object.keys(library).sort(),['hat','kick','snare']);
- for(const sample of Object.values(library))assert.deepEqual(Buffer.from(sample.base64,'base64'),fs.readFileSync(path.join('assets',sample.file)));
+ for(const sample of Object.values(library))assert.ok(Buffer.from(sample.base64,'base64').equals(fs.readFileSync(path.join('assets',sample.file))),sample.file+' changed: run node scripts/build-drum-samples.cjs');
 });
 test('samples decode once and rapid hits keep separate sources with exact scheduled times',async()=>{
  let decodes=0;const audio=create(samples(),{async decodeAudioData(bytes){decodes++;return {bytes};}});
