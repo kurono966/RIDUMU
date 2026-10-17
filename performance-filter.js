@@ -3,7 +3,7 @@
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
  let ctx=null,node=null,output=null;
  let amount=0,mode='lowpass';
- function cutoff(){return 80*Math.pow(180,1-amount);}
+ function cutoff(){return mode==='lowpass'?16000*Math.pow(250/16000,amount):30*Math.pow(3500/30,amount);}
  function connect(context,destination){
   if(node&&ctx===context)return node;
   ctx=context;output=destination;node=ctx.createBiquadFilter();
