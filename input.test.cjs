@@ -288,7 +288,7 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
 });
 test('roster contains six distinct enemies with stronger counterattacks',()=>{
  const g=game();assert.equal(g.run('enemies.length'),6);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),6);
- assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'44,48,52');
+ assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'88,96,104');
  g.run('stage=5;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 06 / 06');
 });
 test('third enemy no longer ends the game and only the sixth enemy completes the run',async()=>{
