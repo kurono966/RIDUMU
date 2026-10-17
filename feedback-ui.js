@@ -122,9 +122,9 @@ document.getElementById('ensembleTab').onclick=()=>setResultPanel('ensemble');
 
 function renderDamageCalculation(c){
  const container=$('damageCalculation');container.replaceChildren();
- const number=n=>Number(n).toFixed(2),percent=n=>(n*100).toFixed(1)+'%';
+ const number=n=>Number(n).toFixed(2);
  const add=(tag,text)=>{const node=document.createElement(tag);node.textContent=text;container.append(node);return node;};
- add('p',`合計 ${c.total} DAMAGE / ${c.hitDetails.filter(h=>h.hit).length}命中・${c.hits}打撃。Drumsの入力 ${c.drums.count}音（Kick ${c.drums.kick} / Snare ${c.drums.snare}）。`);
+ add('p',`合計 ${c.total} DAMAGE / ${c.hits}打撃（固定）。Drumsの入力 ${c.drums.count}音（Kick ${c.drums.kick} / Snare ${c.drums.snare}）。`);
  add('h3','威力が増えた順序');
  const steps=document.createElement('dl');steps.className='calculation-steps';container.append(steps);
  const row=(label,value)=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;steps.append(dt,dd);};
@@ -135,14 +135,15 @@ function renderDamageCalculation(c){
  for(const s of c.affinitySteps)row(s.label,'×'+number(s.multiplier));
  row('最終的な敵相性倍率','×'+number(c.affinity));
  row('多段攻撃の1発あたり配分','÷'+number(c.divisor)+`（${c.hits}段）`);
- row('最終命中率',percent(Math.max(0,Math.min(1,c.accuracy))));
- row('1発ごとの威力の振れ幅','×'+number(1-c.instability)+' ～ ×'+number(1+c.instability));
- add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × その打撃の振れ幅。命中時に四捨五入し、最低1。ミスは0。`);
+ row('命中効率（固定倍率）','×'+number(c.accuracyMultiplier));
+ row('演奏の安定度（固定倍率）','×'+number(c.stabilityMultiplier));
+ row('総合攻撃効率','×'+number(c.efficiency));
+ add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × 命中効率${number(c.accuracyMultiplier)} × 安定度${number(c.stabilityMultiplier)}。四捨五入し、効率が0なら0、それ以外は最低1。`);
  add('h3','実際に発生した打撃');
  const table=document.createElement('table'),head=document.createElement('tr');
- for(const text of ['打撃','命中抽選','威力の振れ','ダメージ']){const cell=document.createElement('th');cell.textContent=text;head.append(cell);}table.append(head);
- c.hitDetails.forEach((hit,i)=>{const tr=document.createElement('tr');for(const text of [i+1,`${percent(hit.roll)} ${hit.hit?'＜':'≧'} ${percent(Math.max(0,Math.min(1,c.accuracy)))} → ${hit.hit?'命中':'ミス'}`,hit.variation===null?'—':'×'+number(hit.variation),hit.damage]){const td=document.createElement('td');td.textContent=text;tr.append(td);}table.append(tr);});container.append(table);
- add('p','命中抽選は表示した命中率未満なら命中。表示値は丸めています。多段は1発の威力を減らしますが、全段命中すると合計が少し伸びます。弱点や支援の倍率が重なると、単純なリズムでも高威力になります。');
+ for(const text of ['打撃','固定ダメージ']){const cell=document.createElement('th');cell.textContent=text;head.append(cell);}table.append(head);
+ c.hitDetails.forEach((hit,i)=>{const tr=document.createElement('tr');for(const text of [i+1,hit.damage]){const td=document.createElement('td');td.textContent=text;tr.append(td);}table.append(tr);});container.append(table);
+ add('p','同じ演奏・敵・状態なら同じ結果になります。命中効率と安定度は固定倍率です。多段は1発の威力を減らしますが、合計は少し伸びます。表示値は丸めています。');
 }
 document.getElementById('damageLabel').onclick=()=>{if(!damageCalculation)return;renderDamageCalculation(damageCalculation);$('damageDialog').showModal();};
 document.getElementById('closeDamage').onclick=()=>$('damageDialog').close();

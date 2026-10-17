@@ -474,7 +474,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
     if(event.damages.length){
      total+=damage;enemyHp=Math.max(0,enemyHp-damage);showHitFeedback(damage);
      $('damage').textContent=total;
-     $('impact').style.color=color;$('impact').textContent=damage||'MISS';
+     $('impact').style.color=color;$('impact').textContent=damage;
      $('enemyHp').textContent=`${enemyHp} / ${enemies[stage].hp}`;
      $('enemyBar').style.width=`${enemyHp/enemies[stage].hp*100}%`;
     }

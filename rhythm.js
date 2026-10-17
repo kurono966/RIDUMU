@@ -29,7 +29,7 @@ function analyze(input,duration=4,bpm=120){
  const accuracy=clamp(.79+.12*regularity+.08*repetition-.12*irregularity,.6,.98),instability=.05+.3*irregularity;
  return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,instability,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
 }
-function resolve(a,enemy,rng=Math.random){
+function resolve(a,enemy){
  let affinity=1,aim=a.accuracy;
  if(enemy.kind==='stone'){affinity=a.element==='earth'?1.35:1;affinity*=.8+.45*a.weight;}
  if(enemy.kind==='fly'){affinity=a.element==='wind'?1.4:1;affinity*=.9+.25*clamp(a.density/6);aim-=.24*a.weight*(1-(a.groove?.swing??0));}
@@ -44,26 +44,27 @@ function resolve(a,enemy,rng=Math.random){
   for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
  }
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
+ // Accuracy is attack efficiency, not a chance to miss. Instability is a fixed
+ // penalty; intentional timing still benefits from Groove's existing analysis.
+ const accuracyMultiplier=clamp(aim),stabilityMultiplier=1-.3*clamp(a.instability??0),efficiency=accuracyMultiplier*stabilityMultiplier;
  const hitDetails=[];
- const damages=Array.from({length:a.count?a.hits:0},()=>{
-  const roll=rng();
-  if(roll>=aim){hitDetails.push({hit:false,roll,variation:null,damage:0});return 0;}
-  const variation=1+(rng()*2-1)*a.instability;
-  const scale=variation/Math.pow(a.hits,.85);
-  const base=Math.max(1,Math.round((24+8*clamp(a.count/8))*scale));
-  const weighted=Math.max(1,Math.round((24+8*clamp(a.count/8)+18*a.weight)*scale));
-  const charged=Math.max(1,Math.round((24+8*clamp(a.count/8)+18*a.weight+12*a.charged)*scale));
-  const beforeAffinity=Math.max(1,Math.round(a.power*scale));
-  const damage=Math.max(1,Math.round(a.power/Math.pow(a.hits,.85)*affinity*variation));
-  hitDetails.push({hit:true,roll,variation,damage});
+ const rounded=value=>efficiency===0?0:Math.max(1,Math.round(value));
+ const damages=Array.from({length:a.count?a.hits:0},(_,index)=>{
+  const scale=efficiency/Math.pow(a.hits,.85);
+  const base=rounded((24+8*clamp(a.count/8))*scale);
+  const weighted=rounded((24+8*clamp(a.count/8)+18*a.weight)*scale);
+  const charged=rounded((24+8*clamp(a.count/8)+18*a.weight+12*a.charged)*scale);
+  const beforeAffinity=rounded(a.power*scale);
+  const damage=rounded(a.power/Math.pow(a.hits,.85)*affinity*efficiency);
+  hitDetails.push({index:index+1,damage});
   breakdown.base+=base;breakdown.form+=beforeAffinity-base;breakdown.affinity+=damage-beforeAffinity;
-  const chained=Math.max(1,Math.round((a.power-(a.groovePower??0))*scale));
+  const chained=rounded((a.power-(a.groovePower??0))*scale);
   breakdown.weight+=weighted-base;breakdown.charged+=charged-weighted;breakdown.chain+=chained-charged;breakdown.groove+=beforeAffinity-chained;
   return damage;
  });
  const total=damages.reduce((x,y)=>x+y,0);
- const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracy:aim,instability:a.instability,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
- return {damages,total,affinity,accuracy:aim,breakdown,calculation};
+ const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,stabilityMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
+ return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,stabilityMultiplier,efficiency,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){
  const sorted=notes.map(n=>({...n,time:n.rawT??n.t})).sort((a,b)=>a.time-b.time);

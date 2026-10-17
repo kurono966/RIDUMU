@@ -57,7 +57,7 @@
   selected.forEach((s,i)=>{const strength=s.score*(i?.6:1),pct=n=>Math.round(n*100);
    if(s.id==='grooveLock'){const attack=.1*strength,shield=4*strength;bonus.attack+=attack;bonus.shield+=shield;s.effect=`攻撃 +${pct(attack)}% / 盾 +${Math.round(shield)}`;}
    if(s.id==='response'){bonus.support+=.18*strength;s.effect=`Lead支援 +${pct(.18*strength)}%`;}
-   if(s.id==='interlock'){bonus.accuracy+=.05*strength;bonus.shieldEfficiency+=.1*strength;s.effect=`命中 +${pct(.05*strength)}% / 盾効率 +${pct(.1*strength)}%`;}
+   if(s.id==='interlock'){bonus.accuracy+=.05*strength;bonus.shieldEfficiency+=.1*strength;s.effect=`命中効率 +${pct(.05*strength)}% / 盾効率 +${pct(.1*strength)}%`;}
    if(s.id==='unison'){bonus.attack+=.12*strength;bonus.break+=.08*strength;s.effect=`攻撃 +${pct(.12*strength)}% / ブレイク強化`;}
    if(s.id==='callResponse'){bonus.element+=.12*strength;bonus.resistance+=.08*strength;s.effect=`属性効果 +${pct(.12*strength)}% / 敵攻撃 −${pct(.08*strength)}%`;}
   });

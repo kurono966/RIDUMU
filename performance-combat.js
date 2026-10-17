@@ -27,7 +27,7 @@
   const off=sorted.filter(n=>root.GridEffects.slot(n,bpm)%4!==0).length/sorted.length;
   const zone=root.GridEffects.inspect(notes,'lead',zones,bpm).boost??0,mult=1+Math.min(.6,zone*.2);
   const result={attack:(.06+.16*rising/pairs)*mult,expose:(.04+.14*off)*mult,accuracy:(.025+.075*same/pairs)*mult,element:(.04+.1*clamp(unique/5))*mult,shieldEfficiency:(.05+.2*held)*mult,weaken:(.03+.15*falling/pairs)*mult,zone};
-  result.description=rising>falling&&rising>same?'上昇フレーズ → 攻撃を後押し':falling>rising&&falling>same?'下降フレーズ → 敵の攻撃を弱めた':held>.45?'長い旋律 → シールド効率上昇':'繰り返す旋律 → 命中を支援';
+  result.description=rising>falling&&rising>same?'上昇フレーズ → 攻撃を後押し':falling>rising&&falling>same?'下降フレーズ → 敵の攻撃を弱めた':held>.45?'長い旋律 → シールド効率上昇':'繰り返す旋律 → 命中効率を支援';
   return result;
  }
  function enhance(a,drums,bpm,zones,support){

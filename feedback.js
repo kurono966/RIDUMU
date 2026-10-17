@@ -1,4 +1,4 @@
-/* Explanations use the same features and multipliers as combat; no extra damage rolls. */
+/* Explanations use the same features and multipliers as combat; deterministic damage. */
 (function(root){
 const grooveEngine=typeof module!=='undefined'?require('./groove.js'):root.Groove;
 const names={earth:'土',wind:'風',fire:'火',lightning:'雷'};
@@ -36,7 +36,7 @@ function explain(a,result,enemy,voice='drums'){
  if(a.groove&&a.groove.confidence>.15){
   const g=a.groove,id=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
   const labels={pocket:'ポケット',laidBack:'レイドバック',pushed:'前ノリ',snarePushed:'前ノリスネア',swing:'スウィング',drunk:'再現する揺れ',tight:'タイト'};
-  if(g[id]>.15)candidates.push({id:'groove',priority:2,score:(b.groove??0)+result.total*.18*g[id],text:labels[id]+(id==='tight'?' → 命中が安定':id==='laidBack'?' → 重撃を強化':id==='drunk'?' → 属性効果を強化':' → 攻撃を強化'),source:'groove-'+id,tag:labels[id]+'！'});
+  if(g[id]>.15)candidates.push({id:'groove',priority:2,score:(b.groove??0)+result.total*.18*g[id],text:labels[id]+(id==='tight'?' → 命中効率を強化':id==='laidBack'?' → 重撃を強化':id==='drunk'?' → 属性効果を強化':' → 攻撃を強化'),source:'groove-'+id,tag:labels[id]+'！'});
  }
  const low=voice==='drums'?'Kick':'低音';
  if(a.count&&a.charged>.2)candidates.push({id:'charge',priority:2,score:(b.charged??12*a.charged)+.6*(b.weight??0),text:`長い間の後の${low} → 溜めた重撃`,source:'charge',tag:'溜め！'});
@@ -44,7 +44,7 @@ function explain(a,result,enemy,voice='drums'){
  if(a.hits>=3)candidates.push({id:'burst',priority:2,score:(result.total||a.power)*Math.min(.8,(a.hits-1)/8),text:a.snareBurst>.3?'高音側の短い連打 → 多段攻撃':`${a.density>3?'密な刻み':'短い間隔の入力'} → ${a.hits}回の連撃`,source:'burst',tag:'連撃！'});
  if(a.alternation>.65&&a.count>2)candidates.push({id:'chain',priority:2,score:b.chain??7*a.alternation,text:'低音・高音を交互に入力 → 連環撃',source:'chain',tag:'連環！'});
  if(a.count)candidates.push({id:'element',priority:3,score:cause.strength*6,text:cause.text,source:cause.source,tag:names[a.element]+'！'});
- if(a.regularity>.65&&a.count>3)candidates.push({id:'stable',priority:4,score:result.total*(.12*a.regularity+.08*a.repetition),text:a.repetition>.4?'安定した反復 → 命中しやすい':'一定の間隔 → 命中しやすい',source:'repeat',tag:'安定'});
+ if(a.regularity>.65&&a.count>3)candidates.push({id:'stable',priority:4,score:result.total*(.12*a.regularity+.08*a.repetition),text:a.repetition>.4?'安定した反復 → 命中効率上昇':'一定の間隔 → 命中効率上昇',source:'repeat',tag:'安定'});
  const sorted=candidates.sort((x,y)=>x.priority-y.priority||y.score-x.score);
  const factors=[];
  for(const f of sorted){if(factors.some(x=>x.priority===f.priority))continue;factors.push(f);if(factors.length===3)break;}
@@ -64,12 +64,11 @@ function explain(a,result,enemy,voice='drums'){
  let hint='属性相性は普通。刻み方を変えて比べてみよう。';
  if(!a.count)hint='今回は入力なし。一音から試してみよう。';
  else if(enemy.kind==='stone'&&a.weight<.45)hint='軽い連打は岩の体に通りにくい。間を空けた低音も試そう。';
- else if(enemy.kind==='fly'&&a.weight>.5)hint='重い一撃は飛行敵に当たりにくい。細かな刻みも試そう。';
+ else if(enemy.kind==='fly'&&a.weight>.5)hint='重い一撃は飛行敵への攻撃効率が下がる。細かな刻みも試そう。';
  else if(enemy.kind==='plant'&&a.element==='wind')hint='風はしなる蔓に流されやすい。別の属性も試そう。';
  else if(enemy.kind==='ghost'&&(!hitCount||a.element==='earth'))hint='揺れる輪郭を捉えにくい。同じズレ方を繰り返すノリも試そう。';
  else if(enemy.kind==='crystal'&&a.alternation<.34)hint='同じ音だけでは晶殻に響きにくい。低音と高音を交互に試そう。';
- else if(!hitCount)hint='今回は命中なし。一定の間隔や反復で当てやすくなる。';
- else if(hitCount<result.damages.length)hint='一部が外れた。一定の間隔や反復で命中が安定する。';
+ else if(!hitCount)hint='今回はダメージなし。一定の間隔や反復で攻撃効率を高めよう。';
  else if(effective.length)hint='この叩き方は敵に有効。違う刻みとも比べてみよう。';
  if(a.groove?.unstable>.55)hint='ズレ方が毎回変わっている。同じ置き方を繰り返すと安定する。';
  const main=factors.find(f=>f.priority===2);
