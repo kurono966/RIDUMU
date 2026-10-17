@@ -49,5 +49,10 @@ function attackTimeline(notes,damages){
  });
  return {events,duration:4-offset,offset};
 }
-root.Rhythm={analyze,resolve,attackTimeline};if(typeof module!=='undefined')module.exports=root.Rhythm;
+function mixTimeline(tracks,currentVoice,damages=[]){
+ const all=tracks.flatMap(track=>attackTimeline(track.notes,track.voice===currentVoice?damages:[]).events.map(event=>({...event,voice:track.voice})));
+ const offset=Math.min(0,...all.map(event=>event.time));
+ return {events:all.map(event=>({...event,at:event.time-offset})).sort((a,b)=>a.at-b.at),duration:4-offset,offset};
+}
+root.Rhythm={analyze,resolve,attackTimeline,mixTimeline};if(typeof module!=='undefined')module.exports=root.Rhythm;
 })(typeof window!=='undefined'?window:globalThis);

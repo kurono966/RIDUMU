@@ -20,3 +20,12 @@ test('playback preserves resolved damage without adding damage for extra notes',
  assert.deepEqual(R.attackTimeline(notes([0,1,3],'kick'),[40]).events.map(n=>n.damages),[[],[],[40]]);
  assert.equal(R.attackTimeline([],[]).events.length,0);
 });
+test('layered replay aligns every part to the same clock and damages only the new part',()=>{
+ const tracks=[{voice:'drums',notes:[{type:'kick',t:0,rawT:-.5},{type:'snare',t:1}]},{voice:'bass',notes:[{type:'kick',t:0},{type:'snare',t:2}]},{voice:'lead',notes:[{type:'snare',t:3}]}];
+ const mix=R.mixTimeline(tracks,'lead',[30]);
+ assert.equal(mix.offset,-.5);assert.equal(mix.duration,4.5);
+ assert.deepEqual(mix.events.map(n=>n.at),[0,.5,1.5,2.5,3.5]);
+ assert.equal(mix.events.filter(n=>n.damages.length).length,1);
+ assert.equal(mix.events.at(-1).voice,'lead');assert.deepEqual(mix.events.at(-1).damages,[30]);
+ assert.ok(R.mixTimeline(tracks,null).events.every(n=>n.damages.length===0));
+});
