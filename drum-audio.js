@@ -11,15 +11,16 @@ function create(samples,decoder){
   }));
   return true;
  }).catch(reason=>{error=reason;return false;});
- function play(ctx,type,when=ctx.currentTime,volume=1,output=ctx.destination){
+ function playVoice(ctx,type,when=ctx.currentTime,volume=1,output=ctx.destination){
   const buffer=buffers.get(type);if(!buffer||error)return false;
   const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=buffer;
   gain.gain.setValueAtTime((levels[type]??1)*volume,Math.max(ctx.currentTime,when));
   source.connect(gain);gain.connect(output);
-  source.onended=()=>{source.disconnect();gain.disconnect();};
-  source.start(Math.max(ctx.currentTime,when));return true;
+  let ended=false;source.onended=()=>{ended=true;source.disconnect();gain.disconnect();};
+  source.start(Math.max(ctx.currentTime,when));return {release(){if(ended)return;const at=ctx.currentTime;gain.gain.cancelScheduledValues(at);gain.gain.setValueAtTime((levels[type]??1)*volume,at);gain.gain.exponentialRampToValueAtTime(.0001,at+.025);source.stop(at+.03);}};
  }
- return {ready,play,get error(){return error;}};
+ const play=(...args)=>!!playVoice(...args);
+ return {ready,play,playVoice,duration:type=>buffers.get(type)?.duration??0,get error(){return error;}};
 }
 if(typeof module!=='undefined')module.exports={create};
 else{

@@ -68,7 +68,7 @@ Hatの平均間隔・平均ズレ・前後の置き方・裏拍・均一性・�
 - style.css / feedback.css / groove.css：画面構成。
 - enemies.css：敵別のシルエット・パーツ・常時アニメーション・ヒット／弱点／回避／帯電／炎の短いリアクション。動きを減らすOS設定にも対応。
 
-検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs drum-audio.test.cjs bass-audio.test.cjs
+検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs drum-audio.test.cjs bass-audio.test.cjs sequence-history.test.cjs history-ui.test.cjs
 
 ベース・リードは A / L またはパッドの長押しで持続音になります。離すと減衰し、押した長さも伴奏・攻撃再生・リプレイで再現します。ドラムとHatは単発音のままです。再生補正は音の開始時刻に適用し、長押しの長さは保持します。
 
@@ -99,3 +99,8 @@ Kick・Snare・HiHatはassets内のClark Audio WAVを使用します。演奏・
 ### ブーンバップ・ベース
 ベースはsine主体にtriangleとごく少量のsawtoothを重ね、オクターブ下の補助音を取り除きました。短いアタックと減衰、丸いローパス、軽いtanhサチュレーション、ベース専用の緩やかなコンプレッションを通します。短押しは短く太く、長押しは持続し、キーを離すと素早く減衰します。既存のマスターコンプレッサーは維持しています。
 Kick音源の発音に合わせ、ベース専用バスだけをごく短く浅く下げて重なりを整えます。音高・長押し記録・再生補正・リードとコードの音色は従来どおりです。実装と単体テストはbass-audio.js / bass-audio.test.cjsにあります。
+
+### 演奏履歴・MIDI保存
+画面上部の「履歴」で、各パートの攻撃後とコード防御後の演奏を再生できます。重ねた全パート・敵BPM・音高・長押しの長さ・再生補正後のタイミングを複製して保存し、元の入力時刻もJSONに残します。防御で実際に押したコードも記録します。次のドラムでパートをリセットしても、履歴は消えません。
+直近50件をlocalStorageに自動保存します。保存できない環境や容量不足の場合も、このプレイ中は履歴に残り、JSONで手元へ保存できます。JSONの読込でRIDUMUに戻せます。履歴は演奏・攻撃・防御中には開けず、再生が戦闘結果やHPを書き換えることはありません。
+「MIDI保存」はStandard MIDI File形式（テンポ・各楽器のトラック・音符・音長）を書き出します。ドラムはGMの10チャンネル、ベース／リード／コードは別チャンネルです。先取り入力の相対時刻も保持します。MIDIには音源そのものを含まないため、外部の再生ソフトでは音色が変わります。

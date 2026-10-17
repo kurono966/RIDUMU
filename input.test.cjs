@@ -362,3 +362,13 @@ test('only successfully played Kick samples duck the bass at their actual schedu
  const g=game();g.run("let dips=[];BassAudio={get:()=>({duckForKick:(...args)=>dips.push(args)})};globalThis.DrumAudio={play:()=>true,ready:Promise.resolve(true)};sampleSound('kick',11,.5);sampleSound('snare',11,.5);sampleSound('hat',11,.5);muted=true;sampleSound('kick',11,1)");
  assert.equal(g.run('dips.length'),1);assert.equal(g.run('dips[0][0]'),11);assert.equal(g.run('dips[0][1]'),.5);
 });
+
+test('attack completion captures an accumulated mix plus the unquantized source tracks',async()=>{
+ const g=game();g.run("turn=2;tracks.set('drums',[{type:'kick',t:0,rawT:0}]);notes=[{type:'kick',t:.48,rawT:.48,inputT:.48,midi:36,duration:.6,quantize:'just'}];hatNotes=[{type:'hat',t:0,rawT:0}];enemyHp=0;let captured=[];globalThis.captureHistory=entry=>captured.push(entry);setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};");
+ await g.run('finish()');assert.equal(g.run('captured.length'),1);assert.equal(g.run('captured[0].kind'),'attack');assert.equal(g.run('captured[0].tracks.map(t=>t.voice).join()'),'drums,bass,hat');assert.equal(g.run("captured[0].rawTracks.find(t=>t.voice==='bass').notes[0].rawT"),.48);assert.equal(g.run("captured[0].tracks.find(t=>t.voice==='bass').notes[0].rawT"),.5);
+});
+test('defense records the performed chord pitches in its own history snapshot',async()=>{
+ const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();lastMix=[{voice:'lead',notes:[{type:'kick',t:0,midi:60,duration:.4}]}];let captured=[];globalThis.captureHistory=entry=>captured.push(entry);let tickGuard;setInterval=fn=>{tickGuard=fn;return 1};clearInterval=()=>{};");
+ const done=g.run('defensePhase(12)');await Promise.resolve();g.run("ctx.currentTime=defenseOrigin+2;defenseInput('kick','key:KeyA');ctx.currentTime=defenseOrigin+defenseBattle.duration;tickGuard()");await done;
+ assert.equal(g.run('captured[0].kind'),'defense');assert.equal(g.run('captured[0].tracks.map(t=>t.voice).join()'),'lead,chord');assert.equal(g.run('captured[0].tracks[1].notes[0].pitches.join()'),'60,63,67,70');assert.equal(g.run('captured[0].tracks[1].notes[0].rawT'),2);
+});

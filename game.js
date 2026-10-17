@@ -57,6 +57,7 @@ function syncNoteMode(){
  }
  $('noteMode').disabled=!['ready','cleared','over'].includes(state);
  $('pitchSetup').disabled=$('noteMode').disabled;
+ $('openHistory').disabled=$('noteMode').disabled;
  $('noteMode').title='ベース・リードの音数。4音：ASKL / 7音：ASDFGHJ / 長押し対応';
  $('melodyPads').setAttribute('aria-label',instrumentForTurn(turn).name+' / '+melodyGuide()+'、長押しで持続');
 }
@@ -218,8 +219,8 @@ function playInput(type,source,note,pitch=note?.pitch){
 }
 // A separate, soft FM keyboard sound for the two defensive seventh chords.
 const defenseChords={kick:{name:'Cm7',notes:[60,63,67,70]},snare:{name:'Fm7',notes:[65,68,72,75]}};
-function chordSound(type,t,volume=1){
- const chord=defenseChords[type];if(!chord)return;
+function chordSound(type,t,volume=1,pitches){
+ const chord=pitches?{notes:pitches}:defenseChords[type];if(!chord)return;
  const gain=ctx.createGain(),peak=.085*volume;
  gain.connect(masterOutput??ctx.destination);gain.gain.setValueAtTime(.001,t);
  gain.gain.exponentialRampToValueAtTime(Math.max(.001,peak),t+.012);
@@ -241,21 +242,21 @@ function sampleSound(type,when,volume=1){
  const play=()=>{
   if(muted)return false;
   const at=Math.max(ctx.currentTime,when??ctx.currentTime);
-  const played=samples.play(ctx,type,at,volume,masterOutput??ctx.destination);
+  const played=(samples.playVoice??samples.play)(ctx,type,at,volume,masterOutput??ctx.destination);
   if(played&&type==='kick')BassAudio.get(ctx,masterOutput??ctx.destination).duckForKick(at,volume);
   return played;
  };
- if(!play())samples.ready.then(play);
+ const played=play();if(!played)samples.ready.then(play);return played;
 }
-function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitch,midi){
+function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitch,midi,pitches){
  if(muted||!ctx)return;const t=when??ctx.currentTime;
- if(voice==='chord')return chordSound(type,t,volume);
+ if(voice==='chord')return chordSound(type,t,volume,pitches);
  if(voice==='hat')return sampleSound('hat',t,volume);
  if(voice==='drums')return sampleSound(type,t,volume);
  return pitchedSound(type,t,voice,volume,duration,pitch,midi);
 }
 function flash(type){$(type).classList.add('active');setTimeout(()=>$(type).classList.remove('active'),90);}
-function stopReplay(){if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
+function stopReplay(){globalThis.stopHistoryPlayback?.();if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
 function input(type,source,pitch){
  if(state==='defense'){defenseInput(type,source);return;}
  if(source!==undefined&&heldInputs.has(source))return;
@@ -275,7 +276,7 @@ function input(type,source,pitch){
 }
 function handleKeyDown(e){
  if(e.repeat||e.ctrlKey||e.altKey||e.metaKey||e.target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;
- if($('codexDialog').open||$('pitchDialog').open)return;
+ if($('codexDialog').open||$('pitchDialog').open||$('historyDialog').open)return;
  if(state==='defense'){const type=e.code==='KeyA'?'kick':e.code==='KeyL'?'snare':null;if(type){e.preventDefault();input(type,'key:'+e.code);}return;}
  if(e.code==='Space'&&e.target?.tagName==='BUTTON'&&e.target.id!=='start'&&!(e.target.id==='hat'&&phase==='hat'))return;
  if((e.code==='KeyH'&&!(sevenNotes()&&(state==='ready'||phase==='parts')))||(e.code==='Space'&&phase==='hat'&&['countin','recording'].includes(state))){e.preventDefault();input('hat');return;}
@@ -355,12 +356,18 @@ function sequence(a){$('sequence').replaceChildren();
  const hatRow=document.createElement('div');hatRow.className='seq-row hat-sequence';const hatLabel=document.createElement('label');hatLabel.textContent='H';hatRow.append(hatLabel);
  for(let i=0;i<a.slots;i++){const cell=document.createElement('span');cell.className='cell'+(i%4===0?' beat':'')+(lastHat.some(n=>Math.min(a.slots-1,Math.max(0,Math.round(n.t/a.step)))===i)?' on':'');cell.title=(i*a.step).toFixed(3)+'秒 / Hat';cell.dataset.type='hat';cell.dataset.q=i;hatRow.append(cell);}$('sequence').append(hatRow);
  ['kick','snare'].forEach(type=>{const row=document.createElement('div');row.className='seq-row';const label=document.createElement('label');label.textContent=last.some(n=>n.pitch!==undefined)?(type==='kick'?'LOW':'HIGH'):instruments.find(i=>i.id===lastInstrument).lanes[type==='kick'?0:1];row.append(label);for(let i=0;i<a.slots;i++){const cell=document.createElement('span');cell.className='cell'+(i%4===0?' beat':'')+(a.grid.some(n=>n.type===type&&n.q===i)?' on':'');if(last.some(n=>n.type===type&&n.duration>0&&i*a.step>n.t&&i*a.step<n.t+n.duration))cell.classList.add('sustain');cell.dataset.type=type;cell.dataset.q=i;const pitches=a.grid.filter(n=>n.type===type&&n.q===i&&n.pitch!==undefined).map(n=>n.midi!==undefined?midiName(n.midi):melodyNames[n.pitch]);cell.title=`${(i*a.step).toFixed(3)}秒${pitches.length?' / '+pitches.join('・'):''}`;if(pitches.length)cell.textContent=pitches.join('·');row.append(cell);}$('sequence').append(row);});}
-let defenseBattle=null,defenseOrigin=0,defenseMessageAt=-Infinity;
+let defenseBattle=null,defenseOrigin=0,defenseMessageAt=-Infinity,defenseChordNotes=[];
+function rememberSequence(kind,mix=lastMix){
+ const rawTracks=Array.from(tracks,([voice,notes])=>({voice,notes}));if(hatNotes.length)rawTracks.push({voice:'hat',notes:hatNotes});
+ if(kind==='defense'&&defenseChordNotes.length)rawTracks.push({voice:'chord',notes:defenseChordNotes});
+ globalThis.captureHistory?.({tracks:mix??[],rawTracks,bpm:lastBpm,duration:lastDuration,enemy:enemies[stage].name,turn,kind,title:kind==='defense'?'全パート＋コード防御':instruments.find(i=>i.id===lastInstrument).name+' / '+$('moveName').textContent});
+}
 const defenseHeld=new Set();
 function defenseInput(type,source){
  if(!defenseBattle||!['kick','snare'].includes(type)||source!==undefined&&defenseHeld.has(source))return;
  if(source!==undefined)defenseHeld.add(source);
  const judged=Defense.press(defenseBattle,type,ctx.currentTime-defenseOrigin);
+ const rawT=ctx.currentTime-defenseOrigin;defenseChordNotes.push({type,t:Math.max(0,rawT),rawT,duration:.32,pitches:[...defenseChords[type].notes]});
  sound(type,undefined,'chord',.9);flash(type);
  if(!judged)return;
  defenseMessageAt=ctx.currentTime;
@@ -371,7 +378,7 @@ function defenseInput(type,source){
  }
 }
 async function defensePhase(damage){
- releaseAllInputs();stopReplay();state='defense';syncQuantizeControl();$('replay').disabled=true;$('start').disabled=true;
+ releaseAllInputs();stopReplay();defenseChordNotes=[];state='defense';syncQuantizeControl();$('replay').disabled=true;$('start').disabled=true;
  const consolePanel=document.querySelector('.console');consolePanel.classList.add('defending');
  $('instrument').textContent='CHORDS';$('status').textContent='CHORD DEFENSE / コードで防御';$('start').textContent='防御中…';
  $('hint').textContent='全パートにコードを重ねる。縦線で A＝Cm7 / L＝Fm7。';
@@ -404,7 +411,7 @@ async function defensePhase(damage){
     if(hit.event.grade==='MISS'){$('phaseLabel').textContent='MISS / 次のノーツを狙おう';defenseMessageAt=ctx.currentTime;}
    }
    if(elapsed>=battle.duration){
-    clearInterval(timer);const report=Defense.summary(battle);defenseBattle=null;defenseHeld.clear();visualBeat=-1;state='attack';consolePanel.classList.remove('defending');$('arena').classList.remove('guard-flash');$('impact').textContent='';
+    clearInterval(timer);const report=Defense.summary(battle);rememberSequence('defense',[...(lastMix??[]),...(defenseChordNotes.length?[{voice:'chord',notes:defenseChordNotes}]:[])]);defenseBattle=null;defenseHeld.clear();visualBeat=-1;state='attack';consolePanel.classList.remove('defending');$('arena').classList.remove('guard-flash');$('impact').textContent='';
     updateInstrument();$('scope').setAttribute('aria-label','入力したリズムのタイムライン');$('replay').disabled=!lastMix?.length;
     resolve(report);
    }
@@ -495,7 +502,7 @@ async function finish(){
  $('result').hidden=false;$('element').textContent=a.count?`${name} / ${a.hits>1?'連撃':'一撃'}`:'静寂';$('element').style.color=color;
  $('moveName').textContent=a.count?prefix+(a.alternation>.7?'連環撃':a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'無音の余韻';
  $('damage').textContent='0';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
- renderReport(report);sequence(a);annotateSequence(a,report);
+ renderReport(report);sequence(a);annotateSequence(a,report);rememberSequence('attack');
  $('replay').disabled=true;$('status').textContent='ATTACK';
  await playbackAttack(result,color);$('replay').disabled=!lastMix.length;
  await wait(250);$('impact').textContent='';if(enemyHp<=0){if(stage===enemies.length-1){state='over';$('status').textContent='ALL ENCOUNTERS CLEAR';$('hint').textContent=`${enemies.length}体の敵を撃破。あなたのリズムが道を開いた。`;$('start').textContent='もう一度遊ぶ ↗';}else{state='cleared';$('status').textContent='ENEMY DEFEATED';$('hint').textContent='撃破。次の敵へ進むとHPが28回復。';$('start').textContent='次の敵へ ↗';}$('start').disabled=false;syncQuantizeControl();return;}
