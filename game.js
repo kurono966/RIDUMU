@@ -1,11 +1,11 @@
 const $=id=>document.getElementById(id);
 const enemies=[
- {name:'苔岩の番人',kind:'stone',bpm:82,hp:150,description:'地に根を張る、分厚い岩のからだ。',attack:28,gridSkill:{type:'poison',cells:3,turns:4,power:3}},
- {name:'宙を舞う翼獣',kind:'fly',bpm:150,hp:135,description:'風の流れに乗り、軽やかに身をかわす。',attack:32},
- {name:'忘却の自律機',kind:'machine',bpm:120,hp:175,description:'古びた装甲の奥で、回路が明滅する。',attack:36},
- {name:'棘冠の喰らい花',kind:'plant',bpm:100,hp:165,description:'開いた花冠の陰で、棘の蔓が脈打つ。',attack:34,gridSkill:{type:'poison',cells:5,turns:5,power:4}},
- {name:'薄明の残響',kind:'ghost',bpm:72,hp:155,description:'輪郭がほどけ、影だけが遅れて揺れる。',attack:32},
- {name:'晶殻の甲虫',kind:'crystal',bpm:138,hp:190,description:'透明な装甲が、二つの響きを返す。',attack:40}
+ {name:'苔岩の番人',kind:'stone',bpm:82,hp:260,description:'地に根を張る、分厚い岩のからだ。',attack:44,gridSkill:{type:'poison',cells:3,turns:4,power:3}},
+ {name:'宙を舞う翼獣',kind:'fly',bpm:150,hp:240,description:'風の流れに乗り、軽やかに身をかわす。',attack:48},
+ {name:'忘却の自律機',kind:'machine',bpm:120,hp:300,description:'古びた装甲の奥で、回路が明滅する。',attack:52},
+ {name:'棘冠の喰らい花',kind:'plant',bpm:100,hp:280,description:'開いた花冠の陰で、棘の蔓が脈打つ。',attack:48,gridSkill:{type:'poison',cells:5,turns:5,power:4}},
+ {name:'薄明の残響',kind:'ghost',bpm:72,hp:270,description:'輪郭がほどけ、影だけが遅れて揺れる。',attack:50},
+ {name:'晶殻の甲虫',kind:'crystal',bpm:138,hp:340,description:'透明な装甲が、二つの響きを返す。',attack:58}
 ];
 const elements={earth:['土','重震','#d4f77d'],wind:['風','風裂','#9adfd5'],fire:['火','烈火','#ffa26d'],lightning:['雷','雷走','#c6b0ff']};
 const instruments=[
@@ -102,7 +102,7 @@ function updateInstrument(){
  document.querySelector('.kick-label').textContent=melodicNotes()?'LOW':instrument.id==='drums'?instrument.lanes[0]:midiName(pitchesFor(instrument.id,'two')[0]);
  document.querySelector('.snare-label').textContent=melodicNotes()?'HIGH':instrument.id==='drums'?instrument.lanes[1]:midiName(pitchesFor(instrument.id,'two')[1]);
 }
-let state='ready',stage=0,hp=100,enemyHp=150,turn=1,notes=[],last=[],started=0,ctx,muted=false,replayTimers=[],replaying=false,run=0;
+let state='ready',stage=0,hp=100,enemyHp=enemies[0].hp,turn=1,notes=[],last=[],started=0,ctx,muted=false,replayTimers=[],replaying=false,run=0;
 const gridHazards=GridHazards.create(32);
 let poisonFlashTimer,poisonToastTimer,gridSkillWave=0;
 function renderGridHazards(){

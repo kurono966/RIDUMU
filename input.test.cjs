@@ -38,10 +38,10 @@ test('enemy HP changes on replayed note times and playback waits for the full ph
  g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();last=[{type:'kick',t:.5},{type:'snare',t:2}];lastInstrument='bass';turn=3;let playedVoices=[];sound=(type,at,voice)=>playedVoices.push(voice);let playbackTick;setInterval=fn=>{playbackTick=fn;return 1};clearInterval=()=>{};state='attack';");
  const playback=g.run("playbackAttack({damages:[10,20]},'#fff')");
  await Promise.resolve();
- assert.equal(g.run('enemyHp'),150);
- g.run('ctx.currentTime=.55;playbackTick()');assert.equal(g.run('enemyHp'),150);
- g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('enemyHp'),140);
- g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('enemyHp'),120);
+ assert.equal(g.run('enemyHp'),260);
+ g.run('ctx.currentTime=.55;playbackTick()');assert.equal(g.run('enemyHp'),260);
+ g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('enemyHp'),250);
+ g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('enemyHp'),230);
  let ended=false;playback.then(()=>ended=true);await Promise.resolve();assert.equal(ended,false);
  g.run('ctx.currentTime=4.07;playbackTick()');await playback;
  assert.equal(g.run('attackPlayhead'),null);
@@ -82,7 +82,7 @@ test('attack replay plays recorded hats at raw times without automatic hats',asy
  assert.equal(g.run("hats.every(h=>h.type==='hat')"),true);
  assert.ok(g.run('hats[0].at')>=.59);
  assert.ok(g.run('hats[1].at')>=1.17);
- assert.equal(g.run('enemyHp'),140);
+ assert.equal(g.run('enemyHp'),250);
 });
 test('space starts only when ready and blocks scrolling and repeat',()=>{
  const g=game();
@@ -177,8 +177,8 @@ test('attack audio and damage follow the corrected copy while the live recording
  g.run("phaseQuantizeMode='just';ctx.currentTime=10.48;input('kick');last=Quantize.render(notes,120,4);saveTrack('drums',notes);ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let scheduled=[];sound=(type,at)=>scheduled.push(at);let replayTick;setInterval=fn=>{replayTick=fn;return 1};clearInterval=()=>{};");
  const playback=g.run("playbackAttack({damages:[20]},'#fff')");await Promise.resolve();
  g.run('ctx.currentTime=.46;replayTick()');
- assert.ok(Math.abs(g.run('scheduled[0]')-.56)<1e-9);assert.equal(g.run('enemyHp'),150);
- g.run('ctx.currentTime=.57;replayTick()');assert.equal(g.run('enemyHp'),130);
+ assert.ok(Math.abs(g.run('scheduled[0]')-.56)<1e-9);assert.equal(g.run('enemyHp'),260);
+ g.run('ctx.currentTime=.57;replayTick()');assert.equal(g.run('enemyHp'),240);
  assert.ok(Math.abs(g.run("tracks.get('drums')[0].rawT")-.48)<1e-9);
  g.run('ctx.currentTime=4.07;replayTick()');await playback;
 });
@@ -288,7 +288,7 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
 });
 test('roster contains six distinct enemies with stronger counterattacks',()=>{
  const g=game();assert.equal(g.run('enemies.length'),6);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),6);
- assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'28,32,36');
+ assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'44,48,52');
  g.run('stage=5;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 06 / 06');
 });
 test('third enemy no longer ends the game and only the sixth enemy completes the run',async()=>{
@@ -350,7 +350,7 @@ test('a complete three-part cycle applies Bass shield and Lead support then coun
 test('automatic enemy attack consumes shields without recording or requesting inputs',async()=>{
  const g=game();g.run("state='attack';muted=true;shield=12;cycleLead={weaken:0};setTimeout=fn=>{fn();return 1};turn=3;castGridSkill=()=>{};");
  await g.run("enemyCounter({count:4,element:'wind',effect:.5},{},{total:20})");
- assert.equal(g.run('shield'),0);assert.equal(g.run('hp'),84);assert.equal(g.run('notes.length'),0);assert.equal(g.run('state'),'enemyAttack');
+ assert.equal(g.run('shield'),0);assert.equal(g.run('hp'),68);assert.equal(g.run('notes.length'),0);assert.equal(g.run('state'),'enemyAttack');
 });
 test('raw Drums and Hat remain the source of groove classification after all three parts',async()=>{
  const g=game();g.run("turn=3;notes=[];tracks.set('drums',[{type:'snare',t:.47,rawT:.47,inputT:.47,quantize:'just'}]);hatNotes=[{type:'hat',t:.5,rawT:.5}];let seen;Groove={...Groove,analyzeRelations:(raw,hat)=>{seen={raw,hat};return {}}};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};");
