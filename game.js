@@ -67,6 +67,12 @@ const tracks=new Map();
 let lastMix=null;
 let masterOutput=null,battleWaveform=null;
 const performanceFilter=globalThis.PerformanceFilter;
+let filterAutomation=[],filterTracks=new Map(),filterLastMix=[];
+let filterPlaybackTimers=[];
+function filterCapture(){if(!ctx||!recordAudioAt||!['countin','recording'].includes(state))return;const t=ctx.currentTime-recordAudioAt;if(t<0||t>timing().duration)return;const point={t:+t.toFixed(3),amount:performanceFilter.state.amount,mode:performanceFilter.state.mode};const prev=filterAutomation.at(-1);if(!prev||t-prev.t>.045||prev.mode!==point.mode)filterAutomation.push(point);else filterAutomation[filterAutomation.length-1]=point;}
+function clearFilterPlayback(){filterPlaybackTimers.forEach(clearTimeout);filterPlaybackTimers=[];}
+function playFilterAutomation(tracks,offset=0){clearFilterPlayback();const events=tracks.flatMap(t=>t.events??[]).sort((a,b)=>a.t-b.t);for(const event of events){const delay=(event.t-offset)*1000;if(delay<0)continue;filterPlaybackTimers.push(setTimeout(()=>{performanceFilter.set(event.amount,event.mode);renderFilterPad();},delay));}}
+
 let phase='parts',hatNotes=[],hatReady=false,lastHat=[],lastDuration=480/enemies[0].bpm,lastBpm=enemies[0].bpm,visualBeat=-1;
 let quantizeMode='off',phaseQuantizeMode='off',phaseHatPlayback=[];
 function syncQuantizeControl(){
@@ -78,7 +84,7 @@ function syncQuantizeControl(){
 function timing(){const bpm=enemies[stage].bpm,beat=60/bpm;return {bpm,beat,duration:beat*8,step:beat/4,slots:32};}
 function prepareTracksForTurn(){
  // A new drum turn starts a fresh three-part phrase.
- if(instrumentForTurn(turn).id==='drums'){tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
+ if(instrumentForTurn(turn).id==='drums'){filterTracks.clear();filterLastMix=[];tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
 }
 function saveTrack(voice,played){
  if(played.length)tracks.set(voice,played.map(n=>({...n})));
@@ -168,7 +174,7 @@ async function countIn(nextPhase='hat'){
  releaseAllInputs();
  phase=nextPhase;phaseQuantizeMode=quantizeMode;updatePhaseUI();
  phaseHatPlayback=phase==='parts'?Quantize.render(hatNotes,timing().bpm,timing().duration):[];
- state='countin';recordAudioAt=null;notes=[];renderGridHazards();
+ state='countin';recordAudioAt=null;notes=[];filterAutomation=[];renderGridHazards();
  syncQuantizeControl();
  $('start').disabled=true;$('replay').disabled=true;
  $('start').textContent='カウントイン…';$('timer').textContent=timing().duration.toFixed(2);
@@ -297,7 +303,7 @@ function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitc
  return pitchedSound(type,t,voice,volume,duration,pitch,midi);
 }
 function flash(type){$(type).classList.add('active');setTimeout(()=>$(type).classList.remove('active'),90);}
-function stopReplay(){globalThis.stopHistoryPlayback?.();if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
+function stopReplay(){clearFilterPlayback();globalThis.stopHistoryPlayback?.();if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
 function input(type,source,pitch){
  if(source!==undefined&&heldInputs.has(source))return;
  audio();
@@ -334,9 +340,14 @@ function handleKeyDown(e){
  const type=e.code==='KeyA'?'kick':e.code==='KeyL'?'snare':null;
  if(type){e.preventDefault();input(type,'key:'+e.code);}
 }
-const filterAmount=$('filterAmount'),filterMode=$('filterMode');
-function syncFilter(){performanceFilter.set(Number(filterAmount.value)/100,filterMode.value);$('filterValue').textContent=filterAmount.value+'%';}
-filterAmount.addEventListener('input',syncFilter);filterMode.addEventListener('change',syncFilter);syncFilter();
+const filterMode=$('filterMode');
+const filterPad=$('filterPad'),filterCursor=$('filterCursor');
+function renderFilterPad(){const {amount,mode}=performanceFilter.state;filterCursor.style.bottom=(amount*100)+'%';filterPad.setAttribute('aria-valuenow',String(Math.round(amount*100)));$('filterValue').textContent=Math.round(amount*100)+'%';filterMode.value=mode;}
+function setFilterFromPointer(e){const box=filterPad.getBoundingClientRect();performanceFilter.set(Math.max(0,Math.min(1,(box.bottom-e.clientY)/box.height)),filterMode.value);renderFilterPad();filterCapture();}
+filterPad.addEventListener('pointerdown',e=>{e.preventDefault();filterPad.setPointerCapture(e.pointerId);setFilterFromPointer(e);});
+filterPad.addEventListener('pointermove',e=>{if(filterPad.hasPointerCapture(e.pointerId))setFilterFromPointer(e);});
+filterPad.addEventListener('keydown',e=>{if(!['ArrowUp','ArrowDown','Home','End'].includes(e.key))return;e.preventDefault();const value=e.key==='Home'?0:e.key==='End'?1:performanceFilter.state.amount+(e.key==='ArrowUp'?.05:-.05);performanceFilter.set(value,filterMode.value);renderFilterPad();filterCapture();});
+filterMode.addEventListener('change',()=>{performanceFilter.set(performanceFilter.state.amount,filterMode.value);renderFilterPad();filterCapture();});renderFilterPad();
 document.addEventListener('keydown',handleKeyDown);
 document.addEventListener('keyup',e=>{releaseInput('key:'+e.code);});
 ['hat','kick','snare'].forEach(type=>{
@@ -465,6 +476,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
  $('hint').textContent='重ねたリズムを再生。Drumsが攻撃、Bassが盾、Leadが支援になる。';
  $('damage').textContent='0';
  const origin=ctx.currentTime+.06;
+ playFilterAutomation(filterLastMix);
  let scheduled=0,shown=0,total=0,flashTimer;
  await new Promise(resolve=>{
   function tick(){
@@ -524,7 +536,7 @@ async function finish(){
  releaseAllInputs();state='attack';document.querySelector('.console').classList.remove('recording');
  $('timer').textContent='0.00';lastDuration=timing().duration;lastBpm=timing().bpm;
  last=Quantize.render(notes,lastBpm,lastDuration);lastHat=Quantize.render(hatNotes,lastBpm,lastDuration);
- lastInstrument=instrumentForTurn(turn).id;saveTrack(lastInstrument,notes);
+ lastInstrument=instrumentForTurn(turn).id;filterTracks.set(lastInstrument,filterAutomation.slice());filterLastMix=Array.from(filterTracks,([voice,events])=>({voice,events:events.map(e=>({...e}))}));$('filterRecordStatus').textContent=filterAutomation.length?`フィルター操作 ${filterAutomation.length}点を記録`:'フィルター操作なし';saveTrack(lastInstrument,notes);
  $('lastInstrument').textContent=lastMix.map(track=>track.voice.toUpperCase()).join(' + ')||'SILENCE';
  $('lastQuantize').textContent='再生：'+Quantize.modes.find(m=>m.id===phaseQuantizeMode).name;
  const zones=currentZones(),preview=Rhythm.analyze(last,lastDuration,lastBpm);
@@ -583,7 +595,7 @@ async function finish(){
 $('replay').onclick=()=>{
  if(!['ready','cleared','over'].includes(state)||!lastMix?.length)return;
  audio();if(replaying){stopReplay();return;}
- replaying=true;$('replay').textContent='■ 再生を停止';
+ replaying=true;$('replay').textContent='■ 再生を停止';playFilterAutomation(filterLastMix);
  const timeline=Rhythm.mixTimeline(lastMix,null,[],lastDuration);
  timeline.events.forEach(event=>replayTimers.push(setTimeout(()=>{
   sound(event.type,undefined,event.voice,.8,event.duration,event.pitch,event.midi);
