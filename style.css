@@ -121,3 +121,15 @@ main>.result h2{font-size:18px;margin:2px}
  main>.console .controls p{display:none}
  main>.arena .enemy-info p:not(.eyebrow){display:none}
 }
+
+/* Larger performance XY-like vertical strip, optional instrument pads. */
+main>.console .filter-control{flex-grow:3;flex-basis:170px;min-height:120px}
+main>.console .filter-pad{min-height:90px}
+main>.console .filter-head{flex-wrap:wrap}
+main>.console .filter-head .toggle-pads{font:inherit;font-size:10px;color:#d4f77d;background:#273125;border:1px solid #657d4d;border-radius:5px;padding:5px 7px;white-space:nowrap}
+main>.console .filter-head .toggle-pads[aria-pressed="false"]{color:#eee;background:#414339}
+main>.console.pads-collapsed #hat,main>.console.pads-collapsed .pads,main>.console.pads-collapsed #melodyPads{display:none!important}
+main>.console.pads-collapsed .filter-control{flex-grow:6;flex-basis:230px;min-height:150px}
+main>.console.pads-collapsed .filter-pad{min-height:115px}
+@media(max-width:759px){main>.console .filter-control{flex-basis:130px;min-height:100px}main>.console .filter-pad{min-height:65px}main>.console.pads-collapsed .filter-control{flex-basis:230px;min-height:145px}main>.console.pads-collapsed .filter-pad{min-height:115px}}
+@media(max-height:600px){main>.console .filter-control{min-height:65px}main>.console .filter-pad{min-height:42px}main>.console.pads-collapsed .filter-control{min-height:100px}main>.console.pads-collapsed .filter-pad{min-height:65px}}
