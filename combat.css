@@ -1,4 +1,9 @@
 .player-strip .shield-value{color:#8edcdd;white-space:nowrap;font-size:10px}
+/* A beat spans four cells; a bar spans sixteen. Keep effect colors independent. */
+.seq-row .cell:nth-child(4n+2){border-left:2px solid #90958b}
+.seq-row .cell:nth-child(16n+2){border-left:3px solid #d0d2cb}
+.cause-grid i:nth-child(4n+1){border-left:1px solid #90958b}
+.cause-grid i:nth-child(16n+1){border-left:2px solid #d0d2cb}
 .console .timeline{min-height:22px;flex:1;margin:3px 0}.enemy-charge{animation:enemy-charge .55s ease-in!important;filter:brightness(1.6)}
 .guard-flash{box-shadow:inset 0 0 50px #9adfd54d!important}
 .arena.enemy-impact{animation:enemy-field .65s ease-out;--attack-color:#b5ba9b}.arena.enemy-impact[data-attack=machine]{--attack-color:#b8a2ff}.arena.enemy-impact[data-attack=plant]{--attack-color:#a8dd74}.arena.enemy-impact[data-attack=fly]{--attack-color:#9adfd5}.arena.enemy-impact[data-attack=ghost]{--attack-color:#c5adff}.arena.enemy-impact[data-attack=crystal]{--attack-color:#90dcfa}

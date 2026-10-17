@@ -589,7 +589,14 @@ function draw(){
   }
   drawGridHazards(w,h);
  }
- for(let i=0;i<=32;i++){const x=22+(w-24)*i/32;paint.strokeStyle=i%4===0?'#454e3a':'#2b3327';paint.beginPath();paint.moveTo(x,2);paint.lineTo(x,h-2);paint.stroke();}
+ // Neutral line weights separate sixteenths, beats and bars from colored effects.
+ for(let i=0;i<=32;i++){
+  const x=22+(w-24)*i/32,bar=i%16===0,beat=i%4===0;
+  paint.lineWidth=bar?3:beat?2:1;
+  paint.strokeStyle=bar?'#d0d2cb':beat?'#90958b':'#363c32';
+  paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();
+ }
+ paint.lineWidth=1;
  const displayNotes=['countin','recording'].includes(state)?(phase==='hat'?hatNotes:[...phaseHatPlayback,...notes]):attackPlayhead!==null?(lastMix??[]).flatMap(track=>track.notes):[...lastHat,...last];
  for(const n of displayNotes){const x=22+(w-24)*n.t/duration;paint.fillStyle=n.type==='hat'?'#e5cb82':n.type==='kick'?'#d4f77d':'#efa568';const held=[...heldInputs.values()].find(v=>v.note===n);const gate=n.duration??(held?Math.min(ctx.currentTime,recordAudioAt+duration)-held.at:0);if(gate>0){paint.fillRect(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8)-2,Math.min(w-x,(w-24)*gate/duration),4);}paint.beginPath();paint.arc(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8),3,0,Math.PI*2);paint.fill();}
  if(state==='recording'||attackPlayhead!==null){
