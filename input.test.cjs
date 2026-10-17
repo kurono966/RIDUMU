@@ -218,3 +218,64 @@ test('mix playback waits for sustained note tails without adding strikes',()=>{
  assert.ok(Math.abs(timeline.duration-4.64)<1e-9);assert.deepEqual(timeline.events[0].damages,[23]);assert.equal(timeline.events.length,1);
 });
 
+
+test('seven-note keyboard records distinct pitches and sustained gates',()=>{
+ const g=game();g.run("turn=2;noteMode='seven';let prevented=0;for(const code of melodyKeys){handleKeyDown({code,target:{},preventDefault(){prevented++}});ctx.currentTime+=.1;releaseInput('key:'+code)}");
+ assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,1,2,3,4,5,6');assert.equal(g.run('prevented'),7);
+ assert.ok(g.run('notes.every(n=>Math.abs(n.duration-.1)<1e-8)'));
+});
+test('seven-note selection leaves drums and Hat controls intact',()=>{
+ const g=game();g.run("noteMode='seven';handleKeyDown({code:'KeyS',target:{},preventDefault(){}});input('kick','key:KeyA');phase='hat';input('hat')");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].pitch'),undefined);assert.equal(g.run('hatNotes.length'),1);
+});
+test('seven pitches survive quantization and mix snapshots including simultaneous notes',()=>{
+ const g=game();g.run("turn=3;noteMode='seven';phaseQuantizeMode='just';input('kick','key:KeyA',0);input('kick','key:KeyS',1);ctx.currentTime=10.5;releaseAllInputs();saveTrack('lead',notes)");
+ assert.equal(g.run('lastMix[0].notes.length'),2);assert.equal(g.run('lastMix[0].notes.map(n=>n.pitch).join()'),'0,1');assert.equal(g.run('lastMix[0].notes[1].duration'),.5);
+});
+test('seven-note synth uses the selected minor-scale pitch at each octave',()=>{
+ const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
+ pitchedSound('kick',0,'bass',1,.5,6);pitchedSound('kick',0,'lead',1,.5,6);`);
+ assert.ok(Math.abs(g.run('frequencies[0]')-65.406*2**(10/12))<1e-8);
+ assert.ok(Math.abs(g.run('frequencies[2]')-261.626*2**(10/12))<1e-8);
+});
+test('note mode cannot change during a recording',()=>{
+ const g=game();g.run("noteMode='seven';state='recording';$('noteMode').value='two';$('noteMode').onchange()");
+ assert.equal(g.run('noteMode'),'seven');assert.equal(g.run("$('noteMode').value"),'seven');
+});
+
+test('H plays the sixth melody note in parts and Hat in the Hat phase',()=>{
+ const g=game();g.run("turn=2;noteMode='seven';handleKeyDown({code:'KeyH',target:{},preventDefault(){}});ctx.currentTime=10.25;releaseInput('key:KeyH');phase='hat';handleKeyDown({code:'KeyH',target:{},preventDefault(){}})");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].pitch'),5);assert.equal(g.run('notes[0].duration'),.25);assert.equal(g.run('hatNotes.length'),1);
+});
+
+test('four-note mode maps ASKL to C Eb G Bb with independent sustained gates',()=>{
+ const g=game();g.run("turn=2;noteMode='four';for(const code of ['KeyA','KeyS','KeyK','KeyL']){handleKeyDown({code,target:{},preventDefault(){}});ctx.currentTime+=.2;releaseInput('key:'+code)};saveTrack('bass',notes)");
+ assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,2,4,6');
+ assert.equal(g.run('notes.map(n=>n.type).join()'),'kick,kick,snare,snare');
+ assert.ok(g.run('lastMix[0].notes.every(n=>Math.abs(n.duration-.2)<1e-8)'));
+});
+test('four-note mode exposes four pads, ignores extra melody keys, and preserves Hat H',()=>{
+ const g=game();g.run("turn=3;noteMode='four';syncNoteMode();handleKeyDown({code:'KeyD',target:{},preventDefault(){}});phase='hat';handleKeyDown({code:'KeyH',target:{},preventDefault(){}})");
+ assert.equal(g.run("[0,1,2,3,4,5,6].filter(i=>!$('note'+i).hidden).join()"),'0,2,4,6');
+ assert.equal(g.run('notes.length'),0);assert.equal(g.run('hatNotes.length'),1);
+});
+
+test('pitch settings are independent by voice and mode and are locked while recording',()=>{
+ const g=game();g.run("state='ready';turn=2;setKeyPitch('bass','four',1,42)");
+ assert.equal(g.run("pitchesFor('bass','four')[1]"),42);assert.equal(g.run("pitchesFor('lead','four')[1]"),63);assert.equal(g.run("pitchesFor('bass','seven')[2]"),39);
+ g.run("state='recording'");assert.equal(g.run("setKeyPitch('bass','four',1,50)"),false);assert.equal(g.run("pitchesFor('bass','four')[1]"),42);
+ assert.equal(g.run("setKeyPitch('bass','four',1,NaN)"),false);
+});
+test('custom pitches sound live, are recorded and remain immutable after settings change',()=>{
+ const g=game();g.run("state='ready';turn=2;noteMode='four';setKeyPitch('bass','four',1,46);state='recording';let played=[];sound=(...args)=>{played.push(args)};input('kick','key:KeyS',2);ctx.currentTime=10.4;releaseAllInputs();saveTrack('bass',notes);state='ready';setKeyPitch('bass','four',1,51)");
+ assert.equal(g.run('played[0][6]'),46);assert.equal(g.run('notes[0].midi'),46);assert.equal(g.run('lastMix[0].notes[0].midi'),46);assert.equal(g.run("pitchesFor('bass','four')[1]"),51);
+});
+test('two-note mode also records custom absolute pitches',()=>{
+ const g=game();g.run("state='ready';turn=3;setKeyPitch('lead','two',1,74);state='recording';input('snare','key:KeyL')");assert.equal(g.run('notes[0].midi'),74);assert.equal(g.run('notes[0].pitch'),undefined);
+});
+test('absolute MIDI pitch controls replay synthesis independently of slot and settings',()=>{
+ const g=game();g.run(`let frequencies=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
+ pitchedSound('kick',0,'lead',1,.3,0,69);`);assert.equal(g.run('frequencies[0]'),440);
+});

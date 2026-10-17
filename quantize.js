@@ -28,7 +28,7 @@ function render(notes,bpm,duration){
   const inputT=note.inputT??note.rawT??note.t;
   const adjusted=apply(note.type,inputT,bpm,note.quantize??'off');
   const inputTimes=[...(note.inputTimes??[inputT])];
-  const duplicate=adjusted.mode!=='off'?rendered.find(n=>n.type===note.type&&Math.abs(n.rawT-adjusted.performedT)<1e-7):null;
+  const duplicate=adjusted.mode!=='off'?rendered.find(n=>n.type===note.type&&n.pitch===note.pitch&&n.midi===note.midi&&Math.abs(n.rawT-adjusted.performedT)<1e-7):null;
   if(duplicate){duplicate.inputTimes.push(...inputTimes);if(note.duration!==undefined)duplicate.duration=Math.max(duplicate.duration??0,note.duration);continue;}
   rendered.push({...note,inputT,inputTimes,rawT:adjusted.performedT,t:Math.min(duration-1e-7,Math.max(0,adjusted.performedT)),quantize:adjusted.mode});
  }
