@@ -5,7 +5,7 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},replaceChildren(){},dataset:{},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
@@ -355,4 +355,10 @@ test('automatic enemy attack consumes shields without recording or requesting in
 test('raw Drums and Hat remain the source of groove classification after all three parts',async()=>{
  const g=game();g.run("turn=3;notes=[];tracks.set('drums',[{type:'snare',t:.47,rawT:.47,inputT:.47,quantize:'just'}]);hatNotes=[{type:'hat',t:.5,rawT:.5}];let seen;Groove={...Groove,analyzeRelations:(raw,hat)=>{seen={raw,hat};return {}}};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};");
  await g.run('finish()');assert.equal(g.run('seen.raw[0].rawT'),.47);assert.equal(g.run('seen.hat[0].rawT'),.5);
+});
+
+
+test('final battle resolution applies ensemble attack and shield bonuses once',async()=>{
+ const g=game();g.run("turn=3;shield=20;cycleBass={shield:20};notes=[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:60,duration:.2}));tracks.set('drums',[0,1,2].map(t=>({type:'kick',t,rawT:t})));tracks.set('bass',[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:36,duration:.2})));renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};let resolved;playbackAttack=async result=>{resolved=result};enemyCounter=async()=>{};");
+ await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.ok(g.run('shield')>24);assert.ok(g.run('resolved.total')>=0);
 });

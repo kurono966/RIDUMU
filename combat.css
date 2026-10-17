@@ -1,4 +1,15 @@
 .player-strip .shield-value{color:#8edcdd;white-space:nowrap;font-size:10px}
+.result-tabs{display:flex;gap:12px;flex-shrink:0;border-bottom:1px solid var(--line)}
+.result-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font-size:10px;padding:4px 0;min-height:24px;white-space:nowrap}
+.result-tabs button[aria-pressed=true]{border-bottom-color:var(--lime);color:var(--lime)}
+.result:not([data-panel=ensemble]) .ensemble-panel{display:none}
+.result[data-panel=ensemble] .summary-panel,.result[data-panel=ensemble] .rhythm-panel{display:none!important}
+.ensemble-item{display:flex;flex-direction:column;gap:1px;margin-bottom:7px;font-size:10px;line-height:1.4}
+.ensemble-item b{font-size:10px;letter-spacing:.7px;color:#e3e7dc}.ensemble-item span{color:#bdc7b0}
+.ensemble-panel p{color:var(--muted)}.ensemble-row label{width:38px;font-size:8px}.ensemble-row .cell.on{background:#808979}.ensemble-row .cell.synergy-cell{outline:1px dashed #fff1ae;outline-offset:1px}
+@media(max-width:740px){.result-tabs{gap:10px}.result-tabs button{font-size:9px}.ensemble-item{font-size:9px;margin-bottom:5px}.ensemble-item b{font-size:9px}.ensemble-row{margin:4px 0}.ensemble-row .cell{height:7px}}
+@media(max-width:740px),(max-height:500px){.result[data-panel=ensemble] .result-content{display:none}}
+@media(max-height:360px) and (orientation:landscape){.result-tabs{gap:8px}.result-tabs button{font-size:8px;min-height:20px}.ensemble-item{font-size:8px;margin-bottom:3px;line-height:1.2}.ensemble-item b{font-size:8px}.ensemble-row{margin:3px 0}.ensemble-row .cell{height:4px}}
 /* A beat spans four cells; a bar spans sixteen. Keep effect colors independent. */
 .seq-row .cell:nth-child(4n+2){border-left:2px solid #90958b}
 .seq-row .cell:nth-child(16n+2){border-left:3px solid #d0d2cb}

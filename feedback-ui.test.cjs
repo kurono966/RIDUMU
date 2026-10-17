@@ -4,7 +4,7 @@ function ui(storage){
  const elements=new Map();
  function el(){const classes=new Set();return {textContent:'',dataset:{},children:[],classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)},setAttribute(){},replaceChildren(){this.children=[]},append(...kids){this.children.push(...kids)}};}
  const $=id=>{if(!elements.has(id))elements.set(id,el());return elements.get(id);};
- const sandbox=vm.createContext({$,document:{getElementById:$,createElement:el},localStorage:storage,CombatFeedback:F,enemies:[{kind:'stone',name:'岩',description:'分厚い体。'}],stage:0,setTimeout(){},clearTimeout(){}});
+ const sandbox=vm.createContext({$,document:{getElementById:$,createElement:el},localStorage:storage,GridEffects:require('./grid-effects.js'),CombatFeedback:F,enemies:[{kind:'stone',name:'岩',description:'分厚い体。'}],stage:0,setTimeout(){},clearTimeout(){}});
  vm.runInContext(fs.readFileSync('feedback-ui.js','utf8'),sandbox);
  const a=R.analyze([{t:1.3,type:'kick'},{t:3.2,type:'kick'}]);sandbox.testReport=F.explain(a,R.resolve(a,{kind:'stone'},()=>0),{kind:'stone'});
  return {run:code=>vm.runInContext(code,sandbox),$};
@@ -32,4 +32,18 @@ test('stored discoveries restore and malformed records do not break gameplay',()
 test('discoveries for new enemy kinds survive browser storage reload',()=>{
  const x=ui({getItem:()=>JSON.stringify({plant:['fire','invalid'],ghost:['laidBack'],crystal:['earth','chain']}),setItem(){}});
  assert.equal(x.run('knownWeaknesses.plant.join()'),'fire');assert.equal(x.run('knownWeaknesses.ghost.join()'),'laidBack');assert.equal(x.run('knownWeaknesses.crystal.join()'),'earth,chain');
+});
+
+
+test('ensemble feedback renders the reason, applied bonus and marked cells for all parts',()=>{
+ const x=ui({getItem:()=>null,setItem(){}});
+ x.run("renderEnsemble({selected:[{name:'GROOVE LOCK',reason:'Kick + Bassが3か所で同期',effect:'攻撃 +10% / 盾 +4',cells:[{voice:'drums',q:0},{voice:'bass',q:0}]}]},new Map([['drums',[{type:'kick',t:0}]],['bass',[{type:'kick',t:0}]]]),120)");
+ assert.equal(x.$('ensembleList').children.length,1);assert.match(x.$('ensembleList').children[0].children[1].textContent,/攻撃 \+10%/);
+ assert.equal(x.$('ensembleSequence').children.length,3);
+ assert.equal(x.$('ensembleSequence').children.flatMap(row=>row.children).filter(cell=>cell.className?.includes('synergy-cell')).length,2);
+ x.run("setResultPanel('ensemble')");assert.equal(x.$('result').dataset.panel,'ensemble');
+});
+test('ensemble feedback clears stale highlights for the next partial recording',()=>{
+ const x=ui({getItem:()=>null,setItem(){}});x.run('renderEnsemble(null)');
+ assert.match(x.$('ensembleList').children[0].textContent,/3パート/);assert.equal(x.$('ensembleSequence').children.length,0);
 });

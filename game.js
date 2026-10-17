@@ -76,7 +76,7 @@ function syncQuantizeControl(){
 function timing(){const bpm=enemies[stage].bpm,beat=60/bpm;return {bpm,beat,duration:beat*8,step:beat/4,slots:32};}
 function prepareTracksForTurn(){
  // A new drum turn starts a fresh three-part phrase.
- if(instrumentForTurn(turn).id==='drums'){tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;}
+ if(instrumentForTurn(turn).id==='drums'){tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
 }
 function saveTrack(voice,played){
  if(played.length)tracks.set(voice,played.map(n=>({...n})));
@@ -127,7 +127,7 @@ function castGridSkill(){
  reactEnemy('poison');renderGridHazards();
 }
 function poisonDefeat(){
- shield=0;cycleBass=null;cycleLead=null;
+ shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
  clearInterval(clockTimer);clockTimer=null;run++;releaseAllInputs();recordAudioAt=null;visualBeat=-1;state='over';
  document.querySelector('.console').classList.remove('recording');$('status').textContent='POISON / 演奏中断';$('hint').textContent='毒汚染で力尽きた。危険な位置を変えるか、ダメージを承知で次の一撃を狙おう。';
  $('start').disabled=false;$('start').textContent='再挑戦 ↗';syncQuantizeControl();resetGridHazards();
@@ -387,7 +387,7 @@ function ready(label='演奏開始 ↗'){
 function startTurn(){advanceGridHazards();prepareTracksForTurn();return countIn(hatReady?'parts':'hat');}
 $('start').onclick=()=>{
  audio();stopReplay();
- if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;}
+ if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
  if(state==='over'){resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}
  else if(state==='cleared'){resetGridHazards();stage++;enemyHp=enemies[stage].hp;hp=Math.min(100,hp+28);turn=1;update();}
  else if(state!=='ready')return;
@@ -397,7 +397,7 @@ function sequence(a){$('sequence').replaceChildren();
  const hatRow=document.createElement('div');hatRow.className='seq-row hat-sequence';const hatLabel=document.createElement('label');hatLabel.textContent='H';hatRow.append(hatLabel);
  for(let i=0;i<a.slots;i++){const cell=document.createElement('span');cell.className='cell'+(i%4===0?' beat':'')+(lastHat.some(n=>Math.min(a.slots-1,Math.max(0,Math.round(n.t/a.step)))===i)?' on':'');cell.title=(i*a.step).toFixed(3)+'秒 / Hat';cell.dataset.type='hat';cell.dataset.q=i;hatRow.append(cell);}$('sequence').append(hatRow);
  ['kick','snare'].forEach(type=>{const row=document.createElement('div');row.className='seq-row';const label=document.createElement('label');label.textContent=last.some(n=>n.pitch!==undefined)?(type==='kick'?'LOW':'HIGH'):instruments.find(i=>i.id===lastInstrument).lanes[type==='kick'?0:1];row.append(label);for(let i=0;i<a.slots;i++){const cell=document.createElement('span');cell.className='cell'+(i%4===0?' beat':'')+(a.grid.some(n=>n.type===type&&n.q===i)?' on':'');if(last.some(n=>n.type===type&&n.duration>0&&i*a.step>n.t&&i*a.step<n.t+n.duration))cell.classList.add('sustain');cell.dataset.type=type;cell.dataset.q=i;const pitches=a.grid.filter(n=>n.type===type&&n.q===i&&n.pitch!==undefined).map(n=>n.midi!==undefined?midiName(n.midi):melodyNames[n.pitch]);cell.title=`${(i*a.step).toFixed(3)}秒${pitches.length?' / '+pitches.join('・'):''}`;if(pitches.length)cell.textContent=pitches.join('·');row.append(cell);}$('sequence').append(row);});}
-let shield=0,cycleBass=null,cycleLead=null;
+let shield=0,cycleBass=null,cycleLead=null,cycleEnsemble=null;
 const battleRound=()=>Math.floor((turn-1)/3)+1;
 const currentZones=()=>GridEffects.create(battleRound(),stage);
 const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電撃放射',plant:'毒棘の噴射',ghost:'残響の衝撃波',crystal:'晶殻の衝撃波'};
@@ -429,7 +429,7 @@ async function enemyCounter(a,report,result){
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
  reactEnemy('strike');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
  await wait(180);
- const reduction=Math.min(.55,(cycleLead?.weaken??0)+(a.count&&a.element==='earth'?.2*a.effect:0));
+ const reduction=Math.min(.55,(cycleLead?.weaken??0)+(cycleEnsemble?.bonus.resistance??0)+(a.count&&a.element==='earth'?.2*a.effect:0));
  const received=PerformanceCombat.receive(hp,shield,enemies[stage].attack,reduction);
  shield=received.shield;renderBattlePlan();
  $('impact').style.color='#8edcdd';$('impact').textContent=received.absorbed?'SHIELD −'+received.absorbed:'';
@@ -495,14 +495,14 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
 }
 function completeBattle(){
  if(hp>0&&enemyHp>0)return false;
- resetGridHazards();shield=0;cycleBass=null;cycleLead=null;
+ resetGridHazards();shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
  state=hp<=0||stage===enemies.length-1?'over':'cleared';
  $('status').textContent=hp<=0?'TRY ANOTHER RHYTHM':state==='cleared'?'ENEMY DEFEATED':'ALL ENCOUNTERS CLEAR';
  $('hint').textContent=hp<=0?'力尽きた。次はBassの置き方や長さも変えてみよう。':'撃破。あなたの演奏が道を開いた。';
  $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?'次の敵へ ↗':'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();return true;
 }
 function showRoleResult(title,factors,amount,label,a){
- activeReport=null;$('result').hidden=false;$('moveName').textContent=title;$('element').textContent=label;$('element').style.color='#8edcdd';
+ renderEnsemble(null);activeReport=null;$('result').hidden=false;$('moveName').textContent=title;$('element').textContent=label;$('element').style.color='#8edcdd';
  $('damage').textContent=amount;$('damageLabel').textContent=label;$('hitInfo').textContent='';
  const report={factors:factors.slice(0,3).map(text=>({text})),hint:'3パートの演奏後、Drumsの攻撃と敵の反撃をまとめて再生。',breakdown:{},grooveText:''};
  renderReport(report);sequence(a);$('causeTracks').replaceChildren();$('breakdown').replaceChildren();
@@ -527,11 +527,13 @@ async function finish(){
   const power=GridEffects.inspect(notes,'drums',zones,lastBpm).power??0;
   showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,power?`POWERゾーン ${power}か所 → 攻撃強化`:'自由なリズムを記録。次はBassで盾を作ろう。'],0,'ATTACK READY',preview);rememberSequence('attack');
  }else{
-  cycleLead=PerformanceCombat.lead(notes,lastBpm,lastDuration,zones);
-  const bonus=Math.round((cycleBass?.shield??0)*cycleLead.shieldEfficiency);shield=Math.min(90,shield+bonus);renderBattlePlan();
+  cycleEnsemble=Ensemble.analyze(tracks,lastBpm,lastDuration);
+  cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones),cycleEnsemble);
+  const bonus=Math.round((cycleBass?.shield??0)*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield;
+  shield=Math.min(90,shield+bonus);renderBattlePlan();
   const drums=tracks.get('drums')??[],rendered=Quantize.render(drums,lastBpm,lastDuration);
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
-  const a=PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead);
+  const a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
   a.powerCells=zones.find(z=>z.type==='power').slots;
   const result=Rhythm.resolve(a,enemies[stage]),report=CombatFeedback.explain(a,result,enemies[stage],'drums');activeReport=report;
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
@@ -540,7 +542,7 @@ async function finish(){
   const extras=[];if(a.powerHits)extras.push({id:'powerZone',source:'power-zone',tag:'POWER！',text:`POWER ${a.powerHits}か所 → Drumsの攻撃強化`,priority:2});
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description+(cycleLead.zone?' / BOOSTで支援強化':''),priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...extras,...report.factors.filter(f=>f.priority!==1)].slice(0,3);
-  report.hasSupport=notes.length>0;renderReport(report);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 +${bonus}）`;
+  report.hasSupport=notes.length>0;renderReport(report);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 +${bonus}）`;
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';
   rememberSequence('attack');$('replay').disabled=true;await playbackAttack(result,color,'drums');

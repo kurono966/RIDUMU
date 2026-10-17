@@ -83,10 +83,30 @@ function annotateSequence(a,report){
   }
  }
 }
+function renderEnsemble(ensemble,tracks=new Map(),bpm=120){
+ const list=$('ensembleList'),grid=$('ensembleSequence');list.replaceChildren();grid.replaceChildren();
+ const selected=ensemble?.selected??[];
+ $('ensembleTab').textContent=selected.length?'シナジー '+selected.length:'シナジー';
+ if(!selected.length){const p=document.createElement('p');p.textContent=ensemble?'今回はシナジーなし。各パートの効果はそのまま。':'3パートが揃うと、噛み合わせを判定。';list.append(p);return;}
+ for(const synergy of selected){
+  const item=document.createElement('div'),name=document.createElement('b'),text=document.createElement('span');
+  item.className='ensemble-item';name.textContent=synergy.name;text.textContent=synergy.reason+' → '+synergy.effect;item.append(name,text);list.append(item);
+ }
+ for(const voice of ['drums','bass','lead']){
+  const row=document.createElement('div'),label=document.createElement('label');row.className='seq-row ensemble-row';label.textContent={drums:'DRUM',bass:'BASS',lead:'LEAD'}[voice];row.append(label);
+  const played=tracks.get(voice)??[];
+  for(let q=0;q<32;q++){
+   const cell=document.createElement('span'),marks=selected.filter(s=>s.cells.some(n=>n.voice===voice&&n.q===q));
+   cell.className='cell'+(played.some(n=>GridEffects.slot(n,bpm)===q)?' on':'')+(marks.length?' synergy-cell':'');
+   cell.title=voice+' / '+(q+1)+'番'+(marks.length?' / '+marks.map(s=>s.name).join('・'):'');cell.setAttribute('aria-label',cell.title);row.append(cell);
+  }grid.append(row);
+ }
+}
 function setResultPanel(panel){
  $('result').dataset.panel=panel;
  $('summaryTab').setAttribute('aria-pressed',String(panel==='summary'));
  $('rhythmTab').setAttribute('aria-pressed',String(panel==='rhythm'));
+ $('ensembleTab').setAttribute('aria-pressed',String(panel==='ensemble'));
  $('damageTab').setAttribute('aria-pressed',String(panel==='damage'));
 }
 document.getElementById('summaryTab').onclick=()=>setResultPanel('summary');
@@ -94,3 +114,5 @@ document.getElementById('rhythmTab').onclick=()=>setResultPanel('rhythm');
 document.getElementById('damageTab').onclick=()=>setResultPanel('damage');
 document.getElementById('openCodex').onclick=()=>{renderCodex();$('codexDialog').showModal();};
 document.getElementById('closeCodex').onclick=()=>$('codexDialog').close();
+
+document.getElementById('ensembleTab').onclick=()=>setResultPanel('ensemble');
