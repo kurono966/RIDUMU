@@ -33,7 +33,9 @@
  function enhance(a,drums,bpm,zones,support){
   const powerHits=root.GridEffects.inspect(drums,'drums',zones,bpm).power??0;
   const powerMultiplier=1+Math.min(.24,powerHits*.08);
-  return {...a,power:a.power*powerMultiplier*(1+support.attack+support.expose),accuracy:clamp(a.accuracy+support.accuracy,0,.99),effect:clamp(a.effect*(1+support.element)),powerHits,powerMultiplier,breakPower:clamp(a.weight*.45+a.hits/16+support.expose)};
+  const supportMultiplier=1+support.attack+support.expose;
+  const powerSteps=[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1},{label:`POWERゾーン ${powerHits}か所`,value:a.power*powerMultiplier,multiplier:powerMultiplier},{label:'Leadの攻撃支援・弱点露出',value:a.power*powerMultiplier*supportMultiplier,multiplier:supportMultiplier}];
+  return {...a,power:a.power*powerMultiplier*supportMultiplier,powerSteps,accuracy:clamp(a.accuracy+support.accuracy,0,.99),effect:clamp(a.effect*(1+support.element)),powerHits,powerMultiplier,breakPower:clamp(a.weight*.45+a.hits/16+support.expose)};
  }
  function receive(hp,shield,attack,reduction=0){
   const incoming=Math.max(0,Math.round(attack*(1-clamp(reduction,0,.65))));

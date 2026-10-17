@@ -65,6 +65,6 @@
   return {scores:{grooveLock:0,response:0,interlock:0,unison:0,callResponse:0,...Object.fromEntries(candidates.map(s=>[s.id,s.score]))},selected,bonus};
  }
  function support(base,ensemble){const next={...base},b=ensemble.bonus;for(const k of ['attack','expose','accuracy','element','shieldEfficiency','weaken'])next[k]=(base[k]??0)*(1+b.support);return next;}
- function attack(base,ensemble){const b=ensemble.bonus;return {...base,power:base.power*(1+Math.min(.2,b.attack+b.break*.25)),accuracy:clamp(base.accuracy+b.accuracy,0,.99),effect:clamp(base.effect*(1+b.element)),breakPower:clamp((base.breakPower??0)+b.break)};}
+ function attack(base,ensemble){const b=ensemble.bonus,multiplier=1+Math.min(.2,b.attack+b.break*.25),power=base.power*multiplier;return {...base,power,powerSteps:[...(base.powerSteps??[{label:'Drums',value:base.power,multiplier:1}]),{label:'シナジー（ブレイク込み）',value:power,multiplier}],accuracy:clamp(base.accuracy+b.accuracy,0,.99),effect:clamp(base.effect*(1+b.element)),breakPower:clamp((base.breakPower??0)+b.break)};}
  const api={analyze,support,attack};root.Ensemble=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -55,7 +55,10 @@ function renderBreakdown(report,burn=0){
   if(value<0)dd.className='negative';container.append(dt,dd);
  }
 }
+let damageCalculation=null;
 function renderReport(report){
+ damageCalculation=report.calculation??null;$('damageLabel').disabled=!damageCalculation;
+ if(damageCalculation)$('damageLabel').textContent='DAMAGE · 計算詳細 ↗';
  const list=$('factors');list.replaceChildren();
  for(const factor of report.factors){const li=document.createElement('li');li.textContent=factor.text;li.className=factor.priority===1?'weak-factor':'';list.append(li);}
  if(!report.factors.length){const li=document.createElement('li');li.textContent='今回は入力なし。次は一音から。';list.append(li);}
@@ -116,3 +119,30 @@ document.getElementById('openCodex').onclick=()=>{renderCodex();$('codexDialog')
 document.getElementById('closeCodex').onclick=()=>$('codexDialog').close();
 
 document.getElementById('ensembleTab').onclick=()=>setResultPanel('ensemble');
+
+function renderDamageCalculation(c){
+ const container=$('damageCalculation');container.replaceChildren();
+ const number=n=>Number(n).toFixed(2),percent=n=>(n*100).toFixed(1)+'%';
+ const add=(tag,text)=>{const node=document.createElement(tag);node.textContent=text;container.append(node);return node;};
+ add('p',`合計 ${c.total} DAMAGE / ${c.hitDetails.filter(h=>h.hit).length}命中・${c.hits}打撃。Drumsの入力 ${c.drums.count}音（Kick ${c.drums.kick} / Snare ${c.drums.snare}）。`);
+ add('h3','威力が増えた順序');
+ const steps=document.createElement('dl');steps.className='calculation-steps';container.append(steps);
+ const row=(label,value)=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;steps.append(dt,dd);};
+ const d=c.drums,active=d.count>0;
+ row('音数による基本威力',number(active?24+8*Math.min(1,d.count/8):0));
+ row('重さ / 溜め / 交互入力 / ノリ', [d.weightBonus,d.chargeBonus,d.alternationBonus,d.grooveBonus].map(v=>number(active?v:0)).join(' / '));
+ for(const [i,s] of c.powerSteps.entries())row(s.label,(i?'×'+number(s.multiplier)+' → ':'')+number(s.value));
+ for(const s of c.affinitySteps)row(s.label,'×'+number(s.multiplier));
+ row('最終的な敵相性倍率','×'+number(c.affinity));
+ row('多段攻撃の1発あたり配分','÷'+number(c.divisor)+`（${c.hits}段）`);
+ row('最終命中率',percent(Math.max(0,Math.min(1,c.accuracy))));
+ row('1発ごとの威力の振れ幅','×'+number(1-c.instability)+' ～ ×'+number(1+c.instability));
+ add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × その打撃の振れ幅。命中時に四捨五入し、最低1。ミスは0。`);
+ add('h3','実際に発生した打撃');
+ const table=document.createElement('table'),head=document.createElement('tr');
+ for(const text of ['打撃','命中抽選','威力の振れ','ダメージ']){const cell=document.createElement('th');cell.textContent=text;head.append(cell);}table.append(head);
+ c.hitDetails.forEach((hit,i)=>{const tr=document.createElement('tr');for(const text of [i+1,`${percent(hit.roll)} ${hit.hit?'＜':'≧'} ${percent(Math.max(0,Math.min(1,c.accuracy)))} → ${hit.hit?'命中':'ミス'}`,hit.variation===null?'—':'×'+number(hit.variation),hit.damage]){const td=document.createElement('td');td.textContent=text;tr.append(td);}table.append(tr);});container.append(table);
+ add('p','命中抽選は表示した命中率未満なら命中。表示値は丸めています。多段は1発の威力を減らしますが、全段命中すると合計が少し伸びます。弱点や支援の倍率が重なると、単純なリズムでも高威力になります。');
+}
+document.getElementById('damageLabel').onclick=()=>{if(!damageCalculation)return;renderDamageCalculation(damageCalculation);$('damageDialog').showModal();};
+document.getElementById('closeDamage').onclick=()=>$('damageDialog').close();

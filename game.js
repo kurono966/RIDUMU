@@ -315,7 +315,7 @@ function input(type,source,pitch){
 }
 function handleKeyDown(e){
  if(e.repeat||e.ctrlKey||e.altKey||e.metaKey||e.target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(e.target?.tagName))return;
- if($('codexDialog').open||$('pitchDialog').open||$('historyDialog').open)return;
+ if($('codexDialog').open||$('pitchDialog').open||$('historyDialog').open||$('damageDialog').open)return;
  if(e.code==='Space'&&e.target?.tagName==='BUTTON'&&e.target.id!=='start'&&!(e.target.id==='hat'&&phase==='hat'))return;
  if((e.code==='KeyH'&&!(sevenNotes()&&(state==='ready'||phase==='parts')))||(e.code==='Space'&&phase==='hat'&&['countin','recording'].includes(state))){e.preventDefault();input('hat');return;}
  if(e.code==='Space'){

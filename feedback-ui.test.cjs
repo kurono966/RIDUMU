@@ -1,5 +1,14 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const R=require('./rhythm.js'),F=require('./feedback.js');
+
+test('damage details render real calculation and clear after non-attack results',()=>{
+ const x=ui({getItem:()=>null,setItem(){}});x.run('renderReport(testReport);renderDamageCalculation(damageCalculation)');
+ assert.equal(x.$('damageLabel').disabled,false);
+ assert.match(x.$('damageCalculation').children[0].textContent,/DAMAGE/);
+ const table=x.$('damageCalculation').children.find(n=>n.children?.[0]?.children?.[0]?.textContent==='打撃');assert.ok(table);
+ assert.equal(table.children.length,x.run('testReport.calculation.hitDetails.length')+1);
+ x.run('renderReport({...testReport,calculation:null})');assert.equal(x.$('damageLabel').disabled,true);assert.equal(x.run('damageCalculation'),null);
+});
 function ui(storage){
  const elements=new Map();
  function el(){const classes=new Set();return {textContent:'',dataset:{},children:[],classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)},setAttribute(){},replaceChildren(){this.children=[]},append(...kids){this.children.push(...kids)}};}

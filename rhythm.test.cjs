@@ -1,5 +1,16 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
+
+test('calculation details match the actual hits without rerolling random values',()=>{
+ const a=R.analyze(notes([0,.15,.35,.7,1.1,1.7,2.4,3.1],'snare'));
+ let calls=0;const values=[.99,.1,.75,.2,.01,.99,.3,.5,.1,.6,.3,.7,.2,.4,.1,.8];
+ const result=R.resolve(a,{kind:'machine'},()=>values[calls++%values.length]);
+ const c=result.calculation;
+ assert.deepEqual(c.hitDetails.map(h=>h.damage),result.damages);assert.equal(c.hitDetails.reduce((sum,h)=>sum+h.damage,0),result.total);
+ assert.equal(calls,c.hitDetails.length+c.hitDetails.filter(h=>h.hit).length);
+ for(const h of c.hitDetails){if(h.hit)assert.equal(h.damage,Math.max(1,Math.round(c.power/c.divisor*c.affinity*h.variation)));else assert.equal(h.variation,null);}
+ assert.ok(Math.abs(c.affinitySteps.reduce((value,s)=>value*s.multiplier,1)-c.affinity)<1e-10);
+});
 test('silence does no damage and features remain finite',()=>{const a=R.analyze([]);assert.equal(R.resolve(a,{kind:'stone'},()=>0).total,0);for(const v of Object.values(a))if(typeof v==='number')assert.ok(Number.isFinite(v));});
 test('sparse kick is heavy, rapid snare is multi hit',()=>{const heavy=R.analyze(notes([1.3,3.2],'kick')),fast=R.analyze(notes(Array.from({length:28},(_,i)=>i*.14),'snare'));assert.equal(heavy.element,'earth');assert.equal(fast.element,'wind');assert.ok(heavy.weight>fast.weight);assert.ok(fast.hits>heavy.hits);assert.ok(heavy.power/heavy.hits>fast.power/fast.hits);});
 test('late acceleration creates fire, irregular offbeats create lightning',()=>{assert.equal(R.analyze(notes([.1,2.1,2.25,2.4,2.55,2.7,2.85,3,3.15,3.3,3.45,3.6,3.75],'kick')).element,'fire');assert.equal(R.analyze([.125,.38,1.12,1.36,2.87,3.13].map((t,i)=>({t,type:i%2?'snare':'kick'}))).element,'lightning');});

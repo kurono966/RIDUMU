@@ -74,7 +74,7 @@ function explain(a,result,enemy,voice='drums'){
  if(a.groove?.unstable>.55)hint='ズレ方が毎回変わっている。同じ置き方を繰り返すと安定する。';
  const main=factors.find(f=>f.priority===2);
  const labels=effective.length?['弱点！',...(main?[main.tag]:[])]:[...(main?[main.tag]:[]),...(a.count?[names[a.element]+'！']:[])];
- return {factors,labels:labels.slice(0,2),weaknesses:effective,hint,hitCount,breakdown:b,elementCause:cause,grooveText:a.groove?grooveEngine.describe(a.groove):'',groove:a.groove};
+ return {factors,labels:labels.slice(0,2),weaknesses:effective,hint,hitCount,breakdown:b,elementCause:cause,grooveText:a.groove?grooveEngine.describe(a.groove):'',groove:a.groove,calculation:result.calculation};
 }
 function marks(a,factors){
  const all=[];

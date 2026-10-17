@@ -38,13 +38,16 @@ function resolve(a,enemy,rng=Math.random){
  if(enemy.kind==='plant')affinity=a.element==='fire'?1.5:a.element==='wind'?.85:1;
  if(enemy.kind==='ghost'){affinity=a.element==='lightning'?1.3:a.element==='earth'?.85:1;aim-=.14*(1-Math.max(a.groove?.laidBack??0,a.groove?.drunk??0,a.groove?.swing??0));}
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
+ const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
-  for(const [id,strength] of choices)affinity*=1+strength*(a.groove[id]??0);
+  for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
  }
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
+ const hitDetails=[];
  const damages=Array.from({length:a.count?a.hits:0},()=>{
-  if(rng()>=aim)return 0;
+  const roll=rng();
+  if(roll>=aim){hitDetails.push({hit:false,roll,variation:null,damage:0});return 0;}
   const variation=1+(rng()*2-1)*a.instability;
   const scale=variation/Math.pow(a.hits,.85);
   const base=Math.max(1,Math.round((24+8*clamp(a.count/8))*scale));
@@ -52,12 +55,15 @@ function resolve(a,enemy,rng=Math.random){
   const charged=Math.max(1,Math.round((24+8*clamp(a.count/8)+18*a.weight+12*a.charged)*scale));
   const beforeAffinity=Math.max(1,Math.round(a.power*scale));
   const damage=Math.max(1,Math.round(a.power/Math.pow(a.hits,.85)*affinity*variation));
+  hitDetails.push({hit:true,roll,variation,damage});
   breakdown.base+=base;breakdown.form+=beforeAffinity-base;breakdown.affinity+=damage-beforeAffinity;
   const chained=Math.max(1,Math.round((a.power-(a.groovePower??0))*scale));
   breakdown.weight+=weighted-base;breakdown.charged+=charged-weighted;breakdown.chain+=chained-charged;breakdown.groove+=beforeAffinity-chained;
   return damage;
  });
- return {damages,total:damages.reduce((x,y)=>x+y,0),affinity,accuracy:aim,breakdown};
+ const total=damages.reduce((x,y)=>x+y,0);
+ const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracy:aim,instability:a.instability,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
+ return {damages,total,affinity,accuracy:aim,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){
  const sorted=notes.map(n=>({...n,time:n.rawT??n.t})).sort((a,b)=>a.time-b.time);
