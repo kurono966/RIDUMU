@@ -4,10 +4,10 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 function game(){
  const elements=new Map();
- const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},style:{},classList:{add(){},remove(){}}});return elements.get(id);},addEventListener(){}};
- const sandbox=vm.createContext({document,setTimeout(){},clearTimeout(){},Rhythm:require('./rhythm.js')});
+ const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},Rhythm:require('./rhythm.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){}});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
- vm.runInContext("ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
+ vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 test('anticipated downbeat is recorded during count-in with raw timing preserved',()=>{
@@ -71,17 +71,17 @@ test('returning to drums resets every saved part before accompaniment starts',()
  g.run("saveTrack('drums',[{type:'kick',t:0}])");
  assert.equal(g.run("lastMix.map(track=>track.voice).join(',')"),'drums');
 });
-test('attack replay adds eight quarter-note hats aligned after the pickup',async()=>{
+test('attack replay plays recorded hats at raw times without automatic hats',async()=>{
  const g=game();
- g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();last=[{type:'kick',t:0,rawT:-.5}];let hats=[];clickSound=(type,at)=>hats.push({type,at});let playbackTick;setInterval=fn=>{playbackTick=fn;return 1};clearInterval=()=>{};");
+ g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();last=[{type:'kick',t:0,rawT:-.5}];lastMix=[{voice:'drums',notes:last},{voice:'hat',notes:[{type:'hat',t:.03,rawT:.03},{type:'hat',t:.61,rawT:.61}]}];let hats=[];sound=(type,at,voice)=>{if(voice==='hat')hats.push({type,at})};let playbackTick;setInterval=fn=>{playbackTick=fn;return 1};clearInterval=()=>{};");
  const playback=g.run("playbackAttack({damages:[10]},'#fff')");
  await Promise.resolve();
  g.run('for(let i=0;i<=9;i++){ctx.currentTime=i*.5;playbackTick()}ctx.currentTime=4.57;playbackTick()');
  await playback;
- assert.equal(g.run('hats.length'),8);
+ assert.equal(g.run('hats.length'),2);
  assert.equal(g.run("hats.every(h=>h.type==='hat')"),true);
- assert.ok(Math.abs(g.run('hats[0].at')-.56)<1e-9);
- assert.ok(Math.abs(g.run('hats[7].at')-4.06)<1e-9);
+ assert.ok(g.run('hats[0].at')>=.59);
+ assert.ok(g.run('hats[1].at')>=1.17);
  assert.equal(g.run('enemyHp'),140);
 });
 test('space starts only when ready and blocks scrolling and repeat',()=>{
@@ -97,4 +97,47 @@ test('bass and lead synthesize separate pitches at the requested audio time',()=
  pitchedSound('kick',5,'bass');pitchedSound('snare',6,'lead');`);
  assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[2]'),311.127);
  assert.equal(g.run("starts.join(',')"),'5,5,6,6');
+});
+test('Hat phase accepts only Hat, then replays its raw offsets in the parts phase',async()=>{
+ const g=game();
+ g.run("enemies[0].bpm=82;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let phaseTick;setInterval=fn=>{phaseTick=fn;return 1};clearInterval=()=>{};let played=[];sound=(type,at,voice)=>played.push({type,at,voice});");
+ await g.run("countIn('hat')");
+ assert.equal(g.run('phase'),'hat');
+ const hatStart=g.run('recordAudioAt'),duration=g.run('timing().duration');
+ g.run("ctx.currentTime=recordAudioAt+.03;phaseTick();input('hat');input('kick');ctx.currentTime=recordAudioAt+.4;input('hat')");
+ assert.equal(g.run('hatNotes.length'),2);assert.equal(g.run('notes.length'),0);
+ assert.ok(Math.abs(g.run('hatNotes[0].rawT')-.03)<1e-9);
+ g.run('ctx.currentTime=recordAudioAt+timing().duration;phaseTick()');await Promise.resolve();
+ assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'countin');
+ assert.equal(g.run('hatReady'),true);
+ assert.ok(g.run('recordAudioAt')>hatStart+duration);
+ g.run("played=[];ctx.currentTime=recordAudioAt-.05;phaseTick()");
+ assert.equal(g.run('played.length'),1);assert.equal(g.run('played[0].voice'),'hat');
+ assert.ok(Math.abs(g.run('played[0].at-recordAudioAt')-.03)<1e-9);
+ g.run("ctx.currentTime=recordAudioAt+.01;phaseTick();input('hat');input('snare')");
+ assert.equal(g.run('hatNotes.length'),2);assert.equal(g.run('notes.length'),1);
+});
+test('hat space input works without restarting the turn or invoking the browser default',()=>{
+ const g=game();
+ g.run("phase='hat';state='recording';ctx.currentTime=10.03;let starts=0,prevented=0;$('start').click=()=>starts++;handleKeyDown({code:'Space',target:{tagName:'BUTTON',id:'hat'},preventDefault(){prevented++}})");
+ assert.equal(g.run('hatNotes.length'),1);assert.equal(g.run('starts'),0);assert.equal(g.run('prevented'),1);
+});
+test('Hat is recorded once, reused for bass and lead, then reset at the next drum turn',async()=>{
+ const g=game();
+ g.run("let launched=[];countIn=async next=>{launched.push(next)};turn=1;");
+ await g.run('startTurn()');
+ assert.equal(g.run('hatReady'),false);
+ g.run("hatNotes=[{type:'hat',t:.035,rawT:.035}];hatReady=true;turn=2");
+ await g.run('startTurn()');
+ assert.equal(g.run('hatNotes[0].rawT'),.035);assert.equal(g.run('needsHat()'),false);
+ g.run('turn=3');await g.run('startTurn()');
+ assert.equal(g.run('hatNotes.length'),1);assert.equal(g.run('hatReady'),true);
+ g.run('turn=4');await g.run('startTurn()');
+ assert.equal(g.run('hatNotes.length'),0);assert.equal(g.run('hatReady'),false);
+ assert.equal(g.run("launched.join(',')"),'hat,parts,parts,hat');
+});
+test('a silent completed Hat phase is reused rather than requesting another Hat recording',async()=>{
+ const g=game();
+ g.run("hatReady=true;hatNotes=[];turn=2;let launched;countIn=async next=>{launched=next}");
+ await g.run('startTurn()');assert.equal(g.run('launched'),'parts');
 });

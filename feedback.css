@@ -1,0 +1,87 @@
+/* Feedback stays in the existing viewport; narrow screens switch the detail panel. */
+header{gap:16px}header #openCodex{margin-left:auto}header #sound{margin-left:0}
+.discoveries{padding:7px 20px 0;color:#cbd7b9;font-size:10px;line-height:1.6;flex-shrink:0;min-height:23px}
+.hit-labels{position:absolute;z-index:5;left:0;right:0;top:calc(30% + 48px);text-align:center;color:#efffcf;font-size:14px;font-weight:bold;letter-spacing:2px;pointer-events:none}
+.weak-hit{box-shadow:inset 0 0 85px #ffe48555;border-color:#ffe485}
+.weak-hit #impact{color:#ffe485!important;font-size:48px}
+.weak-hit .hit-labels{color:#ffe485;text-shadow:0 0 15px #ffe48588}
+.discovery-toast{position:absolute;z-index:7;top:9px;left:50%;translate:-50% 0;max-width:95%;width:max-content;padding:11px 18px;background:#e4f7a7;color:#1e2915;font-size:14px;font-weight:bold;border:1px solid #fff3ac;border-radius:5px;box-shadow:0 0 30px #e4f7a744;opacity:0;pointer-events:none;transition:opacity .15s}
+.discovery-toast.visible{opacity:1;animation:discovered .35s ease-out}
+@keyframes discovered{from{scale:.88}to{scale:1}}
+.result,.result[hidden]{justify-content:center;gap:11px;padding:16px 18px}
+.result-content{padding:0;align-items:start;flex-shrink:0}
+.result h2{font-size:23px;margin:3px 0 4px}
+#feedback:empty{display:none}
+.result #reaction{font-size:10px;line-height:1.5;margin:4px 0 0;max-width:290px}
+.damage b{font-size:35px;line-height:1.1}
+.summary-panel h3{font-size:11px;margin:0 0 7px;color:#d4f77d;font-weight:500}
+.summary-panel h3 small{font-size:9px;color:var(--muted);margin-left:7px}
+.factors{padding:0;margin:0;list-style:none;display:grid;gap:5px}
+.factors li{font-size:11px;line-height:1.5;position:relative;padding-left:12px}
+.factors li::before{content:'›';position:absolute;left:0;color:var(--lime)}
+.factors .weak-factor{color:#ffe5a0}
+.breakdown{margin:10px 0 0;border-top:1px solid var(--line);padding-top:7px;display:grid;grid-template-columns:1fr auto;gap:3px 12px;font-size:10px;line-height:1.4}
+.breakdown dt{color:#aab59e}.breakdown dd{margin:0;font-variant-numeric:tabular-nums;color:#d4f77d}.breakdown dd:first-of-type{color:#eee}.breakdown dd.negative{color:#efa568}
+.rhythm-panel{border-top:1px solid var(--line);padding-top:7px}
+.cause-cell{outline:1px solid #fff1ae;outline-offset:1px}
+.cause-tracks{display:grid;gap:4px;margin-top:8px}
+.cause-row{display:flex;align-items:center;gap:2px;font-size:9px;color:#ffe5a0}
+.cause-row>span{width:38px;flex-shrink:0}
+.cause-grid{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;flex:1;min-width:0}
+.cause-grid i{height:5px;background:#2b3225;border-radius:1px}.cause-grid .marked{background:#ffe5a0}
+.result-tabs{display:none}
+#damageTab,.detail-hint,.summary-hint{display:none}
+.kick-label{top:calc(28% - 5px)}.snare-label{top:calc(72% - 5px)}
+.codex-dialog{width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #6b7a52;border-radius:10px;background:#1b2018;color:#eef4df;padding:23px}
+.codex-dialog::backdrop{background:#070b08cc}.codex-heading{display:flex;align-items:center;justify-content:space-between}.codex-heading h2{font-size:20px;margin:0}.codex-dialog p,.codex-dialog li{font-size:12px;line-height:1.7;color:#bdc7b0}.codex-dialog section{border-top:1px solid var(--line);margin-top:17px;padding-top:5px}.codex-dialog h3{font-size:15px}.codex-dialog ul{padding-left:0;list-style:none}.codex-dialog li{color:var(--lime)}
+@media(max-width:740px),(max-height:700px){
+ .result-tabs{display:flex;gap:14px;border-bottom:1px solid var(--line);flex-shrink:0}
+ .result-tabs button{padding:4px 0;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font-size:10px;min-height:26px}
+ .result-tabs button[aria-pressed=true]{border-bottom-color:var(--lime);color:var(--lime)}
+ .result[data-panel=summary] .rhythm-panel{display:none}
+ .result[data-panel=rhythm] .summary-panel{display:none}
+ .result[data-panel=rhythm] .rhythm-panel{border:0;padding-top:0}
+ .result,.result[hidden]{justify-content:flex-start;gap:6px;padding:10px 13px}
+ .summary-panel h3{display:none}.factors{gap:3px}.factors li{font-size:10px;line-height:1.4}.breakdown{margin-top:6px;padding-top:5px;gap:2px 10px;font-size:9px}
+ .result h2{font-size:19px;margin:1px 0 2px}.result #reaction{font-size:9px;line-height:1.4;margin-top:3px}.result-content{gap:8px}.damage b{font-size:30px}.result-heading .small{padding:5px 8px;font-size:10px;min-height:28px}
+ .sequence{margin-top:4px}.cause-tracks{gap:7px;margin-top:14px}.cause-grid i{height:7px}
+}
+@media(max-width:740px){
+ main{grid-template-rows:36px minmax(95px,1fr) 245px 180px;gap:8px;padding:8px 12px}
+ .discoveries{padding:4px 14px 0;min-height:20px;font-size:9px}
+ .enemy-info{padding-top:9px}.enemy-info p:not(.eyebrow){display:none}
+ .edition{display:none}header{gap:10px}.discovery-toast{font-size:12px;padding:8px 12px}
+ .hit-labels{font-size:11px;top:calc(25% + 37px)}#impact{top:25%;font-size:30px}.weak-hit #impact{font-size:36px}
+ .result #reaction{display:none}.result-content>div:first-child{flex:1}
+ .damage b{font-size:26px;line-height:1}.damage span,.damage small{font-size:7px;line-height:1.1;margin-top:1px}
+ .result,.result[hidden]{gap:4px}.result .summary-hint{display:block;font-size:9px;line-height:1.35;margin:4px 0 0;color:var(--orange)}
+ .console{padding:8px 12px}.timeline{min-height:42px}.pad{min-height:48px;padding:7px 12px}.controls{margin-top:5px}.primary{min-height:32px;padding:7px 12px}
+}
+@media(max-width:740px) and (max-height:660px) and (orientation:portrait){
+ main{grid-template-rows:30px minmax(65px,1fr) 232px 162px;padding:5px 10px;gap:6px}
+ .enemy-info{padding-top:5px}.enemy-info .eyebrow{display:none}.enemy-info h2{font-size:14px;margin-bottom:0}.discoveries{font-size:8px;padding-top:2px;min-height:15px}.player-strip{padding:5px 10px}.creature{scale:.42}
+ .result,.result[hidden]{padding:8px 11px;gap:5px}.result h2{font-size:17px}.result-heading .small{min-height:25px;font-size:9px;padding:4px 7px}.result-tabs button{font-size:9px;min-height:24px}.factors li{font-size:9px}.breakdown{font-size:9px;gap:1px 10px}.result #reaction{font-size:9px}
+ .console{padding:6px 10px}.timeline{min-height:34px}.pad{min-height:44px}.primary{min-height:32px;padding:7px 10px}
+ .damage b{font-size:24px;line-height:1}.breakdown{line-height:1.15;row-gap:0;margin-top:4px;padding-top:4px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ main{grid-template-rows:30px minmax(0,1fr) 205px;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);grid-template-areas:"header header" "arena console" "arena result";gap:6px;padding:5px 10px}
+ .console{padding:5px 9px}.console-top{font-size:8px}.timeline{min-height:36px;margin:0}.lane{font-size:8px}.pads{gap:8px}.pad{min-height:32px;padding:3px 7px}.key{font-size:11px;padding:2px 6px}.pad b{font-size:11px}.controls{margin-top:3px}.controls p{font-size:8px}.primary{min-height:26px;padding:4px 8px;font-size:9px}.controls .primary span{margin-left:4px}
+ .result,.result[hidden]{gap:3px;padding:7px 10px}.result-heading .small{min-height:23px;font-size:9px;padding:3px 7px}.result-tabs button{min-height:22px;padding:2px 0;font-size:9px}.result h2{font-size:16px}.result #reaction{font-size:8px;line-height:1.3}.result .element{font-size:8px}.damage b{font-size:25px}.factors li{font-size:9px;line-height:1.3}.breakdown{font-size:8px;margin-top:4px;padding-top:3px;gap:1px 10px}.summary-panel h3{display:none}.result-content{gap:5px}.discoveries{padding:4px 10px 0;font-size:9px}.cause-tracks{margin-top:9px;gap:5px}
+}
+@media(max-height:360px) and (orientation:landscape){
+ main{grid-template-rows:26px minmax(0,1fr) 154px;padding:4px 8px;gap:4px}
+ .brand{font-size:19px}header .small{padding:4px 8px;font-size:9px}main>header{padding-bottom:3px}
+ .result,.result[hidden]{padding:6px 9px;gap:3px}.result-heading .small{min-height:21px;font-size:8px}.result-heading .eyebrow{font-size:7px;letter-spacing:0}
+ .result #reaction{display:none}.result-content .damage b{font-size:22px}.result h2{font-size:15px}.result .element{font-size:7px}
+ .result-tabs{gap:11px}.result-tabs button{font-size:8px;min-height:20px}
+ #damageTab{display:block}
+ .summary-panel .breakdown{display:none}
+ .result[data-panel=damage] .rhythm-panel,.result[data-panel=damage] .factors{display:none}
+ .result[data-panel=damage] .summary-panel,.result[data-panel=damage] .breakdown{display:grid}
+ .result[data-panel=damage] .breakdown{margin-top:0;padding-top:2px;border:0;font-size:9px}
+ .result[data-panel=damage] .detail-hint{display:block;font-size:8px;line-height:1.35;margin:3px 0 0}
+ .factors{gap:2px}.factors li{font-size:8px;line-height:1.3}
+ .result .summary-hint{display:none}
+ .console{padding:5px 8px}.timeline{min-height:26px}.controls p{font-size:7px}.controls{gap:4px}.pad{min-height:30px}.primary{min-height:25px}
+}
