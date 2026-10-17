@@ -95,8 +95,8 @@ test('bass and lead synthesize separate pitches at the requested audio time',()=
  const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f,t){frequencies.push(f)}},connect(){},start(t){starts.push(t)},stop(){}}}};
  pitchedSound('kick',5,'bass');pitchedSound('snare',6,'lead');`);
- assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[3]'),311.127);
- assert.equal(g.run("starts.join(',')"),'5,5,5,6,6');
+ assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[7]'),311.127);
+ assert.equal(g.run("starts.join(',')"),'5,5,5,5,5,5,5,6,6');
 });
 test('Hat phase accepts only Hat, then replays its raw offsets in the parts phase',async()=>{
  const g=game();
@@ -211,7 +211,7 @@ test('sustained synth keeps oscillators running until release',()=>{
  const g=game();g.run(`let stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={currentTime:10,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){},disconnect(){}}},createOscillator(){return {frequency:param,connect(){},start(){},stop(t){stops.push(t)}}}};
  let voice=pitchedSound('kick',10,'bass',1,Infinity);`);
- assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),3);assert.ok(Math.abs(g.run('stops[0]')-11.605)<1e-9);
+ assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),7);assert.ok(Math.abs(g.run('stops[0]')-11.605)<1e-9);
 });
 test('mix playback waits for sustained note tails without adding strikes',()=>{
  const timeline=require('./rhythm.js').mixTimeline([{voice:'lead',notes:[{type:'kick',rawT:3.5,t:3.5,duration:1}]}],'lead',[23],4);
@@ -237,7 +237,7 @@ test('seven-note synth uses the selected minor-scale pitch at each octave',()=>{
  ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
  pitchedSound('kick',0,'bass',1,.5,6);pitchedSound('kick',0,'lead',1,.5,6);`);
  assert.ok(Math.abs(g.run('frequencies[0]')-65.406*2**(10/12))<1e-8);
- assert.ok(Math.abs(g.run('frequencies[3]')-261.626*2**(10/12))<1e-8);
+ assert.ok(Math.abs(g.run('frequencies[7]')-261.626*2**(10/12))<1e-8);
 });
 test('note mode cannot change during a recording',()=>{
  const g=game();g.run("noteMode='seven';state='recording';$('noteMode').value='two';$('noteMode').onchange()");

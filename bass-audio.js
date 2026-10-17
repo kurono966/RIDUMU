@@ -15,7 +15,7 @@ function get(ctx,output=ctx.destination){
  const dc=ctx.createBiquadFilter(),drive=ctx.createWaveShaper(),tone=ctx.createBiquadFilter(),compressor=ctx.createDynamicsCompressor(),trim=ctx.createGain(),duck=ctx.createGain();
  dc.type='highpass';dc.frequency.value=22;dc.Q.value=.7;
  drive.curve=saturationCurve();drive.oversample='2x';
- tone.type='lowpass';tone.frequency.value=700;tone.Q.value=.55;
+ tone.type='lowpass';tone.frequency.value=950;tone.Q.value=.55;
  compressor.threshold.value=-18;compressor.knee.value=10;compressor.ratio.value=2.8;
  compressor.attack.value=.022;compressor.release.value=.14;
  // Offset the compressor's automatic makeup gain rather than boosting loudness.
@@ -27,12 +27,18 @@ function get(ctx,output=ctx.destination){
   envelope.gain.exponentialRampToValueAtTime(Math.max(.0001,sustain),t+.085);
   filter.type='lowpass';filter.Q.value=.65;
   const ceiling=(ctx.sampleRate??48000)*.4;
-  filter.frequency.setValueAtTime(Math.min(ceiling,Math.max(360,frequency*3.2)),t);
-  filter.frequency.exponentialRampToValueAtTime(Math.min(ceiling,Math.max(175,frequency*1.7)),t+.095);
+  // Keep audible upper harmonics through the sustain, even when a phone cannot
+  // reproduce the fundamental. A soft cutoff still avoids a bright synth buzz.
+  filter.frequency.setValueAtTime(Math.min(ceiling,Math.max(650,frequency*6)),t);
+  filter.frequency.exponentialRampToValueAtTime(Math.min(ceiling,Math.max(480,frequency*4.5)),t+.095);
   envelope.connect(filter);filter.connect(dc);
   const nodes=[],oscillators=[];
-  for(const [type,amount] of [['sine',.73],['triangle',.245],['sawtooth',.025]]){
-   const oscillator=ctx.createOscillator(),blend=ctx.createGain();oscillator.type=type;oscillator.frequency.setValueAtTime(frequency,t);
+  // Redistribution, not a volume boost: the oscillator blend still sums to 1.
+  // Quiet sine harmonics make the missing low fundamental perceptible on small
+  // speakers; all share the same gate, so long holds retain their body.
+  const partials=[['sine',.58,1],['triangle',.22,1],['sawtooth',.02,1],['sine',.085,2],['sine',.05,3],['sine',.03,4],['sine',.015,6]];
+  for(const [type,amount,harmonic] of partials){
+   const oscillator=ctx.createOscillator(),blend=ctx.createGain();oscillator.type=type;oscillator.frequency.setValueAtTime(Math.min(ceiling,frequency*harmonic),t);
    blend.gain.value=amount;oscillator.connect(blend);blend.connect(envelope);oscillator.start(t);nodes.push(blend);oscillators.push(oscillator);
   }
   let releasedAt=Infinity;

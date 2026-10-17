@@ -14,11 +14,15 @@ test('bass shares a dedicated filtered saturated compressor bus before the exist
  assert.equal(shaper.oversample,'2x');assert.ok(shaper.curve.every(Number.isFinite));assert.ok(Math.abs(shaper.curve[0]+shaper.curve.at(-1))<1e-6);assert.ok(Math.max(...shaper.curve)<=1);
  assert.equal(nodes.at(-1).connections[0],master);assert.equal(master.ratio.value,6);assert.equal(master.threshold.value,-12);
 });
-test('bass centers the selected fundamental with mostly sine and triangle and only a little saw',()=>{
+test('bass retains its round fundamental and adds quiet pitch-aligned harmonics for small speakers',()=>{
  const {ctx,nodes}=fixture();Bass.get(ctx).play(65.406,1,1,Infinity);
- const oscillators=nodes.filter(n=>n.kind==='oscillator');assert.deepEqual(oscillators.map(n=>n.type),['sine','triangle','sawtooth']);
- assert.ok(oscillators.every(n=>n.frequency.events[0][1]===65.406));assert.deepEqual(oscillators.map(n=>n.connections[0].gain.value),[.73,.245,.025]);
- const filter=nodes.filter(n=>n.kind==='filter').at(-1);assert.equal(filter.type,'lowpass');assert.ok(filter.frequency.events[0][1]<=400);assert.ok(filter.frequency.events[1][1]<200);
+ const oscillators=nodes.filter(n=>n.kind==='oscillator');assert.deepEqual(oscillators.map(n=>n.type),['sine','triangle','sawtooth','sine','sine','sine','sine']);
+ assert.deepEqual(oscillators.map(n=>n.frequency.events[0][1]),[1,1,1,2,3,4,6].map(r=>65.406*r));
+ const gains=oscillators.map(n=>n.connections[0].gain.value);
+ assert.ok(Math.abs(gains.reduce((a,b)=>a+b,0)-1)<1e-9);assert.ok(gains[0]+gains[1]>=.8-1e-9);assert.ok(gains[2]<=.025);
+ assert.ok(oscillators.slice(3).every(n=>n.frequency.events[0][1]>=130));
+ const filter=nodes.filter(n=>n.kind==='filter').at(-1);assert.equal(filter.type,'lowpass');assert.equal(filter.frequency.events[0][1],650);assert.equal(filter.frequency.events[1][1],480);
+ assert.ok(filter.frequency.events[1][1]>65.406*6,'the phone-audible harmonics remain during sustained notes');
 });
 test('a tap is short while a held note sustains until release and cleans up its voice',()=>{
  const {ctx,nodes}=fixture(),engine=Bass.get(ctx),voice=engine.play(98,0,1,Infinity);
