@@ -68,7 +68,7 @@ Hatの平均間隔・平均ズレ・前後の置き方・裏拍・均一性・�
 - style.css / feedback.css / groove.css：画面構成。
 - enemies.css：敵別のシルエット・パーツ・常時アニメーション・ヒット／弱点／回避／帯電／炎の短いリアクション。動きを減らすOS設定にも対応。
 
-検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs
+検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs drum-audio.test.cjs
 
 ベース・リードは A / L またはパッドの長押しで持続音になります。離すと減衰し、押した長さも伴奏・攻撃再生・リプレイで再現します。ドラムとHatは単発音のままです。再生補正は音の開始時刻に適用し、長押しの長さは保持します。
 
@@ -91,3 +91,7 @@ PERFECTはそのノーツのダメージを完全に防ぎ、GOOD・GUARDは一�
 ### 敵の拡張と反撃ダメージ
 敵は全6種類。反撃の基本ダメージは苔岩28、翼獣32、自律機36、喰らい花34、残響32、晶殻40です。既存3体は以前の12／14／16から増加しました。全ノーツを見逃した場合の合計であり、属性効果とPERFECT／GOOD／GUARDによる防御で軽減できます。
 追加敵にも固有の見た目・BPM・2種類の反撃パターン・弱点発見を設定しています。喰らい花は棘と蔓のシンコペーション、残響は低BPMで不均等な間、晶殻は同じ音の反復と交互の切り替えを使います。進行・クリア判定・遭遇数表示は全6体に対応しています。
+
+### ドラム音源
+Kick・Snare・HiHatはassets内のClark Audio WAVを使用します。演奏・伴奏・攻撃・リプレイで共通のWeb Audioバッファを使い、連打は重ねて鳴らします。リムショットのカウントとベース／リード／コードは従来の合成音です。
+ファイルを直接開いても動くよう、元のWAVをassets/drum-samples.jsへ格納しています。WAVを差し替えたら `node scripts/build-drum-samples.cjs` で再生成してください。

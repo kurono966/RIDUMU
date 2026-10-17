@@ -110,23 +110,13 @@ let recordAudioAt=null;
 const earlyInputGrace=()=>beatSeconds();
 function clickSound(type,when,accent=false,volume=1){
  if(muted||!ctx)return;
- const gain=ctx.createGain(),filter=ctx.createBiquadFilter();
- const length=type==='rim'?.055:.045;
- gain.connect(masterOutput??ctx.destination);
- gain.gain.setValueAtTime((type==='rim'?(accent?.25:.18):.075)*volume,when);
- gain.gain.exponentialRampToValueAtTime(.001,when+length);
- if(type==='rim'){
-  const oscillator=ctx.createOscillator();oscillator.type='triangle';
-  oscillator.frequency.setValueAtTime(accent?1850:1550,when);
-  filter.type='bandpass';filter.frequency.value=1800;filter.Q.value=2;
-  oscillator.connect(filter);filter.connect(gain);oscillator.start(when);oscillator.stop(when+length);
- }else{
-  const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*length),ctx.sampleRate);
-  const data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-  const source=ctx.createBufferSource();source.buffer=buffer;
-  filter.type='highpass';filter.frequency.value=7500;
-  source.connect(filter);filter.connect(gain);source.start(when);source.stop(when+length);
- }
+ if(type==='hat'){sampleSound('hat',when,volume);return;}
+ const gain=ctx.createGain(),filter=ctx.createBiquadFilter(),oscillator=ctx.createOscillator();
+ gain.connect(masterOutput??ctx.destination);gain.gain.setValueAtTime((accent?.25:.18)*volume,when);
+ gain.gain.exponentialRampToValueAtTime(.001,when+.055);
+ oscillator.type='triangle';oscillator.frequency.setValueAtTime(accent?1850:1550,when);
+ filter.type='bandpass';filter.frequency.value=1800;filter.Q.value=2;
+ oscillator.connect(filter);filter.connect(gain);oscillator.start(when);oscillator.stop(when+.055);
 }
 function updatePhaseUI(){
  const isHat=phase==='hat';document.querySelector('.console').classList.toggle('hat-phase',isHat);
@@ -143,7 +133,7 @@ async function countIn(nextPhase='hat'){
  $('start').textContent='カウントイン…';$('timer').textContent=timing().duration.toFixed(2);
  $('hint').textContent=phase==='hat'?'最後のリムショットから、SPACE / HでHatを刻もう。':'自分のHatを聴いて、A / Lを重ねよう。';
  $('status').textContent='COUNT IN / 1 · 2 · 3 · 4';
- const token=++run;await ctx.resume();if(token!==run)return;
+ const token=++run;await ctx.resume();if(globalThis.DrumAudio)await globalThis.DrumAudio.ready;if(token!==run)return;
  const {beat,duration,bpm}=timing(),origin=ctx.currentTime+.06,recordAt=origin+4*beat;
  recordAudioAt=recordAt;started=performance.now()+(recordAt-ctx.currentTime)*1000;
  const backing=phase==='parts'?backingTimeline().events:[];
@@ -245,7 +235,18 @@ function chordSound(type,t,volume=1){
  const handle={release(at=ctx.currentTime){at=Math.max(t+.013,at);if(at>=releasedAt)return;releasedAt=at;gain.gain.cancelScheduledValues(at);gain.gain.setValueAtTime(Math.max(.001,peak*.55),at);gain.gain.exponentialRampToValueAtTime(.001,at+.22);sources.forEach(source=>source.stop(at+.24));}};
  sources[0].onended=()=>{pitchedVoices.delete(handle);gain.disconnect();};pitchedVoices.add(handle);handle.release(t+.32);return handle;
 }
-function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitch,midi){if(muted||!ctx)return;const t=when??ctx.currentTime;if(voice==='chord')return chordSound(type,t,volume);if(voice==='hat'){clickSound('hat',t,false,volume);return;}if(voice!=='drums'){return pitchedSound(type,t,voice,volume,duration,pitch,midi);}const g=ctx.createGain();g.connect(masterOutput??ctx.destination);g.gain.setValueAtTime((type==='kick'?.55:.23)*volume,t);g.gain.exponentialRampToValueAtTime(.001,t+.19);if(type==='kick'){const o=ctx.createOscillator();o.frequency.setValueAtTime(145,t);o.frequency.exponentialRampToValueAtTime(44,t+.15);o.connect(g);o.start(t);o.stop(t+.22);}else{const buffer=ctx.createBuffer(1,ctx.sampleRate*.2,ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter();filter.type='highpass';filter.frequency.value=1100;source.buffer=buffer;source.connect(filter);filter.connect(g);source.start(t);source.stop(t+.2);}}
+function sampleSound(type,when,volume=1){
+ const samples=globalThis.DrumAudio;if(!samples)return;
+ const play=()=>{if(!muted)samples.play(ctx,type,when??ctx.currentTime,volume,masterOutput??ctx.destination);};
+ if(!samples.play(ctx,type,when??ctx.currentTime,volume,masterOutput??ctx.destination))samples.ready.then(play);
+}
+function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitch,midi){
+ if(muted||!ctx)return;const t=when??ctx.currentTime;
+ if(voice==='chord')return chordSound(type,t,volume);
+ if(voice==='hat')return sampleSound('hat',t,volume);
+ if(voice==='drums')return sampleSound(type,t,volume);
+ return pitchedSound(type,t,voice,volume,duration,pitch,midi);
+}
 function flash(type){$(type).classList.add('active');setTimeout(()=>$(type).classList.remove('active'),90);}
 function stopReplay(){if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
 function input(type,source,pitch){
