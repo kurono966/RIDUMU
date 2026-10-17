@@ -5,7 +5,7 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},BassAudio:require('./bass-audio.js'),Defense:require('./defense.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),Defense:require('./defense.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
@@ -371,4 +371,38 @@ test('defense records the performed chord pitches in its own history snapshot',a
  const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();lastMix=[{voice:'lead',notes:[{type:'kick',t:0,midi:60,duration:.4}]}];let captured=[];globalThis.captureHistory=entry=>captured.push(entry);let tickGuard;setInterval=fn=>{tickGuard=fn;return 1};clearInterval=()=>{};");
  const done=g.run('defensePhase(12)');await Promise.resolve();g.run("ctx.currentTime=defenseOrigin+2;defenseInput('kick','key:KeyA');ctx.currentTime=defenseOrigin+defenseBattle.duration;tickGuard()");await done;
  assert.equal(g.run('captured[0].kind'),'defense');assert.equal(g.run('captured[0].tracks.map(t=>t.voice).join()'),'lead,chord');assert.equal(g.run('captured[0].tracks[1].notes[0].pitches.join()'),'60,63,67,70');assert.equal(g.run('captured[0].tracks[1].notes[0].rawT'),2);
+});
+
+test('hazardous Kick Snare and Hat inputs all sound and record while dealing per-input poison',()=>{
+ const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});let heard=[];sound=(...args)=>heard.push(args);ctx.currentTime=10.5;input('kick');input('kick');input('snare');phase='hat';input('hat')");
+ assert.equal(g.run('hp'),88);assert.equal(g.run('heard.length'),4);assert.equal(g.run('notes.length'),3);assert.equal(g.run('hatNotes.length'),1);assert.equal(g.run('notes[0].rawT'),.5);
+});
+test('poison evaluates raw position rather than the quantized replay position',()=>{
+ const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});phaseQuantizeMode='laidBack';ctx.currentTime=10.39;input('snare')");assert.equal(g.run('hp'),100);assert.ok(Math.abs(g.run('Quantize.render(notes,120,4)[0].rawT')-.41)<1e-9);
+ g.run("phaseQuantizeMode='snarePushed';ctx.currentTime=10.41;input('snare')");assert.equal(g.run('hp'),97);assert.ok(g.run('notes[1].rawT')>.4);
+});
+test('a held bass note takes poison once, while release and preview replay do not',()=>{
+ const g=game();g.run("turn=2;gridHazards.add({type:'poison',slots:[4],turns:4,power:3});ctx.currentTime=10.5;input('kick','key:KeyA');input('kick','key:KeyA');ctx.currentTime=10.7;releaseInput('key:KeyA');state='ready';input('kick');sound('kick');");assert.equal(g.run('hp'),97);assert.equal(g.run('notes.length'),1);assert.ok(Math.abs(g.run('notes[0].duration')-.2)<1e-9);
+});
+test('enemy skill is forecast, starts next turn, and new waves coexist',()=>{
+ const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);renderGridHazards();castGridSkill()");assert.match(g.run("$('enemyIntent').textContent"),/毒汚染/);assert.equal(g.run('gridHazards.active().length'),0);
+ g.run('turn=4;ready();ready()');assert.equal(g.run('gridHazards.active()[0].remainingTurns'),4);assert.equal(g.run("$('hazardBar').hidden"),false);
+ g.run('turn=6;advanceGridHazards();castGridSkill();turn=7;ready()');assert.equal(g.run('gridHazards.active().length'),2);assert.equal(g.run('gridHazards.active()[0].remainingTurns'),1);
+});
+test('poison defeat cancels the recording clock and resets contamination without rejecting the fatal note',async()=>{
+ const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let recordingTick;setInterval=fn=>{recordingTick=fn;return 1};hp=2;gridHazards.add({type:'poison',slots:[0],turns:4,power:3});");
+ await g.run("countIn('hat')");g.run("ctx.currentTime=recordAudioAt+.001;input('hat');recordingTick()");assert.equal(g.run('hp'),0);assert.equal(g.run('hatNotes.length'),1);assert.equal(g.run('state'),'over');assert.equal(g.run('clockTimer'),null);assert.equal(g.run('gridHazards.active().length'),0);
+});
+test('victory clears active and pending grid hazards',async()=>{
+ const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});gridHazards.add({type:'poison',slots:[8],turns:4,power:3,fromTurn:4});enemyHp=0;notes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};");await g.run('finish()');assert.equal(g.run('state'),'cleared');assert.equal(g.run('gridHazards.active(4).length'),0);
+});
+test('changing enemies clears the previous enemy contamination',()=>{
+ const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});state='cleared';enemyHp=0;startTurn=()=>{};$('start').onclick()");assert.equal(g.run('stage'),1);assert.equal(g.run('gridHazards.active().length'),0);assert.equal(g.run('gridHazards.turn'),1);
+});
+
+test('opening enemy skill contaminates the next turn while defense still waits for lead',async()=>{
+ const g=game();g.run("turn=1;enemyHp=150;notes=[];hatNotes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};let counters=0;enemyCounter=async()=>counters++;");await g.run('finish()');assert.equal(g.run('turn'),2);assert.equal(g.run('counters'),0);assert.equal(g.run('gridHazards.active().length'),1);assert.equal(g.run('gridHazards.active()[0].remainingTurns'),4);
+});
+test('death during a later enemy counter resets contamination',async()=>{
+ const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);gridHazards.add({type:'poison',slots:[4],turns:4,power:3});enemyHp=150;notes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{hp=0};");await g.run('finish()');assert.equal(g.run('state'),'over');assert.equal(g.run('gridHazards.active(4).length'),0);
 });

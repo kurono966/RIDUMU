@@ -68,7 +68,7 @@ Hatの平均間隔・平均ズレ・前後の置き方・裏拍・均一性・�
 - style.css / feedback.css / groove.css：画面構成。
 - enemies.css：敵別のシルエット・パーツ・常時アニメーション・ヒット／弱点／回避／帯電／炎の短いリアクション。動きを減らすOS設定にも対応。
 
-検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs drum-audio.test.cjs bass-audio.test.cjs sequence-history.test.cjs history-ui.test.cjs
+検証：node --test rhythm.test.cjs input.test.cjs feedback.test.cjs feedback-ui.test.cjs groove.test.cjs quantize.test.cjs defense.test.cjs drum-audio.test.cjs bass-audio.test.cjs sequence-history.test.cjs history-ui.test.cjs grid-hazards.test.cjs
 
 ベース・リードは A / L またはパッドの長押しで持続音になります。離すと減衰し、押した長さも伴奏・攻撃再生・リプレイで再現します。ドラムとHatは単発音のままです。再生補正は音の開始時刻に適用し、長押しの長さは保持します。
 
@@ -104,3 +104,9 @@ Kick音源の発音に合わせ、ベース専用バスだけをごく短く浅�
 画面上部の「履歴」で、各パートの攻撃後とコード防御後の演奏を再生できます。重ねた全パート・敵BPM・音高・長押しの長さ・再生補正後のタイミングを複製して保存し、元の入力時刻もJSONに残します。防御で実際に押したコードも記録します。次のドラムでパートをリセットしても、履歴は消えません。
 直近50件をlocalStorageに自動保存します。保存できない環境や容量不足の場合も、このプレイ中は履歴に残り、JSONで手元へ保存できます。JSONの読込でRIDUMUに戻せます。履歴は演奏・攻撃・防御中には開けず、再生が戦闘結果やHPを書き換えることはありません。
 「MIDI保存」はStandard MIDI File形式（テンポ・各楽器のトラック・音符・音長）を書き出します。ドラムはGMの10チャンネル、ベース／リード／コードは別チャンネルです。先取り入力の相対時刻も保持します。MIDIには音源そのものを含まないため、外部の再生ソフトでは音色が変わります。
+
+### シーケンサー干渉：毒汚染
+苔岩の番人（3マス・1入力3HP・4ターン）と棘冠の喰らい花（5マス・1入力4HP・5ターン）は毒汚染を使います。次の行動を敵の下に予告し、初回演奏後とリード後の実際の反撃時に汚染を追加します。行動停止・回避で反撃が消えた場合や、敵を倒した場合はその反撃による追加汚染も発生しません。
+汚染は次の演奏ターンから有効になります。紫の帯が危険範囲、紫の32マス表示が中心とその周辺を示します。帯の中心から前後0.75スロットに、補正前のraw入力が入るとダメージを受けます。危険でも発音・記録は行われ、入力を禁止しません。同じ範囲の連打も1入力ごとにダメージです。ベース・リードの低音側／高音側入力も対象です。長押しの持続や、伴奏・攻撃再生・履歴再生・コード防御では毒の追加判定は行いません。
+残りターンはプレイヤーの各パート終了時に進み、Hatとドラムは同じターンとして扱います。発生した敵行動のターン中には寿命を減らしません。新しい汚染は既存の汚染と共存し、個別に期限を持ちます。同じ入力に複数の毒が重なった場合は、最も強い毒のダメージを1回受けます。勝利・敗北・敵変更・再挑戦時に全汚染をリセットします。毒で力尽きた場合は録音の時計を止め、以後の攻撃や反撃へ進みません。
+`grid-hazards.js` はDOM・音・戦闘処理から独立した汎用システムです。`add`（発生ターン・寿命・対象入力・半径）、`advanceToTurn`、`onInput`、`reset` を提供します。`register(type, resolver)` で、該当するマスと入力文脈から効果記述子の配列を返す処理を追加できます。各汚染の `params` に将来の遅延量・反復数などを保持でき、ハンドラーには元の音高・音種・voiceなどの入力文脈も渡します。現段階で登録する実効果はpoisonのdamageだけです。mute / delay / forceQuantize / echo / shieldBreak は種別と拡張点のみ用意し、音や判定への効果は未実装です。描画は `grid-hazards.css` とゲームのCanvasで行います。
