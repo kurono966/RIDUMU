@@ -5,7 +5,7 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},Rhythm:require('./rhythm.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){}});
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){}});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
@@ -92,7 +92,7 @@ test('space starts only when ready and blocks scrolling and repeat',()=>{
 test('bass and lead synthesize separate pitches at the requested audio time',()=>{
  const g=game();
  g.run(`let frequencies=[],starts=[];
- const param={setValueAtTime(){},exponentialRampToValueAtTime(){}};
+ const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={destination:{},createGain(){return {gain:{...param},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f,t){frequencies.push(f)}},connect(){},start(t){starts.push(t)},stop(){}}}};
  pitchedSound('kick',5,'bass');pitchedSound('snare',6,'lead');`);
  assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[2]'),311.127);
@@ -141,3 +141,80 @@ test('a silent completed Hat phase is reused rather than requesting another Hat 
  g.run("hatReady=true;hatNotes=[];turn=2;let launched;countIn=async next=>{launched=next}");
  await g.run('startTurn()');assert.equal(g.run('launched'),'parts');
 });
+test('live input is immediate and keeps every raw press regardless of quantize mode',()=>{
+ const g=game();
+ g.run("phaseQuantizeMode='just';let played=[];sound=(type,at,voice)=>played.push({type,at,voice});ctx.currentTime=10.01;input('kick');ctx.currentTime=10.06;input('kick')");
+ assert.equal(g.run('notes.length'),2);assert.equal(g.run('played.length'),2);
+ assert.ok(Math.abs(g.run('notes[0].inputT')-.01)<1e-9);
+ assert.ok(Math.abs(g.run('notes[0].rawT')-.01)<1e-9);
+ assert.equal(g.run('notes[0].inputTimes.length'),1);
+ assert.equal(g.run('played[0].at'),undefined);assert.equal(g.run('played[1].at'),undefined);
+});
+test('closing notes stay raw in storage and receive correction only in the playback copy',()=>{
+ const g=game();g.run("phaseQuantizeMode='laidBack';ctx.currentTime=13.99;input('snare')");
+ assert.equal(g.run('notes.length'),1);assert.ok(g.run('notes[0].rawT')<4);
+ assert.ok(g.run('Quantize.render(notes,120,4)[0].rawT')>4);
+});
+test('live recording ends on the phrase boundary without waiting for quantization',async()=>{
+ const g=game();
+ g.run("quantizeMode='laidBack';ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let phaseTick;setInterval=fn=>{phaseTick=fn;return 1};clearInterval=()=>{};let finished=false;finish=()=>{finished=true;state='attack'};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+3.99;phaseTick();input('snare');ctx.currentTime=recordAudioAt+4;phaseTick()");
+ assert.equal(g.run('finished'),true);
+});
+test('the next phase hears quantized Hat while the saved Hat keeps its early input',async()=>{
+ const g=game();
+ g.run("hatNotes=[{type:'hat',t:.48,rawT:.48,inputT:.48,quantize:'just'}];ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let phaseTick;setInterval=fn=>{phaseTick=fn;return 1};clearInterval=()=>{};let played=[];sound=(type,at,voice)=>played.push({type,at,voice});");
+ await g.run("countIn('parts')");
+ g.run('ctx.currentTime=recordAudioAt+.41;phaseTick()');
+ assert.equal(g.run('played.length'),1);
+ assert.ok(Math.abs(g.run('played[0].at-recordAudioAt')-.5)<1e-9);
+ assert.equal(g.run('hatNotes[0].rawT'),.48);
+ assert.equal(g.run('phaseHatPlayback[0].rawT'),.5);
+});
+test('attack audio and damage follow the corrected copy while the live recording remains raw',async()=>{
+ const g=game();
+ g.run("phaseQuantizeMode='just';ctx.currentTime=10.48;input('kick');last=Quantize.render(notes,120,4);saveTrack('drums',notes);ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let scheduled=[];sound=(type,at)=>scheduled.push(at);let replayTick;setInterval=fn=>{replayTick=fn;return 1};clearInterval=()=>{};");
+ const playback=g.run("playbackAttack({damages:[20]},'#fff')");await Promise.resolve();
+ g.run('ctx.currentTime=.46;replayTick()');
+ assert.ok(Math.abs(g.run('scheduled[0]')-.56)<1e-9);assert.equal(g.run('enemyHp'),150);
+ g.run('ctx.currentTime=.57;replayTick()');assert.equal(g.run('enemyHp'),130);
+ assert.ok(Math.abs(g.run("tracks.get('drums')[0].rawT")-.48)<1e-9);
+ g.run('ctx.currentTime=4.07;replayTick()');await playback;
+});
+test('mode changes apply to the next recording and do not retime existing Hat',()=>{
+ const g=game();
+ g.run("hatNotes=[{type:'hat',t:.031,rawT:.031}];state='ready';$('quantizeMode').value='laidBack';$('quantizeMode').onchange()");
+ assert.equal(g.run('quantizeMode'),'laidBack');assert.equal(g.run('hatNotes[0].rawT'),.031);
+ g.run("state='recording';$('quantizeMode').value='drunk';$('quantizeMode').onchange()");
+ assert.equal(g.run('quantizeMode'),'laidBack');assert.equal(g.run("$('quantizeMode').value"),'laidBack');
+});
+
+test('bass holds record raw gate length and release on key up',()=>{
+ const g=game();g.run("turn=2;state='recording';let gates=[];sound=(...args)=>{gates.push(args[4]);return {release(){gates.push('released')}}};input('kick','key:KeyA');ctx.currentTime=10.75;releaseInput('key:KeyA')");
+ assert.equal(g.run('notes[0].duration'),.75);assert.equal(g.run('gates[0]'),Infinity);assert.equal(g.run('heldInputs.size'),0);assert.equal(g.run('gates[1]'),'released');
+});
+test('lead supports independent holds and caps gates at phrase end',()=>{
+ const g=game();g.run("turn=3;input('kick','pointer:1');ctx.currentTime=10.5;input('snare','pointer:2');ctx.currentTime=11;releaseInput('pointer:1');ctx.currentTime=15;releaseAllInputs()");
+ assert.equal(g.run('notes[0].duration'),1);assert.equal(g.run('notes[1].duration'),3.5);assert.equal(g.run('heldInputs.size'),0);
+});
+test('drums remain one shots and repeat keydown cannot retrigger a held lead',()=>{
+ const g=game();g.run("input('kick','key:KeyA');releaseInput('key:KeyA');turn=3;input('snare','key:KeyL');input('snare','key:KeyL')");
+ assert.equal(g.run('notes.length'),2);assert.equal(g.run('notes[0].duration'),undefined);
+});
+test('quantized playback preserves gate length without changing raw recording',()=>{
+ const g=game();g.run("turn=2;phaseQuantizeMode='just';ctx.currentTime=10.08;input('kick','key:KeyA');ctx.currentTime=10.78;releaseInput('key:KeyA');saveTrack('bass',notes)");
+ assert.ok(Math.abs(g.run('lastMix[0].notes[0].duration')-.7)<1e-9);assert.equal(g.run('lastMix[0].notes[0].rawT'),.125);assert.ok(Math.abs(g.run('notes[0].rawT')-.08)<1e-9);
+});
+
+test('sustained synth keeps oscillators running until release',()=>{
+ const g=game();g.run(`let stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},cancelScheduledValues(){}};
+ ctx={currentTime:10,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createBiquadFilter(){return {frequency:param,Q:{},connect(){},disconnect(){}}},createOscillator(){return {frequency:param,connect(){},start(){},stop(t){stops.push(t)}}}};
+ let voice=pitchedSound('kick',10,'bass',1,Infinity);`);
+ assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),2);assert.ok(Math.abs(g.run('stops[0]')-11.64)<1e-9);
+});
+test('mix playback waits for sustained note tails without adding strikes',()=>{
+ const timeline=require('./rhythm.js').mixTimeline([{voice:'lead',notes:[{type:'kick',rawT:3.5,t:3.5,duration:1}]}],'lead',[23],4);
+ assert.ok(Math.abs(timeline.duration-4.64)<1e-9);assert.deepEqual(timeline.events[0].damages,[23]);assert.equal(timeline.events.length,1);
+});
+

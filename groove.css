@@ -1,5 +1,11 @@
 .enemy-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.enemy-title h2{margin-bottom:5px}.enemy-bpm{color:var(--lime);font:10px Arial;letter-spacing:1px;white-space:nowrap}
 .phase-strip{display:flex;justify-content:space-between;align-items:center;margin-top:6px;color:#e5cb82;font-size:9px;letter-spacing:1px;min-height:12px}
+.phase-strip{gap:9px;min-height:23px}#phaseLabel{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.beat-lights{flex-shrink:0}
+.quantize-control{display:flex;align-items:center;gap:5px;flex-shrink:0;font-size:9px;letter-spacing:0;color:var(--muted)}
+.quantize-control select{color:#e5cb82;background:#242a1d;border:1px solid #596643;border-radius:4px;font:10px Arial,sans-serif;padding:3px 5px;width:104px;min-height:23px;cursor:pointer}
+.quantize-control select:disabled{opacity:.55;cursor:default}.quantize-control select:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.quantize-badge{font-size:8px;color:#e5cb82;margin-left:9px;white-space:nowrap}.quantize-badge:empty{display:none}
+.console .timeline{min-height:30px}
 .beat-lights{display:flex;gap:7px}.beat-lights i{width:6px;height:6px;border-radius:50%;background:#414832}.beat-lights i.on{background:#e5cb82;box-shadow:0 0 7px #e5cb82}
 .console>.hat{display:none}.console.hat-phase>.hat{display:flex}.console.hat-phase>.pads{display:none}
 .hat{color:#e5cb82;border-color:#7f6c3c;background:#302d20;min-height:58px;padding:10px 16px;gap:14px;width:100%}.hat .key{font-size:11px}.hat.active{background:#776333}.hat small{font-size:10px;margin-top:3px}.hat b{font-size:16px;letter-spacing:2px}
@@ -22,14 +28,23 @@
  .hat{min-height:48px;padding:7px 12px}.hat small{font-size:9px}.groove-summary{font-size:9px!important;line-height:1.3!important;margin:2px 0!important}
  .console .timeline{min-height:32px}.result .groove-summary{max-width:none}
  .summary-panel .breakdown{line-height:1.2;row-gap:1px}
+ .phase-strip{gap:6px;min-height:21px}.quantize-control{font-size:8px;gap:3px}.quantize-control select{font-size:9px;width:91px;min-height:21px;padding:2px 3px}.beat-lights{gap:5px}.console .timeline{min-height:25px}.quantize-badge{font-size:7px;margin-left:5px}
 }
 @media(max-width:740px) and (max-height:660px) and (orientation:portrait){
  .phase-strip{margin-top:2px;min-height:9px;font-size:7px}.hat{min-height:44px}.hat small{display:none}.console .timeline{min-height:25px}.groove-summary{font-size:8px!important;line-height:1.2!important}
  .result .result-content{gap:5px}.result .groove-summary{max-width:200px}
+ .phase-strip{min-height:20px}.quantize-control select{min-height:20px}.console .timeline{min-height:16px}
 }
 @media(max-height:500px) and (orientation:landscape){
  .phase-strip{margin-top:2px;min-height:9px;font-size:7px}.console .timeline{min-height:20px}.hat{min-height:30px;padding:3px 7px}.hat small{display:none}.hat b{font-size:12px}.hat .key{font-size:9px;padding:3px 6px}.groove-summary{font-size:8px!important;line-height:1.2!important}
+ .phase-strip{min-height:20px}.quantize-control select{min-height:20px;font-size:8px;width:85px}.console .timeline{min-height:14px}
 }
 @media(max-height:360px) and (orientation:landscape){
  .result .groove-summary{display:none}.result .summary-hint{display:none}.phase-strip{font-size:7px}.console .timeline{min-height:16px}
+ .phase-strip{gap:4px}.quantize-control>span{display:none}.quantize-control select{min-height:18px;width:83px}.console .timeline{min-height:10px}
 }
+
+/* A sustained note remains lit until release. */
+#kick.held,#snare.held{filter:brightness(1.35);box-shadow:inset 0 0 0 2px currentColor;}
+
+.cell.sustain{background:currentColor;opacity:.38;border-radius:0;height:4px;align-self:center;}

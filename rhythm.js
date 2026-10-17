@@ -66,12 +66,12 @@ function attackTimeline(notes,damages,duration=4){
   const index=damages.length===1?events.length-1:Math.round(i*(events.length-1)/(damages.length-1));
   events[index].damages.push(damage);
  });
- return {events,duration:duration-offset,offset};
+ return {events,duration:Math.max(duration,...sorted.map(n=>n.time+(n.duration!==undefined?n.duration+.14:.06)))-offset,offset};
 }
 function mixTimeline(tracks,currentVoice,damages=[],duration=4){
  const all=tracks.flatMap(track=>attackTimeline(track.notes,track.voice===currentVoice?damages:[],duration).events.map(event=>({...event,voice:track.voice})));
  const offset=Math.min(0,...all.map(event=>event.time));
- return {events:all.map(event=>({...event,at:event.time-offset})).sort((a,b)=>a.at-b.at),duration:duration-offset,offset};
+ return {events:all.map(event=>({...event,at:event.time-offset})).sort((a,b)=>a.at-b.at),duration:Math.max(duration,...all.map(event=>event.time+(event.duration!==undefined?event.duration+.14:.06)))-offset,offset};
 }
 root.Rhythm={analyze,resolve,attackTimeline,mixTimeline};if(typeof module!=='undefined')module.exports=root.Rhythm;
 })(typeof window!=='undefined'?window:globalThis);
