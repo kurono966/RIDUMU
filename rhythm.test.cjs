@@ -1,12 +1,66 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
 
+test('raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity',()=>{
+ const regular=R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick'));
+ const chaotic=R.analyze(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick'));
+ assert.equal(regular.performanceQuality.multiplier,1.2);assert.ok(chaotic.performanceQuality.multiplier<.65);
+ // Hold all other combat features constant to isolate the new performance layer.
+ const common={...regular,power:60,hits:3,accuracy:.9,instability:.1};
+ const good=R.resolve(common,{kind:'machine'}),bad=R.resolve({...common,performanceQuality:chaotic.performanceQuality},{kind:'machine'});
+ assert.ok(good.total>bad.total*1.5);assert.equal(good.affinity,bad.affinity);
+ assert.deepEqual(R.resolve(common,{kind:'machine'}),good);
+});
+test('repeated uneven motifs and consistent laid-back or drunk offsets count as skill',()=>{
+ for(const offset of [q=>.035,q=>[.02,-.015,.04,-.01][q%4]]){
+  const motif=[0,1,3,6,8,9,11,14,16,17,19,22,24,25,27,30];
+  const a=R.analyze(motif.map(q=>({type:q%2?'snare':'kick',t:q*.125+offset(q)})));
+  assert.ok(a.performanceQuality.multiplier>=1.1);assert.ok(a.performanceQuality.repetition>.9);
+ }
+});
+test('sparse heavy attacks stay neutral while clustered spam cannot bypass low quality',()=>{
+ assert.equal(R.analyze(notes([1.3,3.2],'kick')).performanceQuality.multiplier,1);
+ const spam=R.analyze(notes([0,.001,.005,.008,.011,.017,.02,.027,.031,.039],'snare'));
+ assert.ok(spam.performanceQuality.multiplier<.7);
+});
+test('playback quantization does not repair raw rhythmic quality, including merged notes',()=>{
+ const Q=require('./quantize.js'),raw=notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick').map(n=>({...n,rawT:n.t,inputT:n.t,quantize:'just'}));
+ const before=R.analyze(raw).performanceQuality,after=R.analyze(Q.render(raw,120,4)).performanceQuality;
+ assert.deepEqual(after,before);assert.equal(after.count,raw.length);
+});
+
+test('matchup tuning raises effective attacks and lowers resisted attacks for every enemy',()=>{
+ const base={...R.analyze(notes([0,1,2],'kick')),power:100,hits:1,accuracy:1,instability:0};
+ const cases=[
+  ['stone',{element:'earth',weight:.95},{element:'wind',weight:.1}],
+  ['fly',{element:'wind',density:6,weight:0},{element:'earth',density:.5,weight:.9}],
+  ['machine',{element:'lightning'},{element:'earth'}],
+  ['plant',{element:'fire'},{element:'wind'}],
+  ['ghost',{element:'lightning'},{element:'earth'}],
+  ['crystal',{element:'earth',alternation:1},{element:'lightning',alternation:0}]
+ ];
+ for(const [kind,good,bad] of cases){
+  const effective=R.resolve({...base,...good},{kind}),weak=R.resolve({...base,...bad},{kind});
+  const oldTotal=result=>Math.round(100*result.calculation.affinitySteps.slice(0,-1).reduce((v,s)=>v*s.multiplier,1)*result.efficiency);
+  assert.ok(effective.total>oldTotal(effective),kind+' effective damage should increase');
+  if(kind!=='machine')assert.ok(weak.total<oldTotal(weak),kind+' resisted damage should decrease');
+  else assert.equal(weak.total,oldTotal(weak),'neutral attacks stay neutral');
+  assert.ok(effective.total>weak.total);assert.deepEqual(R.resolve({...base,...good},{kind}),effective);
+ }
+});
+test('stacked weaknesses stay capped and the contrast multiplier is visible in the ledger',()=>{
+ const a={...R.analyze(notes([0,1,2],'kick')),element:'earth',weight:1,groove:{laidBack:1,pocket:1}};
+ const result=R.resolve(a,{kind:'stone'});
+ assert.equal(result.affinity,3);assert.equal(result.calculation.affinitySteps.at(-1).label,'相性メリハリ補正（有効↑・苦手↓）');
+ assert.equal(result.breakdown.base+result.breakdown.form+result.breakdown.affinity,result.total);
+});
+
 test('calculation details match deterministic hits and contain no random rolls',()=>{
  const a=R.analyze(notes([0,.15,.35,.7,1.1,1.7,2.4,3.1],'snare'));
  const result=R.resolve(a,{kind:'machine'},()=>{throw Error('random must never be called')});
  const c=result.calculation;
  assert.deepEqual(c.hitDetails.map(h=>h.damage),result.damages);assert.equal(c.hitDetails.reduce((sum,h)=>sum+h.damage,0),result.total);
- for(const h of c.hitDetails)assert.equal(h.damage,Math.max(1,Math.round(c.power/c.divisor*c.affinity*c.accuracyMultiplier*c.stabilityMultiplier)));
+ for(const h of c.hitDetails)assert.equal(h.damage,Math.max(1,Math.round(c.power/c.divisor*c.affinity*c.efficiency)));
  assert.ok(Math.abs(c.affinitySteps.reduce((value,s)=>value*s.multiplier,1)-c.affinity)<1e-10);
  assert.doesNotMatch(JSON.stringify(c),/variation|roll/);
 });

@@ -28,6 +28,8 @@ function explain(a,result,enemy,voice='drums'){
  const cause=elementCause(a),b=result.breakdown??{base:result.total,form:0,affinity:0};
  const effective=result.total>0?matchups(a,enemy).sort((x,y)=>y.multiplier-x.multiplier):[];
  const candidates=[];
+ const quality=a.performanceQuality;
+ if(quality&&quality.confidence>.4&&Math.abs(quality.multiplier-1)>.08)candidates.push({id:'rhythm-quality',priority:2,score:a.power*Math.abs(quality.multiplier-1),text:quality.multiplier>=1?'規則的な刻み・反復 → リズム精度で威力上昇':'間隔・ズレ方がばらばら → リズム精度で威力低下',source:quality.multiplier>=1?'repeat':'irregular',tag:quality.multiplier>=1?'安定！':'乱れ'});
  if(effective.length){
   const m=effective[0];
   const shown=effective.slice(0,2);
@@ -61,6 +63,10 @@ function explain(a,result,enemy,voice='drums'){
    factors.sort((x,y)=>x.priority-y.priority||y.score-x.score);
   }
  }
+ if(quality?.multiplier<.85&&!factors.some(f=>f.id==='rhythm-quality')){
+  const factor=candidates.find(f=>f.id==='rhythm-quality');
+  if(factor){if(factors.length<3)factors.push(factor);else factors[factors.length-1]=factor;}
+ }
  let hint='属性相性は普通。刻み方を変えて比べてみよう。';
  if(!a.count)hint='今回は入力なし。一音から試してみよう。';
  else if(enemy.kind==='stone'&&a.weight<.45)hint='軽い連打は岩の体に通りにくい。間を空けた低音も試そう。';
@@ -71,6 +77,7 @@ function explain(a,result,enemy,voice='drums'){
  else if(!hitCount)hint='今回はダメージなし。一定の間隔や反復で攻撃効率を高めよう。';
  else if(effective.length)hint='この叩き方は敵に有効。違う刻みとも比べてみよう。';
  if(a.groove?.unstable>.55)hint='ズレ方が毎回変わっている。同じ置き方を繰り返すと安定する。';
+ if(quality?.multiplier<.85)hint='間隔やズレ方のばらつきで威力低下。一定の刻みや同じフレーズの反復を試そう。';
  const main=factors.find(f=>f.priority===2);
  const labels=effective.length?['弱点！',...(main?[main.tag]:[])]:[...(main?[main.tag]:[]),...(a.count?[names[a.element]+'！']:[])];
  return {factors,labels:labels.slice(0,2),weaknesses:effective,hint,hitCount,breakdown:b,elementCause:cause,grooveText:a.groove?grooveEngine.describe(a.groove):'',groove:a.groove,calculation:result.calculation};

@@ -541,7 +541,7 @@ async function finish(){
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
   const extras=[];if(a.powerHits)extras.push({id:'powerZone',source:'power-zone',tag:'POWER！',text:`POWER ${a.powerHits}か所 → Drumsの攻撃強化`,priority:2});
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description+(cycleLead.zone?' / BOOSTで支援強化':''),priority:3});
-  report.factors=[...report.factors.filter(f=>f.priority===1),...extras,...report.factors.filter(f=>f.priority!==1)].slice(0,3);
+  report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
   report.hasSupport=notes.length>0;renderReport(report);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 +${bonus}）`;
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';

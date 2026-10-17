@@ -104,7 +104,7 @@ test('leading Snare has real matching combat affinity, feedback and note-specifi
  const marks=F.marks(a,report.factors).find(m=>m.source==='groove-snarePushed');assert.ok(marks.cells.length);assert.ok(marks.cells.every(n=>n.type==='snare'));
  const discovered=F.discover({},'fly',report);assert.ok(discovered.fresh.includes('snarePushed'));
  const factors=G.affinity(g,'fly').reduce((p,b)=>p*b.multiplier,1);
- assert.ok(Math.abs(result.affinity/without.affinity-(1+.2*g.snarePushed))<1e-9);
+ assert.ok(Math.abs(result.affinity/without.affinity-Math.pow(1+.2*g.snarePushed,1.65))<1e-9);
  assert.ok(Number.isFinite(factors));
 });
 
@@ -115,7 +115,7 @@ test('new enemy elemental and groove affinities match feedback and real combat',
   const a={...base,element,alternation:1},enemy={kind},r=R.resolve(a,enemy,()=>0),f=F.explain(a,r,enemy);
   assert.ok(r.total>0);assert.ok(f.weaknesses.some(w=>w.id===id));
   const expected=(kind==='plant'?1.5:kind==='ghost'?1.3:1.25*1.2)*G.affinity(groove,kind).reduce((s,b)=>s*b.multiplier,1);
-  assert.ok(Math.abs(r.affinity-expected)<1e-9);
+  assert.ok(Math.abs(r.affinity-Math.max(.4,Math.min(3,Math.pow(expected,1.65))))<1e-9);
   assert.equal(r.breakdown.base+r.breakdown.form+r.breakdown.affinity,r.total);
  }
  const a={...base,element:'wind',alternation:1},enemy={kind:'crystal'},r=R.resolve(a,enemy,()=>0),f=F.explain(a,r,enemy);
