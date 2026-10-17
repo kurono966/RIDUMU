@@ -340,6 +340,11 @@ function handleKeyDown(e){
  const type=e.code==='KeyA'?'kick':e.code==='KeyL'?'snare':null;
  if(type){e.preventDefault();input(type,'key:'+e.code);}
 }
+const togglePads=$('togglePads');
+function setPadsVisible(visible){document.querySelector('.console').classList.toggle('pads-collapsed',!visible);togglePads.textContent=visible?'演奏パッド ON':'演奏パッド OFF';togglePads.setAttribute('aria-pressed',String(visible));try{localStorage.setItem('ridumu-pads-visible',String(visible));}catch{}}
+let padsVisible=true;try{padsVisible=localStorage.getItem('ridumu-pads-visible')!=='false';}catch{}
+setPadsVisible(padsVisible);
+togglePads.addEventListener('click',()=>setPadsVisible(document.querySelector('.console').classList.contains('pads-collapsed')));
 const filterMode=$('filterMode');
 const filterPad=$('filterPad'),filterCursor=$('filterCursor');
 function renderFilterPad(){const {amount,mode}=performanceFilter.state;filterCursor.style.bottom=(amount*100)+'%';filterPad.setAttribute('aria-valuenow',String(Math.round(amount*100)));$('filterValue').textContent=Math.round(amount*100)+'%';filterMode.value=mode;}
