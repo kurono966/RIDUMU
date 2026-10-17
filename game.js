@@ -66,6 +66,7 @@ let lastInstrument='drums';
 const tracks=new Map();
 let lastMix=null;
 let masterOutput=null,battleWaveform=null;
+const performanceFilter=globalThis.PerformanceFilter;
 let phase='parts',hatNotes=[],hatReady=false,lastHat=[],lastDuration=480/enemies[0].bpm,lastBpm=enemies[0].bpm,visualBeat=-1;
 let quantizeMode='off',phaseQuantizeMode='off',phaseHatPlayback=[];
 function syncQuantizeControl(){
@@ -212,7 +213,7 @@ async function countIn(nextPhase='hat'){
  }
  const timer=setInterval(tick,20);clockTimer=timer;tick();
 }
-function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=ctx.createDynamicsCompressor();masterOutput.threshold.value=-12;masterOutput.ratio.value=6;if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,masterOutput,$('battleWaveform'));battleWaveform.setVoice(instrumentForTurn(turn).id);}else masterOutput.connect(ctx.destination);}if(ctx.state==='suspended')ctx.resume();}
+function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=ctx.createDynamicsCompressor();masterOutput.threshold.value=-12;masterOutput.ratio.value=6;const filtered=performanceFilter.connect(ctx,ctx.destination);masterOutput.connect(filtered);if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,masterOutput,$('battleWaveform'));battleWaveform.setVoice(instrumentForTurn(turn).id);}}if(ctx.state==='suspended')ctx.resume();}
 const heldInputs=new Map(), pitchedVoices=new Set();
 function pitchedSound(type,t,voice,volume=1,duration,pitch,midi){
  const bass=voice==='bass',frequency=Number.isInteger(midi)?440*2**((midi-69)/12):Number.isInteger(pitch)&&pitch>=0&&pitch<7?(bass?65.406:261.626)*2**(melodyScale[pitch]/12):bass?(type==='kick'?65.406:97.999):(type==='kick'?261.626:311.127);
@@ -333,6 +334,9 @@ function handleKeyDown(e){
  const type=e.code==='KeyA'?'kick':e.code==='KeyL'?'snare':null;
  if(type){e.preventDefault();input(type,'key:'+e.code);}
 }
+const filterAmount=$('filterAmount'),filterMode=$('filterMode');
+function syncFilter(){performanceFilter.set(Number(filterAmount.value)/100,filterMode.value);$('filterValue').textContent=filterAmount.value+'%';}
+filterAmount.addEventListener('input',syncFilter);filterMode.addEventListener('change',syncFilter);syncFilter();
 document.addEventListener('keydown',handleKeyDown);
 document.addEventListener('keyup',e=>{releaseInput('key:'+e.code);});
 ['hat','kick','snare'].forEach(type=>{
@@ -526,7 +530,7 @@ async function finish(){
  const zones=currentZones(),preview=Rhythm.analyze(last,lastDuration,lastBpm);
  if(lastInstrument==='bass'){
   cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones);
-  const before=shield;shield=Math.min(90,shield+cycleBass.shield);if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
+  const before=shield;const filterShield=performanceFilter.combat().shield;shield=Math.min(90,shield+cycleBass.shield+filterShield);if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
   if(cycleBass.zone)causes.push(`SHIELDゾーン ${cycleBass.zone}か所 → 追加シールド`);
@@ -544,7 +548,9 @@ async function finish(){
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
   const a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
   a.powerCells=zones.find(z=>z.type==='power').slots;
-  const result=Rhythm.resolve(a,enemies[stage]),report=CombatFeedback.explain(a,result,enemies[stage],'drums');activeReport=report;
+  const filterAttack=performanceFilter.combat().attack;
+   if(filterAttack>1){a.power*=filterAttack;a.powerSteps=[...(a.powerSteps??[]),{label:'HIGH PASSフィルター',value:a.power,multiplier:filterAttack}];}
+   const result=Rhythm.resolve(a,enemies[stage]),report=CombatFeedback.explain(a,result,enemies[stage],'drums');activeReport=report;
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
