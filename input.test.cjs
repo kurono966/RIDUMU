@@ -4,8 +4,8 @@ const vm=require('node:vm');
 const fs=require('node:fs');
 function game(){
  const elements=new Map();
- const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),Defense:require('./defense.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},replaceChildren(){},dataset:{},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
+ const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
@@ -286,37 +286,6 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
  assert.equal(g.run('reactions.length'),0);g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('reactions[0].kind'),'weak');assert.equal(g.run('reactions[0].element'),'earth');
  g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('reactions[1].kind'),'dodge');g.run('ctx.currentTime=4.07;playbackTick()');await playback;
 });
-test('finish evaluates groove from recorded input rather than the quantized replay',()=>{
- const g=game();g.run("turn=1;notes=Array.from({length:8},(_,i)=>({type:i%2?'snare':'kick',t:i*.5,rawT:i*.5,inputT:i*.5,quantize:'snarePushed'}));hatNotes=Array.from({length:16},(_,i)=>({type:'hat',t:i*.25,rawT:i*.25,inputT:i*.25,quantize:'off'}));let captured;renderReport=r=>{captured=r};sequence=()=>{};annotateSequence=()=>{};playbackAttack=()=>new Promise(()=>{});finish()");
- assert.ok(g.run("last.filter(n=>n.type==='snare').every(n=>n.rawT<n.inputT)"));assert.ok(Math.abs(g.run('captured.groove.snareMean'))<1e-9);assert.equal(g.run('captured.groove.snarePushed'),0);
-});
-
-test('defense uses A and L even in seven-note mode and never records musical input',()=>{
- const g=game();g.run("turn=3;noteMode='seven';state='defense';defenseBattle=Defense.create('machine',120,1,16);defenseOrigin=8;ctx.currentTime=10;handleKeyDown({code:'KeyA',target:{},preventDefault(){}});ctx.currentTime=10.5;handleKeyDown({code:'KeyL',target:{},preventDefault(){}})");
- assert.equal(g.run('defenseBattle.events[0].grade'),'PERFECT');assert.equal(g.run('defenseBattle.events[1].grade'),'PERFECT');assert.equal(g.run('notes.length'),0);assert.equal(g.run('hatNotes.length'),0);
-});
-test('defense phase reduces player HP on missed enemy notes and restores the music UI',async()=>{
- const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let guardTick;setInterval=fn=>{guardTick=fn;return 1};clearInterval=()=>{};turn=2;noteMode='four';lastMix=[];let defenseSounds=[];sound=(type,at,voice)=>defenseSounds.push({type,at,voice});clickSound=()=>defenseSounds.push({type:'clock'});");
- const done=g.run('defensePhase(12)');await Promise.resolve();assert.equal(g.run('state'),'defense');assert.equal(g.run('defenseSounds.length'),0);
- g.run('ctx.currentTime=defenseOrigin+defenseBattle.events[0].at;input("kick","pointer:1");ctx.currentTime+=.18;guardTick()');assert.equal(g.run('hp'),100);
- g.run('ctx.currentTime=defenseOrigin+defenseBattle.duration;guardTick()');const report=await done;
- assert.equal(g.run('defenseSounds.length'),1);assert.equal(g.run('defenseSounds[0].type'),'kick');assert.equal(g.run('defenseSounds[0].voice'),'chord');assert.equal(g.run('defenseSounds[0].at'),undefined);
- assert.equal(report.damage,8);assert.equal(g.run('hp'),92);assert.equal(g.run('state'),'attack');assert.equal(g.run('defenseBattle'),null);assert.equal(g.run('defenseHeld.size'),0);
-});
-
-test('earth reduces the note damage budget before timing defense without double damage',async()=>{
- const g=game();g.run("setTimeout=fn=>{fn();return 1};lastMix=[];let budget;defensePhase=async damage=>{budget=damage;hp-=2;return {counts:{PERFECT:2,GOOD:0,GUARD:1,MISS:0},damage:2,total:damage,prevented:damage-2}};");
- await g.run("enemyCounter({count:4,element:'earth',effect:1},{},{total:20})");assert.equal(g.run('budget'),18);assert.equal(g.run('hp'),98);
-});
-test('lightning can stop the attack and skips the defense phase',async()=>{
- const g=game();g.run("setTimeout=fn=>{fn();return 1};Math.random=()=>0;lastMix=[];let defended=false;defensePhase=async()=>{defended=true};");
- await g.run("enemyCounter({count:4,element:'lightning',effect:1},{},{total:20})");assert.equal(g.run('defended'),false);assert.equal(g.run('hp'),100);
-});
-test('a held defense input cannot hit a second note until released',()=>{
- const g=game();g.run("state='defense';defenseOrigin=8;defenseBattle=Defense.create('machine',120,1,16);ctx.currentTime=10;defenseInput('kick','key:KeyA');ctx.currentTime=11;defenseInput('kick','key:KeyA')");
- assert.equal(g.run('defenseBattle.events[0].grade'),'PERFECT');assert.equal(g.run('defenseBattle.events[2].grade'),null);g.run("defenseHeld.delete('key:KeyA');defenseInput('kick','key:KeyA')");assert.equal(g.run('defenseBattle.events[2].grade'),'PERFECT');
-});
-
 test('roster contains six distinct enemies with stronger counterattacks',()=>{
  const g=game();assert.equal(g.run('enemies.length'),6);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),6);
  assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'28,32,36');
@@ -329,35 +298,6 @@ test('third enemy no longer ends the game and only the sixth enemy completes the
  }
 });
 
-test('only lead attacks trigger the defensive phase in each three-part cycle',async()=>{
- for(const [number,expected] of [[1,0],[2,0],[3,1],[4,0],[5,0],[6,1]]){
-  const g=game();g.run(`turn=${number};notes=[];hatNotes=[];enemyHp=150;let counters=0;setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{counters++};`);
-  await g.run('finish()');assert.equal(g.run('counters'),expected);assert.equal(g.run('turn'),number+1);assert.equal(g.run('state'),'ready');
- }
-});
-test('defense replays all recorded voices with original pitches and gates while input plays chords',async()=>{
- const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();turn=3;lastDuration=4;lastMix=[{voice:'drums',notes:[{type:'kick',rawT:0,t:0}]},{voice:'hat',notes:[{type:'hat',rawT:.25,t:.25}]},{voice:'bass',notes:[{type:'kick',rawT:.5,t:.5,midi:41,duration:.7}]},{voice:'lead',notes:[{type:'snare',rawT:1,t:1,midi:66,duration:.9}]}];let sounds=[];sound=(...args)=>sounds.push(args);clickSound=()=>{throw Error('enemy note or clock must stay silent')};let guardTick;setInterval=fn=>{guardTick=fn;return 1};clearInterval=()=>{};");
- const done=g.run('defensePhase(12)');await Promise.resolve();
- g.run('[.23,.48,.98].forEach(t=>{ctx.currentTime=t;guardTick()})');
- assert.equal(g.run('sounds.map(n=>n[2]).join()'),'drums,hat,bass,lead');assert.equal(g.run('sounds[2][6]'),41);assert.equal(g.run('sounds[2][4]'),.7);assert.equal(g.run('sounds[3][6]'),66);
- g.run("ctx.currentTime=defenseOrigin+defenseBattle.events[0].at;input('kick','key:KeyA');guardTick()");assert.equal(g.run('sounds.length'),5);assert.equal(g.run('sounds[4][2]'),'chord');assert.equal(g.run('sounds[4][1]'),undefined);
- g.run('ctx.currentTime=defenseOrigin+defenseBattle.duration;guardTick()');await done;
- assert.equal(g.run('sounds.length'),5);assert.equal(g.run('notes.length'),0);
-});
-test('defense mix keeps anticipated notes aligned and waits for sustained backing tails',async()=>{
- const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();lastMix=[{voice:'bass',notes:[{type:'kick',t:0,rawT:-.2,duration:.4},{type:'snare',t:3.9,rawT:3.9,duration:1.2}]}];let sounds=[];sound=(...args)=>sounds.push(args);let guardTick;setInterval=fn=>{guardTick=fn;return 1};clearInterval=()=>{};");
- const done=g.run('defensePhase(12)');await Promise.resolve();assert.ok(Math.abs(g.run('defenseOrigin')-.26)<1e-9);assert.ok(Math.abs(g.run('sounds[0][1]')-.06)<1e-9);
- g.run('ctx.currentTime=defenseOrigin+4.4;guardTick()');assert.equal(g.run('state'),'defense');
- g.run('ctx.currentTime=defenseOrigin+defenseBattle.duration;guardTick()');await done;
-});
-test('defensive keyboard plays a four-note FM chord rather than the bass or lead tone',()=>{
- const g=game();g.run(`let frequencies=[],types=[],stops=[];const param={setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
- ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},set type(t){types.push(t)},connect(){},start(){},stop(t){stops.push(t)}}}};
- chordSound('kick',0,.9);`);
- assert.equal(g.run('frequencies.length'),8);assert.equal(g.run('types.every(t=>t==="sine")'),true);
- assert.ok(Math.abs(g.run('frequencies[0]')-440*2**((60-69)/12))<1e-9);assert.ok(Math.abs(g.run('frequencies[6]')-440*2**((70-69)/12))<1e-9);assert.equal(g.run('stops.length'),8);
-});
-
 test('only successfully played Kick samples duck the bass at their actual scheduled time',()=>{
  const g=game();g.run("let dips=[];BassAudio={get:()=>({duckForKick:(...args)=>dips.push(args)})};globalThis.DrumAudio={play:()=>true,ready:Promise.resolve(true)};sampleSound('kick',11,.5);sampleSound('snare',11,.5);sampleSound('hat',11,.5);muted=true;sampleSound('kick',11,1)");
  assert.equal(g.run('dips.length'),1);assert.equal(g.run('dips[0][0]'),11);assert.equal(g.run('dips[0][1]'),.5);
@@ -367,12 +307,6 @@ test('attack completion captures an accumulated mix plus the unquantized source 
  const g=game();g.run("turn=2;tracks.set('drums',[{type:'kick',t:0,rawT:0}]);notes=[{type:'kick',t:.48,rawT:.48,inputT:.48,midi:36,duration:.6,quantize:'just'}];hatNotes=[{type:'hat',t:0,rawT:0}];enemyHp=0;let captured=[];globalThis.captureHistory=entry=>captured.push(entry);setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};");
  await g.run('finish()');assert.equal(g.run('captured.length'),1);assert.equal(g.run('captured[0].kind'),'attack');assert.equal(g.run('captured[0].tracks.map(t=>t.voice).join()'),'drums,bass,hat');assert.equal(g.run("captured[0].rawTracks.find(t=>t.voice==='bass').notes[0].rawT"),.48);assert.equal(g.run("captured[0].tracks.find(t=>t.voice==='bass').notes[0].rawT"),.5);
 });
-test('defense records the performed chord pitches in its own history snapshot',async()=>{
- const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();lastMix=[{voice:'lead',notes:[{type:'kick',t:0,midi:60,duration:.4}]}];let captured=[];globalThis.captureHistory=entry=>captured.push(entry);let tickGuard;setInterval=fn=>{tickGuard=fn;return 1};clearInterval=()=>{};");
- const done=g.run('defensePhase(12)');await Promise.resolve();g.run("ctx.currentTime=defenseOrigin+2;defenseInput('kick','key:KeyA');ctx.currentTime=defenseOrigin+defenseBattle.duration;tickGuard()");await done;
- assert.equal(g.run('captured[0].kind'),'defense');assert.equal(g.run('captured[0].tracks.map(t=>t.voice).join()'),'lead,chord');assert.equal(g.run('captured[0].tracks[1].notes[0].pitches.join()'),'60,63,67,70');assert.equal(g.run('captured[0].tracks[1].notes[0].rawT'),2);
-});
-
 test('hazardous Kick Snare and Hat inputs all sound and record while dealing per-input poison',()=>{
  const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});let heard=[];sound=(...args)=>heard.push(args);ctx.currentTime=10.5;input('kick');input('kick');input('snare');phase='hat';input('hat')");
  assert.equal(g.run('hp'),88);assert.equal(g.run('heard.length'),4);assert.equal(g.run('notes.length'),3);assert.equal(g.run('hatNotes.length'),1);assert.equal(g.run('notes[0].rawT'),.5);
@@ -400,9 +334,25 @@ test('changing enemies clears the previous enemy contamination',()=>{
  const g=game();g.run("gridHazards.add({type:'poison',slots:[4],turns:4,power:3});state='cleared';enemyHp=0;startTurn=()=>{};$('start').onclick()");assert.equal(g.run('stage'),1);assert.equal(g.run('gridHazards.active().length'),0);assert.equal(g.run('gridHazards.turn'),1);
 });
 
-test('opening enemy skill contaminates the next turn while defense still waits for lead',async()=>{
- const g=game();g.run("turn=1;enemyHp=150;notes=[];hatNotes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};let counters=0;enemyCounter=async()=>counters++;");await g.run('finish()');assert.equal(g.run('turn'),2);assert.equal(g.run('counters'),0);assert.equal(g.run('gridHazards.active().length'),1);assert.equal(g.run('gridHazards.active()[0].remainingTurns'),4);
-});
 test('death during a later enemy counter resets contamination',async()=>{
  const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);gridHazards.add({type:'poison',slots:[4],turns:4,power:3});enemyHp=150;notes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{hp=0};");await g.run('finish()');assert.equal(g.run('state'),'over');assert.equal(g.run('gridHazards.active(4).length'),0);
+});
+
+
+test('a complete three-part cycle applies Bass shield and Lead support then counters automatically',async()=>{
+ const g=game();g.run("state='ready';let attacks=[],counters=0;notes=[{type:'kick',t:0,rawT:0},{type:'snare',t:1,rawT:1}];hatNotes=[{type:'hat',t:0,rawT:0},{type:'hat',t:1,rawT:1}];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async(result,color,voice)=>{attacks.push({result,voice})};enemyCounter=async()=>{counters++;const hit=PerformanceCombat.receive(hp,shield,40);hp=hit.hp;shield=hit.shield};");
+ await g.run('finish()');assert.equal(g.run('turn'),2);assert.equal(g.run('attacks.length'),0);assert.equal(g.run('counters'),0);
+ g.run("notes=[{type:'kick',t:0,rawT:0,duration:1,midi:36},{type:'snare',t:2,rawT:2,duration:1,midi:43}]");
+ await g.run('finish()');assert.equal(g.run('turn'),3);assert.ok(g.run('shield')>0);assert.equal(g.run('counters'),0);
+ g.run("notes=[{type:'kick',t:0,rawT:0,duration:.3,midi:60},{type:'snare',t:1,rawT:1,duration:.3,midi:67}]");
+ await g.run('finish()');assert.equal(g.run('turn'),4);assert.equal(g.run('counters'),1);assert.equal(g.run('attacks.length'),1);assert.equal(g.run('attacks[0].voice'),'drums');assert.ok(g.run('cycleLead.attack')>0);assert.equal(g.run('state'),'ready');
+});
+test('automatic enemy attack consumes shields without recording or requesting inputs',async()=>{
+ const g=game();g.run("state='attack';muted=true;shield=12;cycleLead={weaken:0};setTimeout=fn=>{fn();return 1};turn=3;castGridSkill=()=>{};");
+ await g.run("enemyCounter({count:4,element:'wind',effect:.5},{},{total:20})");
+ assert.equal(g.run('shield'),0);assert.equal(g.run('hp'),84);assert.equal(g.run('notes.length'),0);assert.equal(g.run('state'),'enemyAttack');
+});
+test('raw Drums and Hat remain the source of groove classification after all three parts',async()=>{
+ const g=game();g.run("turn=3;notes=[];tracks.set('drums',[{type:'snare',t:.47,rawT:.47,inputT:.47,quantize:'just'}]);hatNotes=[{type:'hat',t:.5,rawT:.5}];let seen;Groove={...Groove,analyzeRelations:(raw,hat)=>{seen={raw,hat};return {}}};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};");
+ await g.run('finish()');assert.equal(g.run('seen.raw[0].rawT'),.47);assert.equal(g.run('seen.hat[0].rawT'),.5);
 });

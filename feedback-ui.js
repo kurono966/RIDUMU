@@ -47,7 +47,7 @@ function clearHitFeedback(){
 function renderBreakdown(report,burn=0){
  const container=$('breakdown');container.replaceChildren();
  const b=report.breakdown;
- const formLabel=b.groove>0?'ノリ・攻撃形態の補正':report.factors.some(f=>f.id==='charge')?'重撃・溜め補正':report.factors.some(f=>f.id==='chain')?'攻撃形態の補正':'重さ・連環の補正';
+ const formLabel=report.hasSupport?'演奏・支援の補正':b.groove>0?'ノリ・攻撃形態の補正':report.factors.some(f=>f.id==='charge')?'重撃・溜め補正':report.factors.some(f=>f.id==='chain')?'攻撃形態の補正':'重さ・連環の補正';
  const rows=[['基本攻撃',b.base||0],[formLabel,b.form||0],[b.affinity>=0?'敵との相性':'相性による軽減',b.affinity||0]];
  if(burn)rows.push(['炎の余熱',burn]);
  for(const [i,[label,value]] of rows.entries()){

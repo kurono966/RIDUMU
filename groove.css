@@ -66,12 +66,3 @@
 .pitch-setup{flex-shrink:0;padding:3px 5px;font-size:10px;min-height:23px;color:#e5cb82;background:#242a1d;border:1px solid #596643;border-radius:4px}.pitch-setup:disabled{opacity:.5}
 .pitch-dialog{width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;background:#191c18;color:#eff1e9;border:1px solid #596643;border-radius:10px;padding:18px}.pitch-dialog::backdrop{background:#000a}.pitch-dialog h2{font-size:19px;margin:0}.pitch-dialog p{font-size:11px;color:#a4ad99;line-height:1.6}.pitch-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;margin-bottom:12px}.pitch-dialog select{background:#242a1d;color:#e5cb82;border:1px solid #596643;border-radius:4px;padding:6px;font:inherit}.pitch-row{display:grid;grid-template-columns:32px 1fr 64px;align-items:center;gap:10px;margin:6px 0}.pitch-row label{font-weight:bold;color:#d4f77d}.pitch-row button{background:#28311e;color:#d4f77d;border:1px solid #596643;border-radius:4px;padding:7px}.pitch-options .small{padding:6px}
 @media(max-width:740px){.phase-strip{gap:3px}.pitch-setup{font-size:9px;padding:2px 4px;min-height:20px}}
-
-.console.defending>.pads{display:grid!important}.console.defending>.hat,.console.defending>.melody-pads{display:none!important}
-.defending .hat-label{display:none}.defending .kick-label{top:calc(30% - 5px)}.defending .snare-label{top:calc(76% - 5px)}
-.defending .quantize-control,.defending .pitch-setup{display:none}.defending #status{color:#efa568}.defending .live-dot{background:#efa568;box-shadow:0 0 8px #efa568}
-.defending .pad b{font-size:14px;letter-spacing:1px}.guard-flash{box-shadow:inset 0 0 50px #9adfd54d!important}
-@media(max-width:740px){.defending .pad b{font-size:12px}}
-
-.console.defending>.pads{grid-template-columns:repeat(2,minmax(0,1fr))}.defending .pad{min-width:0;gap:8px}.defending .pad>span:nth-child(2){min-width:0}.defending .console-top>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:400px){.defending .pad b{font-size:11px;letter-spacing:0}}

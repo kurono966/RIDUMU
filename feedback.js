@@ -79,7 +79,7 @@ function explain(a,result,enemy,voice='drums'){
 function marks(a,factors){
  const all=[];
  for(const f of factors){
-  const source=f.source;
+  const source=f.source??'';
   const group=[];
   if(source.startsWith('groove-')){
    const id=source.slice(7),g=a.groove;
@@ -100,6 +100,7 @@ function marks(a,factors){
   a.grid.forEach((n,i)=>{
    const previous=a.grid[i-1],gap=n.t-(previous?.t??0);
    let matches=false;
+   if(source==='power-zone')matches=(a.powerCells??[]).includes(n.q);
    if(source==='charge')matches=n.type==='kick'&&gap>(60/(a.bpm??120))*1.24;
    if(source==='heavy'||source==='kick')matches=n.type==='kick';
    if(source==='snare')matches=n.type==='snare';
@@ -111,7 +112,7 @@ function marks(a,factors){
    if(source==='irregular')matches=!!previous&&Math.abs(gap-a.meanInterval)>.12;
    if(matches)group.push({q:n.q,type:n.type});
   });
-  const label={charge:'溜め',heavy:'重撃',kick:'低音',snare:'高音',burst:'連撃',acceleration:'加速',offbeat:'裏',chain:'交互',repeat:'反復',irregular:'変化'}[source];
+  const label={'power-zone':'POWER',charge:'溜め',heavy:'重撃',kick:'低音',snare:'高音',burst:'連撃',acceleration:'加速',offbeat:'裏',chain:'交互',repeat:'反復',irregular:'変化'}[source];
   if(group.length&&!all.some(m=>m.source===source))all.push({source,label,cells:group});
  }
  return all.slice(0,3);
