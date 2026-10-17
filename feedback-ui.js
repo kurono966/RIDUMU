@@ -139,12 +139,12 @@ function renderDamageCalculation(c){
  row('演奏の安定度（固定倍率）','×'+number(c.stabilityMultiplier));
  row('リズム精度（規則性・反復）','×'+number(c.rhythmMultiplier??1));
  row('総合攻撃効率','×'+number(c.efficiency));
- add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × 命中効率${number(c.accuracyMultiplier)} × 安定度${number(c.stabilityMultiplier)} × リズム精度${number(c.rhythmMultiplier??1)}。四捨五入し、効率が0なら0、それ以外は最低1。`);
+ add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × 命中効率${number(c.accuracyMultiplier)} × リズム精度${number(c.rhythmMultiplier??1)}。四捨五入し、効率が0なら0、それ以外は最低1。`);
  add('h3','実際に発生した打撃');
  const table=document.createElement('table'),head=document.createElement('tr');
  for(const text of ['打撃','固定ダメージ']){const cell=document.createElement('th');cell.textContent=text;head.append(cell);}table.append(head);
  c.hitDetails.forEach((hit,i)=>{const tr=document.createElement('tr');for(const text of [i+1,hit.damage]){const td=document.createElement('td');td.textContent=text;tr.append(td);}table.append(tr);});container.append(table);
- add('p','同じ演奏・敵・状態なら同じ結果になります。命中効率と安定度は固定倍率です。多段は1発の威力を減らしますが、合計は少し伸びます。表示値は丸めています。');
+ add('p','同じ演奏・敵・状態なら同じ結果になります。命中効率は固定倍率です。多段は1発の威力を減らしますが、合計は少し伸びます。表示値は丸めています。');
 }
 document.getElementById('damageLabel').onclick=()=>{if(!damageCalculation)return;renderDamageCalculation(damageCalculation);$('damageDialog').showModal();};
 document.getElementById('closeDamage').onclick=()=>$('damageDialog').close();

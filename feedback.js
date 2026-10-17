@@ -29,7 +29,7 @@ function explain(a,result,enemy,voice='drums'){
  const effective=result.total>0?matchups(a,enemy).sort((x,y)=>y.multiplier-x.multiplier):[];
  const candidates=[];
  const quality=a.performanceQuality;
- if(quality&&quality.confidence>.4&&Math.abs(quality.multiplier-1)>.08)candidates.push({id:'rhythm-quality',priority:2,score:a.power*Math.abs(quality.multiplier-1),text:quality.multiplier>=1?'規則的な刻み・反復 → リズム精度で威力上昇':'間隔・ズレ方がばらばら → リズム精度で威力低下',source:quality.multiplier>=1?'repeat':'irregular',tag:quality.multiplier>=1?'安定！':'乱れ'});
+ if(quality&&quality.confidence>.4&&Math.abs(quality.multiplier-1)>.08)candidates.push({id:'rhythm-quality',priority:2,score:a.power*Math.abs(quality.multiplier-1),text:quality.multiplier>=1?'意図したタイミングを再現 → 演奏再現性で威力上昇':'狙ったズレを再現できていない → 演奏再現性で威力低下',source:quality.multiplier>=1?'repeat':'irregular',tag:quality.multiplier>=1?'安定！':'乱れ'});
  if(effective.length){
   const m=effective[0];
   const shown=effective.slice(0,2);
@@ -53,9 +53,9 @@ function explain(a,result,enemy,voice='drums'){
  const g=a.groove;
  if(g&&g.confidence>.15){
   const dominant=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
-  const id=g.unstable>.55?'unstable':dominant;
+  const id=dominant;
   if(g[id]>.15){
-   const detail={id:'groove',priority:2,score:(b.groove??0),text:grooveEngine.describe(g),source:'groove-'+id,tag:{pocket:'ポケット！',laidBack:'後ノリ！',pushed:'前ノリ！',snarePushed:'前ノリスネア！',swing:'スウィング！',drunk:'揺れ！',tight:'タイト！',unstable:'揺らぎ'}[id]};
+   const detail={id:'groove',priority:2,score:(b.groove??0),text:grooveEngine.describe(g),source:'groove-'+id,tag:{pocket:'ポケット！',laidBack:'後ノリ！',pushed:'前ノリ！',snarePushed:'前ノリスネア！',swing:'スウィング！',drunk:'揺れ！',tight:'タイト！'}[id]};
    const existing=factors.findIndex(f=>f.id==='groove');
    if(existing>=0)factors[existing]=detail;
    else if(factors.length<3)factors.push(detail);
@@ -77,7 +77,7 @@ function explain(a,result,enemy,voice='drums'){
  else if(!hitCount)hint='今回はダメージなし。一定の間隔や反復で攻撃効率を高めよう。';
  else if(effective.length)hint='この叩き方は敵に有効。違う刻みとも比べてみよう。';
  if(a.groove?.unstable>.55)hint='ズレ方が毎回変わっている。同じ置き方を繰り返すと安定する。';
- if(quality?.multiplier<.85)hint='間隔やズレ方のばらつきで威力低下。一定の刻みや同じフレーズの反復を試そう。';
+ if(quality?.multiplier<.85)hint='意図したノリを再現できていない。同じフレーズを同じタイミングで刻む練習をしよう。';
  const main=factors.find(f=>f.priority===2);
  const labels=effective.length?['弱点！',...(main?[main.tag]:[])]:[...(main?[main.tag]:[]),...(a.count?[names[a.element]+'！']:[])];
  return {factors,labels:labels.slice(0,2),weaknesses:effective,hint,hitCount,breakdown:b,elementCause:cause,grooveText:a.groove?grooveEngine.describe(a.groove):'',groove:a.groove,calculation:result.calculation};

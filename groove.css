@@ -13,6 +13,8 @@
 .hat-sequence .cell.on{background:#e5cb82}.seq-row:nth-child(2) .cell.on{background:var(--lime)}.seq-row:nth-child(3) .cell.on{background:var(--orange)}
 .groove-summary{color:#e5cb82!important;max-width:300px;font-size:10px!important;line-height:1.45!important;margin:3px 0!important}
 .groove-summary:empty{display:none}
+.performance-summary{color:#8edcdd!important;max-width:300px;font-size:10px!important;line-height:1.45!important;margin:3px 0!important}
+.performance-summary:empty{display:none}
 .result .result-content{align-items:start}.cause-grid{grid-template-columns:repeat(var(--slots,32),minmax(0,1fr))}
 @media(min-width:741px) and (max-height:800px){
  .result-tabs{display:flex;gap:14px;border-bottom:1px solid var(--line)}

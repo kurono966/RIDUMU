@@ -6,7 +6,7 @@ test('raw rhythmic consistency rewards regular playing and penalizes chaotic int
  const chaotic=R.analyze(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick'));
  assert.equal(regular.performanceQuality.multiplier,1.2);assert.ok(chaotic.performanceQuality.multiplier<.65);
  // Hold all other combat features constant to isolate the new performance layer.
- const common={...regular,power:60,hits:3,accuracy:.9,instability:.1};
+ const common={...regular,power:60,hits:3,accuracy:.9};
  const good=R.resolve(common,{kind:'machine'}),bad=R.resolve({...common,performanceQuality:chaotic.performanceQuality},{kind:'machine'});
  assert.ok(good.total>bad.total*1.5);assert.equal(good.affinity,bad.affinity);
  assert.deepEqual(R.resolve(common,{kind:'machine'}),good);
@@ -30,7 +30,7 @@ test('playback quantization does not repair raw rhythmic quality, including merg
 });
 
 test('matchup tuning raises effective attacks and lowers resisted attacks for every enemy',()=>{
- const base={...R.analyze(notes([0,1,2],'kick')),power:100,hits:1,accuracy:1,instability:0};
+ const base={...R.analyze(notes([0,1,2],'kick')),power:100,hits:1,accuracy:1};
  const cases=[
   ['stone',{element:'earth',weight:.95},{element:'wind',weight:.1}],
   ['fly',{element:'wind',density:6,weight:0},{element:'earth',density:.5,weight:.9}],
@@ -73,13 +73,63 @@ test('identical analysis and enemy always produce identical complete results wit
   assert.equal(JSON.stringify(a),snapshot);assert.equal(first.damages.length,a.count?a.hits:0);assert.ok(new Set(first.damages).size<=1);
  }}finally{Math.random=random;}
 });
-test('accuracy and instability are fixed efficiency penalties rather than misses',()=>{
- const a={...R.analyze(notes([0,.25,.5,.75,1,1.25,1.5,1.75],'snare')),accuracy:1,instability:0};
- const full=R.resolve(a,{kind:'machine'}),lowAim=R.resolve({...a,accuracy:.5},{kind:'machine'}),unstable=R.resolve({...a,instability:.55},{kind:'machine'});
- assert.ok(lowAim.total<full.total);assert.ok(unstable.total<full.total);
- assert.equal(lowAim.damages.length,full.damages.length);assert.ok(lowAim.damages.every(d=>d>0));
- assert.equal(lowAim.accuracyMultiplier,.5);assert.equal(unstable.stabilityMultiplier,1-.3*.55);
- const zero=R.resolve({...a,accuracy:0},{kind:'machine'});assert.equal(zero.total,0);assert.equal(zero.damages.length,a.hits);
+
+test('same pattern repeated at same timing yields high performanceQuality',()=>{
+  const motif=[0,1,3,6,8,9,11,14];
+  const repeated=[...motif.map(q=>({type:q%2?'snare':'kick',t:q*.125})),...motif.map(q=>({type:q%2?'snare':'kick',t:q*.125+2}))];
+  const a=R.analyze(repeated);
+  assert.ok(a.performanceQuality.multiplier>=1.1);
+  assert.ok(a.performanceQuality.repetition>.8);
+});
+
+test('consistent laid-back repetition does not lower performanceQuality',()=>{
+  const motif=[0,1,3,6,8,9,11,14];
+  const laidback=motif.map(q=>({type:q%2?'snare':'kick',t:q*.125+.03}));
+  const twice=[...laidback,...laidback.map(n=>({...n,t:n.t+2}))];
+  const a=R.analyze(twice);
+  assert.ok(a.performanceQuality.multiplier>=1.05);
+});
+
+test('consistent drunk pattern is evaluated highly',()=>{
+  const offsets=[0,.025,-.02,.035];
+  const motif=[0,1,3,6,8,9,11,14];
+  const drunk=[];
+  for(let i=0;i<motif.length;i++)drunk.push({type:motif[i]%2?'snare':'kick',t:motif[i]*.125+offsets[i%4]});
+  const twice=[...drunk,...drunk.map(n=>({...n,t:n.t+2}))];
+  const a=R.analyze(twice);
+  assert.ok(a.performanceQuality.repetition>.8);
+});
+
+test('random jitter lowers performanceQuality even with same average interval',()=>{
+  const regular=R.analyze([0,.5,1,1.5,2,2.5,3,3.5].map(t=>({t,type:'kick'})));
+  const jittered=R.analyze([0.03,.47,1.02,1.48,2.05,2.45,3.01,3.49].map(t=>({t,type:'kick'})));
+  assert.ok(regular.performanceQuality.multiplier>jittered.performanceQuality.multiplier);
+});
+
+test('irregularity alone does not directly penalize damage',()=>{
+  const irregular=R.analyze([0,.1,.55,.62,1.3,1.72,2.4,3.85].map(t=>({t,type:'kick'})));
+  
+  const base={...irregular,power:60,hits:3,accuracy:.9};
+  const result=R.resolve(base,{kind:'machine'});
+  assert.ok(result.total>0);
+});
+
+test('resolve has no stabilityMultiplier or instability in calculation',()=>{
+  const a=R.analyze([0,.5,1,1.5,2,2.5,3,3.5].map(t=>({t,type:'kick'})));
+  const base={...a,power:60,hits:3,accuracy:.9};
+  const result=R.resolve(base,{kind:'machine'});
+  assert.ok(!('stabilityMultiplier' in result.calculation));
+  assert.ok(!('instability' in result));
+});
+
+test('same input always produces identical damage result',()=>{
+  const notes=[0,.5,1,1.5,2,2.5,3,3.5].map(t=>({t,type:'kick'}));
+  const a=R.analyze(notes);
+  const base={...a,power:60,hits:3,accuracy:.9};
+  const r1=R.resolve(base,{kind:'machine'});
+  const r2=R.resolve(base,{kind:'machine'});
+  assert.deepEqual(r1,r2);
+  assert.deepEqual(R.resolve(base,{kind:'machine'}),r1);
 });
 test('groove, zone, Lead and ensemble modifiers remain deterministic together',()=>{
  const G=require('./groove.js'),C=require('./performance-combat.js'),E=require('./ensemble.js');

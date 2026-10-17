@@ -6,7 +6,7 @@ const report=(input,kind='stone',rng=()=>0)=>{const a=R.analyze(input),r=R.resol
 test('chaotic raw rhythm explains the fixed damage loss in the selected feedback',()=>{
  const {f}=report(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85]));
  assert.ok(f.factors.some(f=>f.id==='rhythm-quality'&&/威力低下/.test(f.text)));
- assert.match(f.hint,/一定の刻み|反復/);assert.ok(f.factors.length<=3);
+ assert.match(f.hint,/再現できていない|同じタイミング/);assert.ok(f.factors.length<=3);
 });
 test('breakdown exactly sums to damage for every enemy with fixed hit efficiency',()=>{
  let seed=931;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);

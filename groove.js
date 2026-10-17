@@ -86,7 +86,7 @@ function enrich(analysis,groove){
  a.groovePower=6*groove.laidBack+4*groove.pocket+3*groove.pushed+3*(groove.snarePushed??0);
  a.power+=18*(a.weight-oldWeight)+a.groovePower;
  a.hits=Math.min(8,Math.max(1,a.hits+Math.round(groove.pushed)));
- a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+.12*groove.tight+.08*groove.pocket+.08*intentional-.16*groove.unstable));
+ a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+.12*groove.tight+.08*groove.pocket+.08*intentional));
  a.instability=Math.min(.55,Math.max(.04,a.instability*(1-.7*intentional)+.2*groove.unstable));
  a.scores.lightning+=.7*groove.drunk;a.scores.wind+=.35*groove.swing;
  a.element=Object.keys(a.scores).reduce((x,y)=>a.scores[x]>=a.scores[y]?x:y);

@@ -543,6 +543,19 @@ async function finish(){
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description+(cycleLead.zone?' / BOOSTで支援強化':''),priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
   report.hasSupport=notes.length>0;renderReport(report);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 +${bonus}）`;
+  if(lastInstrument==='drums'){
+    const pq=a.performanceQuality??{multiplier:1};
+    $('performanceSummary').textContent=`PERFORMANCE 再現性 ${Math.round(pq.multiplier*100)}%`;
+    if(groove&&groove.confidence>.15){
+      const g=groove;
+      const id=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
+      const labels={pocket:'ポケット',laidBack:'レイドバック',pushed:'前ノリ',snarePushed:'前ノリスネア',swing:'スウィング',drunk:'再現する揺れ',tight:'タイト'};
+      if(g[id]>.15)$('grooveSummary').textContent=`GROOVE ${labels[id]}`;
+      else $('grooveSummary').textContent='';
+    } else {
+      $('grooveSummary').textContent='';
+    }
+  }
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';
   rememberSequence('attack');$('replay').disabled=true;await playbackAttack(result,color,'drums');

@@ -55,8 +55,8 @@ function analyze(input,duration=4,bpm=120){
  const element=Object.keys(scores).reduce((a,b)=>scores[a]>=scores[b]?a:b);
  const weight=clamp(.5*kRatio+.3*low+.45*charged-.2*snareBurst),hits=Math.max(1,Math.min(8,Math.round(1+high*4+bursts*2+snareBurst*2-weight*2)));
  const power=count?24+18*weight+12*charged+7*alternation+8*clamp(count/8):0;
- const accuracy=clamp(.79+.12*regularity+.08*repetition-.12*irregularity,.6,.98),instability=.05+.3*irregularity;
- return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,performanceQuality:performanceQuality(notes,bpm,duration),firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,instability,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
+ const accuracy=clamp(.79+.12*regularity+.08*repetition,.6,.98);
+ return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,performanceQuality:performanceQuality(notes,bpm,duration),firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
 }
 function resolve(a,enemy){
  let affinity=1,aim=a.accuracy;
@@ -80,7 +80,7 @@ function resolve(a,enemy){
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
  // Accuracy is attack efficiency, not a chance to miss. Instability is a fixed
  // penalty; intentional timing still benefits from Groove's existing analysis.
- const accuracyMultiplier=clamp(aim),stabilityMultiplier=1-.3*clamp(a.instability??0),rhythmMultiplier=a.performanceQuality?.multiplier??1,efficiency=accuracyMultiplier*stabilityMultiplier*rhythmMultiplier;
+ const accuracyMultiplier=clamp(aim),rhythmMultiplier=a.performanceQuality?.multiplier??1,efficiency=accuracyMultiplier*rhythmMultiplier;
  const hitDetails=[];
  const rounded=value=>efficiency===0?0:Math.max(1,Math.round(value));
  const damages=Array.from({length:a.count?a.hits:0},(_,index)=>{
@@ -97,8 +97,8 @@ function resolve(a,enemy){
   return damage;
  });
  const total=damages.reduce((x,y)=>x+y,0);
- const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,stabilityMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
- return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,stabilityMultiplier,efficiency,breakdown,calculation};
+ const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
+ return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){
  const sorted=notes.map(n=>({...n,time:n.rawT??n.t})).sort((a,b)=>a.time-b.time);
