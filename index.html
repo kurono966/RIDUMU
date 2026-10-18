@@ -105,7 +105,7 @@
             </div>
             <div id="filterPad" class="filter-pad" role="slider" tabindex="0" aria-label="エフェクトパッド。上下で音量、左右でフィルター。矢印キーでも操作可能" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="filter-grid"></div>
-              <div id="liveToneGauges" class="live-tone-gauges" aria-label="現在の音色属性"></div>
+              
               <div id="filterCursor" class="filter-cursor"></div>
               <span class="filter-top">↑ VOL 100%</span>
               <span class="filter-bottom">↓ VOL 0%</span>
@@ -416,15 +416,14 @@
       <div class="synth-body">
         <div id="synthParameters" class="synth-parameters"></div>
         <div class="synth-character">
-          <p class="eyebrow">TIMBRE / 音色の属性配分</p>
-          <div id="synthGauges" class="synth-gauges"></div>
+          <p class="eyebrow">TIMBRE / 音色の個性</p>
+          
           <p id="synthEffects"></p>
           <svg id="synthEnvelope" viewbox="0 0 300 90" role="img" aria-label="音量エンベロープ">
             <path id="synthEnvelopePath" fill="none" stroke="currentColor" stroke-width="3"></path>
           </svg>
           <p class="synth-guide">A：立ち上がり → D：減衰 → S：保持音量 → R：余韻</p>
-          <p class="synth-guide">炎：明るく鋭い波形＋速い立ち上がり → 攻撃↑・盾↓<br>水：丸い波形＋長い余韻 → 湿潤で敵攻撃↓・攻撃↓<br>風：開いたフィルター＋短い保持 → 命中↑・盾↓<br>土：暗い音＋厚い保持 → 盾↑・攻撃／命中↓</p>
-          <p class="synth-guide">リズム由来の属性はそのまま。音色の攻撃・命中は各パート1/2、盾はBass全量とLead半量で反映。水属性の湿潤は今回の敵反撃のみ、合計12%まで。配分は合計100%、無音には効果なし。</p>
+          <p class="synth-guide">音色の波形・フィルターは自由に選べます。短音を刻むスタイルと長音をつなげるスタイルに小さなトレードオフがあります。敵の弱点に合わせて音色を変える必要はありません。</p>
         </div>
       </div>
       <p id="synthStorage" class="synth-guide" role="status"></p>
