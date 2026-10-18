@@ -23,7 +23,8 @@ test('development evaluation uses quantized positions in all raw-based analyzers
 test('normal comparison exactly reproduces the existing attack evaluation pipeline',()=>{
  const f=fixture(),drums=f.tracks.get('drums'),ensemble=E.analyze(f.tracks,120,4),lead=E.support(C.lead(f.tracks.get('lead'),120,4,f.zones),ensemble);
  const a=E.attack(C.enhance(G.enrich(R.analyze(Q.render(drums,120,4),4,120),G.analyzeRelations(drums,f.hats,120,4)),drums,120,f.zones,lead),ensemble);
- assert.deepEqual(D.compare(f.tracks,f.hats,120,4,f.zones,f.enemy).normal.result,R.resolve(a,f.enemy));
+ const bass=C.bass(f.tracks.get('bass'),drums,120,4,f.zones),withPitch=require('./pitch-combat.js').apply(a,bass.pitch,lead.pitch);
+ assert.deepEqual(D.compare(f.tracks,f.hats,120,4,f.zones,f.enemy).normal.result,R.resolve(withPitch,f.enemy));
 });
 test('merged quantized notes are evaluated once and original timing provenance stays intact',()=>{
  const tracks=new Map([['drums',[.01,.02,.04,.51,.52,.53].map(t=>({type:'kick',t,rawT:t,inputT:t,quantize:'just'}))]]);

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="combat.css?v=3">
     <link rel="stylesheet" href="synth.css?v=2">
     <link rel="stylesheet" href="ui.css?v=3">
+    <link rel="stylesheet" href="pitch.css?v=1">
   </head>
   <body class="game-ui">
     <main id="game">
@@ -156,7 +157,8 @@
           <span id="hazardStatus" role="status"></span>
         </div>
         <div class="timeline">
-          <canvas id="scope" aria-label="入力したKickとSnareのタイムライン"></canvas>
+          <canvas id="scope" aria-label="入力したKickとSnareのタイムライン" aria-describedby="melodyTrend"></canvas>
+          <span id="melodyTrend" class="melody-trend"></span>
           <span class="lane hat-label">H</span>
           <span class="lane kick-label">K</span>
           <span class="lane snare-label">S</span>
@@ -237,6 +239,7 @@
           <div>
             <span id="element" class="element"></span>
             <h2 id="moveName"></h2>
+            <p id="pitchOutcome" class="pitch-outcome" hidden></p>
           </div>
           <div class="damage">
             <b id="damage">0</b>
@@ -289,6 +292,7 @@
             シンセ
           </button>
         </div>
+        <p class="setting-help">2音：反復と安定 / 4音：動きと安定 / 7音：跳躍も狙える。音数そのものに倍率はありません。</p>
       </fieldset>
       <fieldset>
         <legend>演奏の表示</legend>
@@ -349,6 +353,7 @@
         </button>
       </div>
       <p id="timbreResult" class="timbre-result" aria-live="polite"></p>
+      <details id="pitchAnalysis" hidden><summary>音程の効果と旋律を見る</summary><p>↑ 上昇 · ↓ 下降 · ＝ 反復 · ↯ 跳躍。項目を選ぶと評価した音符を強調します。命中は確率ではなくダメージ効率です。評価は16分枠ごとの最後の音（最大32音）を使い、間隔の比率で判断します。</p><div id="pitchDetails"></div></details>
       <div class="result-tabs" role="group" aria-label="結果表示の切り替え">
         <button id="summaryTab" type="button" aria-pressed="true">
           今回効いたもの
@@ -495,29 +500,31 @@
       <div id="historyList"></div>
       <p class="history-note">MIDIは音符・テンポのデータです。外部ソフトでは音色が変わります。JSONはRIDUMUで読み戻せます。</p>
     </dialog>
-    <script src="rhythm.js"></script>
+    <script src="rhythm.js?v=2"></script>
     <script src="quantize.js"></script>
     <script src="groove.js"></script>
     <script src="feedback.js?v=2"></script>
-    <script src="feedback-ui.js"></script>
+    <script src="feedback-ui.js?v=2"></script>
     <script src="grid-effects.js?v=2"></script>
     <script src="ensemble.js"></script>
-    <script src="performance-combat.js?v=2"></script>
+    <script src="pitch-combat.js?v=1"></script>
+    <script src="performance-combat.js?v=3"></script>
     <script src="assets/drum-samples.js"></script>
     <script src="drum-audio.js"></script>
     <script src="bass-audio.js"></script>
     <script src="synth.js?v=3"></script>
     <script src="synth-audio.js?v=3"></script>
-    <script src="sequence-history.js?v=3"></script>
+    <script src="sequence-history.js?v=4"></script>
     <script src="grid-hazards.js"></script>
-    <script src="evaluation-debug.js"></script>
-    <script src="battle-waveform.js"></script>
+    <script src="evaluation-debug.js?v=2"></script>
+    <script src="battle-waveform.js?v=2"></script>
     <script src="performance-filter.js?v=2"></script>
     <script src="enemy-music.js?v=5"></script>
-    <script src="game.js?v=19"></script>
+    <script src="game.js?v=20"></script>
     <script src="synth-ui.js?v=4"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js"></script>
     <script src="ui.js?v=2"></script>
+    <script src="pitch-ui.js?v=1"></script>
   </body>
 </html>

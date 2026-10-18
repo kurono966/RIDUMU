@@ -29,7 +29,7 @@ test('Lead pitch direction chooses benefits while retired BOOST zones have no ef
  const plain=Combat.lead(rising,120,4,[]),boost=Combat.lead(rising,120,4,zones);
  assert.deepEqual(boost,plain);assert.equal(boost.zone,0);
  const falling=Combat.lead(rising.map((n,i)=>({...n,midi:[67,64,60][i]})),120,4,[]);
- assert.ok(falling.weaken>plain.weaken);assert.ok(plain.attack>falling.attack);
+ assert.ok(falling.pitch.effects.weaken>plain.pitch.effects.weaken);assert.ok(plain.pitch.effects.attack>falling.pitch.effects.attack);
 });
 test('enemy attack consumes shield first, with only remaining damage reaching HP',()=>{
  assert.deepEqual(Combat.receive(100,20,32),{incoming:32,absorbed:20,damage:12,shield:0,hp:88});

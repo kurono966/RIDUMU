@@ -18,6 +18,7 @@ function cleanTracks(tracks){
    for(const name of ['midi','pitch'])if(note[name]!==undefined){if(!Number.isInteger(note[name])||!finite(note[name],0,name==='midi'?127:6))throw Error('音高が不正です。');n[name]=note[name];}
    if(note.pitches!==undefined){if(!Array.isArray(note.pitches)||!note.pitches.length||note.pitches.length>12||!note.pitches.every(p=>Number.isInteger(p)&&finite(p,0,127)))throw Error('コードの音高が不正です。');n.pitches=[...note.pitches];}
    if(typeof note.quantize==='string')n.quantize=note.quantize.slice(0,24);
+   if(note.register!==undefined){if(!finite(note.register,0,1))throw Error('音域の位置が不正です。');n.register=note.register;}
    return n;
   });const result={voice:track.voice,notes};if(track.synth!==undefined){if(!['bass','lead'].includes(track.voice)||!root.Synth)throw Error('シンセパートが不正です。');result.synth=root.Synth.cleanSnapshot(track.synth,track.voice);}if(track.effects!==undefined)result.effects=cleanEffects(track.effects);return result;
  });

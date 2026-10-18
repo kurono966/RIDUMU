@@ -1,5 +1,6 @@
 (function(root){
  if(!root.GridEffects&&typeof require==='function')root.GridEffects=require('./grid-effects.js');
+ if(!root.PitchCombat&&typeof require==='function')root.PitchCombat=require('./pitch-combat.js');
  const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
  const raw=n=>n.inputT??n.rawT??n.t;
  function bass(notes,kicks,bpm,duration,zones){
@@ -15,19 +16,19 @@
   const repetition=2*repeated/Math.max(1,slots.size);
   const zone=0;
   const shield=Math.round((8+Math.min(12,slots.size*1.5)+Math.min(12,strong*3)+18*sustain+Math.min(10,locked*2))*(1+.2*repetition));
-  return {shield,strong,sustain,repetition,locked,zone};
+  const pitch=root.PitchCombat?.analyze(notes,'bass',bpm,duration),pitchShield=Math.round(shield*(pitch?.effects.shield??0));
+  return {shield:shield+pitchShield,rhythmShield:shield,pitchShield,pitch,strong,sustain,repetition,locked,zone};
  }
  function lead(notes,bpm,duration,zones){
   const empty={attack:0,expose:0,accuracy:0,element:0,shieldEfficiency:0,weaken:0,zone:0,description:'Leadなし：支援効果なし。'};
   if(!notes.length)return empty;
-  const sorted=[...notes].sort((a,b)=>raw(a)-raw(b)),pitches=sorted.map(n=>n.midi??(60+(n.pitch??0)*2));
-  let rising=0,falling=0,same=0;for(let i=1;i<pitches.length;i++){if(pitches[i]>pitches[i-1])rising++;else if(pitches[i]<pitches[i-1])falling++;else same++;}
-  const pairs=Math.max(1,pitches.length-1),unique=new Set(pitches.map(p=>p%12)).size;
+  const sorted=[...notes].sort((a,b)=>raw(a)-raw(b));
   const held=clamp(sorted.reduce((s,n)=>s+(n.duration??.12),0)/duration);
   const off=sorted.filter(n=>root.GridEffects.slot(n,bpm)%4!==0).length/sorted.length;
   const zone=0;
-  const result={attack:(.06+.16*rising/pairs),expose:(.04+.14*off),accuracy:(.025+.075*same/pairs),element:(.04+.1*clamp(unique/5)),shieldEfficiency:(.05+.2*held),weaken:(.03+.15*falling/pairs),zone};
-  result.description=rising>falling&&rising>same?'上昇フレーズ → 攻撃を後押し':falling>rising&&falling>same?'下降フレーズ → 敵の攻撃を弱めた':held>.45?'長い旋律 → シールド効率上昇':'繰り返す旋律 → 命中効率を支援';
+  const result={attack:.06,expose:(.04+.14*off),accuracy:.025,element:.04,shieldEfficiency:(.05+.2*held),weaken:.03,zone,pitch:root.PitchCombat?.analyze(notes,'lead',bpm,duration)};
+  // Pitch effects are applied once, after timbre and ensemble modifiers.
+  result.description=result.pitch?.causes.slice(0,2).map(c=>c.label).join(' / ')||'Leadのリズムと長押しで支援';
   return result;
  }
  function enhance(a,drums,bpm,zones,support){
@@ -42,5 +43,10 @@
   const absorbed=Math.min(Math.max(0,shield),incoming),damage=Math.min(hp,incoming-absorbed);
   return {incoming,absorbed,damage,shield:Math.max(0,shield-absorbed),hp:Math.max(0,hp-damage)};
  }
- root.PerformanceCombat={bass,lead,enhance,receive};if(typeof module!=='undefined')module.exports=root.PerformanceCombat;
+ function reduction(lead,bass,ensemble,a){
+  const base=Math.min(.55,(lead?.weaken??0)+(ensemble?.bonus.resistance??0)+(a.count&&a.element==='earth'?.2*a.effect:0)+(a.timbreWeaken??0));
+  const pitch=(lead?.pitch?.effects.weaken??0)+(bass?.pitch?.effects.resistance??0),total=Math.min(.55,base+pitch);
+  return {base,total,pitch:total-base};
+ }
+ root.PerformanceCombat={bass,lead,enhance,receive,reduction};if(typeof module!=='undefined')module.exports=root.PerformanceCombat;
 })(typeof window!=='undefined'?window:globalThis);

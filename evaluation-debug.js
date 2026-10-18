@@ -14,7 +14,8 @@
    const ensemble=E.analyze(parts,bpm,duration),bass=C.bass(parts.bass,drums,bpm,duration,zones);
    const lead=E.support(C.lead(parts.lead,bpm,duration,zones),ensemble);
    const groove=G.analyzeRelations(drums,hat,bpm,duration);
-   const analysis=E.attack(C.enhance(G.enrich(R.analyze(after?drums:Q.render(drums,bpm,duration),duration,bpm),groove),drums,bpm,zones,lead),ensemble);
+   let analysis=E.attack(C.enhance(G.enrich(R.analyze(after?drums:Q.render(drums,bpm,duration),duration,bpm),groove),drums,bpm,zones,lead),ensemble);
+   const P=typeof module!=='undefined'?require('./pitch-combat.js'):root.PitchCombat;if(P)analysis=P.apply(analysis,bass.pitch,lead.pitch);
    const result=R.resolve(analysis,enemy);
    const shield=Math.min(90,bass.shield+Math.round(bass.shield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield);
    return {analysis,result,groove,ensemble,shield,parts,hat};

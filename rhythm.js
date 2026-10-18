@@ -80,6 +80,11 @@ function resolve(a,enemy){
  const originalAffinity=affinity;
  affinity=clamp(Math.pow(originalAffinity,1.65),.4,3);
  affinitySteps.push({label:'相性メリハリ補正（有効↑・苦手↓）',multiplier:affinity/originalAffinity});
+ const pitchElementMultiplier=1+.25*clamp(a.pitchElementBoost??0,0,.18);
+ if(pitchElementMultiplier!==1){affinity*=pitchElementMultiplier;affinitySteps.push({label:'音程：属性効果（効果増分の25%を相性へ）',multiplier:pitchElementMultiplier});}
+ const guard=clamp(enemy.guard??0,0,.6),pierce=clamp(a.pitchPierce??0,0,.3),guardMultiplier=1-guard*(1-pierce);
+ if(guard)affinitySteps.push({label:'装甲軽減（音程の貫通適用後）',multiplier:guardMultiplier});
+ affinity*=guardMultiplier;
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
  // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality
  // provides the performance multiplier without a second stability penalty.
@@ -101,6 +106,7 @@ function resolve(a,enemy){
  });
  const total=damages.reduce((x,y)=>x+y,0);
  const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
+ calculation.guard={rate:guard,pierce,multiplier:guardMultiplier};
  return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){
