@@ -34,7 +34,7 @@
  el('openMenu').onclick=el('openPlaySettings').onclick=()=>open(settings);el('closePlaySettings').onclick=()=>settings.close();el('openResultDetails').onclick=()=>open(analysis);el('closeResultDetails').onclick=()=>analysis.close();
  const replay=document.createElement('button');replay.type='button';replay.className='small';replay.id='analysisReplay';replay.textContent='▶ 演奏を再生';replay.onclick=()=>el('replay').click();analysis.querySelector('.analysis-context').prepend(replay);
  for(const [trigger,dialog,parent] of [['openSynth','synthDialog',settings],['pitchSetup','pitchDialog',settings],['openHistory','historyDialog',settings],['openCodex','codexDialog',settings],['openDebug','debugDialog',settings],['damageLabel','damageDialog',analysis]]){
-  el(trigger).addEventListener('click',()=>{parent.close();},{capture:true});el(dialog).addEventListener('close',()=>el(parent===settings?'openPlaySettings':'openResultDetails').focus());
+  el(trigger).addEventListener('click',()=>{if(parent.open)parent.close();});el(dialog).addEventListener('close',()=>el(parent===settings?'openPlaySettings':'openResultDetails').focus());
  }
  function effects(show){el('effectsPanel').hidden=!show;el('toggleEffects').setAttribute('aria-expanded',String(show));if(!show)resetFilterPad();try{localStorage.setItem('ridumu-effects-open',String(show));}catch{}}
  el('toggleEffects').onclick=()=>effects(el('effectsPanel').hidden);el('closeEffects').onclick=()=>{effects(false);el('toggleEffects').focus();};el('restorePads').onclick=()=>setPadsVisible(true);
