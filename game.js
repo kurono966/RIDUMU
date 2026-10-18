@@ -71,7 +71,8 @@ function syncEnemyMusic(){
  if(!ctx||!globalThis.EnemyMusic)return;
  if(!enemyMusic)enemyMusic=EnemyMusic.create(ctx,masterOutput??ctx.destination,{onChord:name=>{$('enemyBpm').textContent='BPM '+timing().bpm+' · '+name;}});
  enemyMusic.setEnemy(enemies[stage].kind,timing().bpm);enemyMusic.setMuted(muted);
- if(document.hidden||['over','cleared'].includes(state))enemyMusic.stop();else enemyMusic.start();
+ const performing=state==='recording'&&recordAudioAt!==null&&ctx.currentTime>=recordAudioAt&&ctx.currentTime<recordAudioAt+timing().duration;
+ if(document.hidden||!performing)enemyMusic.stop();else enemyMusic.start(recordAudioAt);
  $('enemyBpm').textContent='BPM '+timing().bpm+' · '+enemyMusic.state.chord;
  $('enemyBpm').title=EnemyMusic.progression(enemies[stage].kind).chords.map(id=>EnemyMusic.chords[id].name).join(' → ');
 }
@@ -292,7 +293,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
  // Apply grid effects once, in the destination turn, just like count-in input.
  for(const note of anticipated?.notes??[])applyInputHazards(gridHazards.onInput({type:note.type,rawT:note.rawT,bpm,voice:anticipated.voice,note:{...note}}));
  if(token!==run)return;
- syncEnemyMusic();if(hasCountIn&&!document.hidden)enemyMusic?.align(recordAt);
+ syncEnemyMusic();
  const backing=phase==='parts'?backingTimeline().events:[];
  const endAt=recordAt+(continuousRunning?duration:Math.max(duration,...backing.map(event=>event.time+(event.duration??0)+.14)));
  let backingIndex=0,countBeat=0;
@@ -300,7 +301,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
  function tick(){
   if(token!==run){clearInterval(timer);return;}
   const now=ctx.currentTime;
-  if(now>=recordAt+duration)releaseAllInputs(recordAt+duration,pendingTrackInput);
+  if(now>=recordAt+duration){enemyMusic?.stop();releaseAllInputs(recordAt+duration,pendingTrackInput);}
   while(backingIndex<backing.length&&recordAt+backing[backingIndex].time<now+.1){
    const event=backing[backingIndex++],at=recordAt+event.time;
    if(at>=now||(continuousRunning&&at>=now-.1))sound(event.type,Math.max(at,now),event.voice,event.voice==='hat'?.85:.6,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
@@ -320,6 +321,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
    $('status').textContent=phase==='hat'?'HI-HAT / 自分の基準を刻む':instrumentForTurn(turn).name+' · Hatに重ねる';
    $('hint').textContent=phase==='hat'?'SPACE / H またはHatパッド。少しずらしても、繰り返せばあなたのノリ。':(melodicNotes()?melodyGuide()+'。長押しで伸ばそう。':'A / L またはパッド。Hatの前・同時・後ろ、自由に重ねよう。');
    document.querySelector('.console').classList.add('recording');
+   syncEnemyMusic();
    if(continuousRunning){$('start').disabled=false;$('start').textContent='■ 連続入力を停止';}
   }
   if(now>=endAt){
@@ -519,6 +521,7 @@ $('quantizeMode').onchange=()=>{
 function update(){updateInstrument();renderDiscoveries();$('enemyBpm').textContent='BPM '+timing().bpm;$('bpmValue').textContent=timing().bpm;$('timer').textContent=timing().duration.toFixed(2);const enemy=enemies[stage];$('enemyName').textContent=enemy.name;$('enemyDesc').textContent=enemy.description;$('enemyHp').textContent=`${enemyHp} / ${enemy.hp}`;$('enemyBar').style.width=`${enemyHp/enemy.hp*100}%`;$('playerHp').textContent=`${hp} / 100`;$('playerBar').style.width=`${hp}%`;$('turn').textContent=`TURN ${String(battleRound()).padStart(2,'0')}`;$('stage').textContent=`ENCOUNTER ${String(stage+1).padStart(2,'0')} / ${String(enemies.length).padStart(2,'0')}`;$('sector').textContent=stage+1;$('enemy').className=`creature ${enemy.kind}`;renderGridHazards();syncEnemyMusic();}
 function needsHat(){return !autoHat&&(!hatReady||(instrumentForTurn(turn).id==='drums'&&!continuousResume));}
 function ready(label='演奏開始 ↗'){
+ enemyMusic?.stop();
  state='ready';advanceGridHazards();$('start').disabled=false;syncQuantizeControl();$('start').textContent=label;$('status').textContent='READY TO PLAY';
  const createHat=needsHat();
  $('phaseLabel').textContent=(createHat?'HAT → ':'録ったHAT → ')+instrumentForTurn(turn).name+(instrumentForTurn(turn).id==='lead'?' → 戦闘':'');
@@ -602,7 +605,6 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
  $('hint').textContent='重ねたリズムを再生。Drumsが攻撃、Bassが盾、Leadが支援になる。';
  $('damage').textContent='0';
  const origin=ctx.currentTime+.06;
- if(!document.hidden&&enemyMusic?.state.playing)enemyMusic.align(origin-timeline.offset);
  playFilterAutomation(filterLastMix);
  let scheduled=0,shown=0,total=0,flashTimer;
  await new Promise(resolve=>{
@@ -662,6 +664,7 @@ function showRoleResult(title,factors,amount,label,a){
  renderReport(report);sequence(a);$('causeTracks').replaceChildren();$('breakdown').replaceChildren();
 }
 async function finish(continuationAt=null){
+ enemyMusic?.stop();
  releaseAllInputs(undefined,pendingTrackInput);if(Synth.voices.includes(instrumentForTurn(turn).id))notes=Synth.monoNotes(notes);state='attack';document.querySelector('.console').classList.remove('recording');
  $('timer').textContent='0.00';lastDuration=timing().duration;lastBpm=timing().bpm;
  last=Quantize.render(notes,lastBpm,lastDuration);lastHat=Quantize.render(hatNotes,lastBpm,lastDuration);
@@ -748,8 +751,6 @@ function drawGridHazards(w,h){
   }
  }
 }
-document.addEventListener('pointerdown',()=>audio(),{once:true});
-document.addEventListener('keydown',()=>audio(),{once:true});
 const canvas=$('scope'),paint=canvas.getContext('2d');
 function draw(){
  const box=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;

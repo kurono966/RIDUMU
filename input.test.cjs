@@ -13,6 +13,15 @@ function game(){
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
+test('chord accompaniment is restricted to the live input window and never starts in idle or combat',()=>{
+ const g=game();g.run("let musicStarts=[],musicStops=0;enemyMusic={start:at=>musicStarts.push(at),stop:()=>musicStops++,setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
+ for(const state of ['ready','countin','attack','enemyAttack','cleared','over'])g.run(`state='${state}';syncEnemyMusic()`);
+ assert.equal(g.run('musicStarts.length'),0);
+ g.run("state='recording';recordAudioAt=10;ctx.currentTime=10.1;syncEnemyMusic()");assert.equal(g.run('musicStarts[0]'),10);
+ g.run('ctx.currentTime=9.9;syncEnemyMusic();ctx.currentTime=14;syncEnemyMusic()');assert.equal(g.run('musicStarts.length'),1);
+ assert.equal(g.run('musicStops'),8);
+});
+
 test('continuous input keeps four opening rimshots and eight Hat guide beats without a gap before Drums',async()=>{
  const g=game();g.run("continuousInput=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,rims=0;setInterval=fn=>{tickContinuous=fn;return 1};clickSound=()=>rims++;");
  await g.run("countIn('hat')");
