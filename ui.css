@@ -1058,3 +1058,5 @@ dialog::backdrop{
 }
 /* A large, explicit opt-in for the alternate recording workflow. */
 #continuousInput,#autoHat{width:44px;height:28px;accent-color:var(--lime);cursor:pointer;flex-shrink:0}
+#game .console.nine-notes>.melody-pads{grid-template-columns:repeat(9,minmax(0,1fr))}
+@media(max-width:740px),(max-height:500px){#game .console.nine-notes>.melody-pads{grid-template-columns:repeat(5,minmax(0,1fr))}}

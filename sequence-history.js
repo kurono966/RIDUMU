@@ -15,7 +15,7 @@ function cleanTracks(tracks){
    const n={type:note.type,t:note.t};
    for(const name of ['rawT','inputT'])if(note[name]!==undefined){if(!finite(note[name],-30,120))throw Error('入力時刻が不正です。');n[name]=note[name];}
    if(note.duration!==undefined){if(!finite(note.duration,.001,60))throw Error('音の長さが不正です。');n.duration=note.duration;}
-   for(const name of ['midi','pitch'])if(note[name]!==undefined){if(!Number.isInteger(note[name])||!finite(note[name],0,name==='midi'?127:6))throw Error('音高が不正です。');n[name]=note[name];}
+   for(const name of ['midi','pitch'])if(note[name]!==undefined){if(!Number.isInteger(note[name])||!finite(note[name],0,name==='midi'?127:8))throw Error('音高が不正です。');n[name]=note[name];}
    if(note.pitches!==undefined){if(!Array.isArray(note.pitches)||!note.pitches.length||note.pitches.length>12||!note.pitches.every(p=>Number.isInteger(p)&&finite(p,0,127)))throw Error('コードの音高が不正です。');n.pitches=[...note.pitches];}
    if(typeof note.quantize==='string')n.quantize=note.quantize.slice(0,24);
    if(note.register!==undefined){if(!finite(note.register,0,1))throw Error('音域の位置が不正です。');n.register=note.register;}
@@ -53,7 +53,7 @@ function midi(value){
  const phraseEnd=tick(entry.duration),tempo=Math.round(60000000/entry.bpm);
  const conductor=[0,255,81,3,...number(tempo,3),0,255,88,4,4,2,24,8,...vlq(phraseEnd),255,47,0];
  const tracks=[chunk('MTrk',conductor)];
- const settings={drums:[9,null,100],hat:[9,null,58],bass:[0,33,90],lead:[1,80,80],chord:[2,4,70]},scale=[0,2,3,5,7,8,10];
+ const settings={drums:[9,null,100],hat:[9,null,58],bass:[0,33,90],lead:[1,80,80],chord:[2,4,70]},scale=[0,2,3,5,7,8,10,12,14];
  const exportTracks=[...entry.tracks];
  if(entry.accompaniment){const music=entry.accompaniment,step=music.chordBeats*60/entry.bpm,notes=[];for(let t=0,i=0;t<entry.duration;t+=step,i++)notes.push({type:'kick',t,rawT:t,duration:Math.min(step,entry.duration-t),pitches:music.chords[i%4].notes});exportTracks.push({voice:'chord',notes,accompaniment:true});}
  for(const track of exportTracks){

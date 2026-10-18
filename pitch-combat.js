@@ -3,7 +3,7 @@
  'use strict';
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
  const time=n=>n.inputT??n.rawT??n.t;
- const scale=[0,2,3,5,7,8,10];
+ const scale=[0,2,3,5,7,8,10,12,14];
  function midi(n,voice){return Number.isInteger(n.midi)?n.midi:(voice==='bass'?36:60)+(Number.isInteger(n.pitch)?scale[n.pitch]??0:n.type==='snare'?(voice==='bass'?7:3):0);}
  function register(m,palette){const keys=[...new Set(palette)].sort((a,b)=>a-b);return keys.length<2?.5:clamp(keys.filter(k=>k<m).length/(keys.length-1));}
  function analyze(notes,voice,bpm=120,duration=4){

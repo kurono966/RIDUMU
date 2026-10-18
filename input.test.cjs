@@ -395,6 +395,17 @@ test('seven-note keyboard records distinct pitches and sustained gates',()=>{
  assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,1,2,3,4,5,6');assert.equal(g.run('prevented'),7);
  assert.ok(g.run('notes.every(n=>Math.abs(n.duration-.1)<1e-8)'));
 });
+
+test('nine-note mode records ASDFGHJKL with upper C and D, including H and long holds',()=>{
+ const g=game();g.run("turn=3;noteMode='nine';for(const code of melodyKeys){handleKeyDown({code,target:{},preventDefault(){}});ctx.currentTime+=.1;releaseInput('key:'+code)};saveTrack('lead',notes)");
+ assert.equal(g.run('notes.map(n=>n.midi).join()'),'60,62,63,65,67,68,70,72,74');assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,1,2,3,4,5,6,7,8');assert(g.run('notes.every(n=>Math.abs(n.duration-.1)<1e-8)'));assert.equal(g.run('hatNotes.length'),0);
+ g.run("state='ready';setKeyPitch('lead','nine',8,77);state='recording';phase='hat';handleKeyDown({code:'KeyH',target:{},preventDefault(){}})");assert.equal(g.run("pitchesFor('lead','nine')[8]"),77);assert.equal(g.run('lastMix[0].notes.at(-1).midi'),74);assert.equal(g.run('hatNotes.length'),1);
+});
+
+test('seven-note mode ignores the two added keys and nine mode keeps drums unchanged',()=>{
+ const g=game();g.run("turn=2;noteMode='seven';for(const code of ['KeyK','KeyL'])handleKeyDown({code,target:{},preventDefault(){}})");assert.equal(g.run('notes.length'),0);
+ g.run("turn=1;noteMode='nine';handleKeyDown({code:'KeyL',target:{},preventDefault(){}})");assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].type'),'snare');assert.equal(g.run('notes[0].midi'),undefined);
+});
 test('seven-note selection leaves drums and Hat controls intact',()=>{
  const g=game();g.run("noteMode='seven';handleKeyDown({code:'KeyS',target:{},preventDefault(){}});input('kick','key:KeyA');phase='hat';input('hat')");
  assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].pitch'),undefined);assert.equal(g.run('hatNotes.length'),1);

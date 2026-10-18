@@ -2,6 +2,10 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),P=require
 const notes=(pitches,extra={})=>pitches.map((midi,i)=>({type:'kick',midi,t:i*.5,rawT:i*.5,duration:.3,...extra}));
 const lead=p=>P.analyze(notes(p),'lead',120,4),bass=p=>P.analyze(notes(p),'bass',120,4);
 const attack={power:100,accuracy:.8,effect:.5,count:4,hits:2,weight:.4,charged:0,alternation:0,density:1,element:'fire'};
+test('nine-note upper pitches roundtrip through history, JSON, MIDI and legacy pitch evaluation',()=>{
+ const entry=H.snapshot({bpm:120,duration:4,tracks:[{voice:'lead',notes:[{type:'snare',t:0,pitch:7,midi:72},{type:'snare',t:1,pitch:8,midi:74}]}]});
+ assert.deepEqual(H.validate(JSON.parse(JSON.stringify(entry))).tracks,entry.tracks);assert.equal(P.midi({pitch:7},'lead'),72);assert.equal(P.midi({pitch:8},'bass'),50);const data=Buffer.from(H.midi(entry));assert(data.includes(Buffer.from([0x91,72,80])));assert(data.includes(Buffer.from([0x91,74,80])));
+});
 test('semitone intervals distinguish repeat, small, medium, large and direction',()=>{
  assert.equal(lead([60,60,60,60]).effects.accuracy,.06);
  assert.equal(lead([60,61,62,64]).effects.element,.18);

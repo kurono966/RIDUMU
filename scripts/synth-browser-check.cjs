@@ -9,7 +9,7 @@ const root=path.resolve(__dirname,'..');
  await page.click('#toggleEffects');
  for(const [width,height] of [[1280,720],[1024,600],[390,844],[320,568],[320,480],[844,390],[667,375],[740,360]]){
   await page.setViewportSize({width,height});
-  for(const mode of ['two','four','seven'])for(const collapsed of [false,true])for(const showResult of [false,true])for(const phaseName of ['hat','parts']){
+  for(const mode of ['two','four','seven','nine'])for(const collapsed of [false,true])for(const showResult of [false,true])for(const phaseName of ['hat','parts']){
    await page.evaluate(({mode,collapsed,showResult,phaseName})=>{document.getElementById('result').hidden=!showResult;state='ready';turn=2;hatReady=phaseName!=='hat';noteMode=mode;phase=phaseName;updatePhaseUI();syncNoteMode();setPadsVisible(!collapsed);}, {mode,collapsed,showResult,phaseName});
    const boxes=await page.evaluate(()=>['filterPad','start',...(!document.querySelector('.console').classList.contains('pads-collapsed')?(document.querySelector('.console').classList.contains('hat-phase')?['hat']:(noteMode==='two'?['kick','snare']:(noteMode==='four'?['note0','note2']:['note0','note1']))):[])].map(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();return {id,x:r.x,y:r.y,w:r.width,h:r.height,visible:getComputedStyle(e).display!=='none'};}));
    for(const b of boxes){if(b.id==='hat'&&!b.visible)continue;assert(b.w>0&&b.h>0&&b.x>=0&&b.y>=0&&b.x+b.w<=width+1&&b.y+b.h<=height+1,JSON.stringify({width,height,mode,collapsed,b}));}
