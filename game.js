@@ -67,12 +67,14 @@ const tracks=new Map();
 let lastMix=null;
 let masterOutput=null,drumOutput=null,battleWaveform=null;
 let enemyMusic=null;
+let attackMusicWindow=null;
 function syncEnemyMusic(){
  if(!ctx||!globalThis.EnemyMusic)return;
  if(!enemyMusic)enemyMusic=EnemyMusic.create(ctx,masterOutput??ctx.destination,{onChord:name=>{$('enemyBpm').textContent='BPM '+timing().bpm+' · '+name;}});
  enemyMusic.setEnemy(enemies[stage].kind,timing().bpm);enemyMusic.setMuted(muted);
  const performing=state==='recording'&&recordAudioAt!==null&&ctx.currentTime>=recordAudioAt&&ctx.currentTime<recordAudioAt+timing().duration;
- if(document.hidden||!performing)enemyMusic.stop();else enemyMusic.start(recordAudioAt);
+ const attackReplay=state==='attack'&&attackMusicWindow&&ctx.currentTime<attackMusicWindow.end;
+ if(document.hidden||(!performing&&!attackReplay))enemyMusic.stop();else enemyMusic.start(performing?recordAudioAt:attackMusicWindow.start);
  $('enemyBpm').textContent='BPM '+timing().bpm+' · '+enemyMusic.state.chord;
  $('enemyBpm').title=EnemyMusic.progression(enemies[stage].kind).chords.map(id=>EnemyMusic.chords[id].name).join(' → ');
 }
@@ -232,6 +234,7 @@ function castGridSkill(){
  reactEnemy('poison');battleWaveform?.trigger('poison');renderGridHazards();
 }
 function poisonDefeat(){
+ attackMusicWindow=null;
  enemyMusic?.stop();
  continuousRunning=false;continuousResume=false;recordingAdvance=null;
  shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
@@ -521,6 +524,7 @@ $('quantizeMode').onchange=()=>{
 function update(){updateInstrument();renderDiscoveries();$('enemyBpm').textContent='BPM '+timing().bpm;$('bpmValue').textContent=timing().bpm;$('timer').textContent=timing().duration.toFixed(2);const enemy=enemies[stage];$('enemyName').textContent=enemy.name;$('enemyDesc').textContent=enemy.description;$('enemyHp').textContent=`${enemyHp} / ${enemy.hp}`;$('enemyBar').style.width=`${enemyHp/enemy.hp*100}%`;$('playerHp').textContent=`${hp} / 100`;$('playerBar').style.width=`${hp}%`;$('turn').textContent=`TURN ${String(battleRound()).padStart(2,'0')}`;$('stage').textContent=`ENCOUNTER ${String(stage+1).padStart(2,'0')} / ${String(enemies.length).padStart(2,'0')}`;$('sector').textContent=stage+1;$('enemy').className=`creature ${enemy.kind}`;renderGridHazards();syncEnemyMusic();}
 function needsHat(){return !autoHat&&(!hatReady||(instrumentForTurn(turn).id==='drums'&&!continuousResume));}
 function ready(label='演奏開始 ↗'){
+ attackMusicWindow=null;
  enemyMusic?.stop();
  state='ready';advanceGridHazards();$('start').disabled=false;syncQuantizeControl();$('start').textContent=label;$('status').textContent='READY TO PLAY';
  const createHat=needsHat();
@@ -571,6 +575,7 @@ function enemyAttackSound(kind){
  osc.connect(filter);filter.connect(gain);gain.connect(masterOutput??ctx.destination);osc.start(at);osc.stop(at+.45);
 }
 async function enemyCounter(a,report,result){
+ attackMusicWindow=null;enemyMusic?.stop();
  state='enemyAttack';releaseAllInputs();$('replay').disabled=true;
  $('status').textContent='ENEMY / '+attackNames[enemies[stage].kind];$('hint').textContent='BassのシールドとLeadの支援で迎え撃つ。';
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
@@ -605,6 +610,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
  $('hint').textContent='重ねたリズムを再生。Drumsが攻撃、Bassが盾、Leadが支援になる。';
  $('damage').textContent='0';
  const origin=ctx.currentTime+.06;
+ enemyMusic?.stop();attackMusicWindow={start:origin-timeline.offset,end:origin+timeline.duration};syncEnemyMusic();
  playFilterAutomation(filterLastMix);
  let scheduled=0,shown=0,total=0,flashTimer;
  await new Promise(resolve=>{
@@ -644,10 +650,11 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
    }
   }
   const timer=setInterval(tick,16);tick();
- });
+ }).finally(()=>{attackMusicWindow=null;enemyMusic?.stop();});
 }
 function completeBattle(){
  if(hp>0&&enemyHp>0)return false;
+ attackMusicWindow=null;
  enemyMusic?.stop();
  releaseAllInputs();pendingTrackInput=null;
  continuousRunning=false;continuousResume=false;recordingAdvance=null;

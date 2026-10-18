@@ -16,6 +16,10 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  await page.waitForFunction(()=>phase==='parts'&&state==='recording');assert.equal(await page.evaluate(()=>enemyMusic.state.playing),true);
  await page.waitForFunction(()=>state==='ready');assert.equal(await page.evaluate(()=>enemyMusic.state.playing),false);
  for(const idle of ['ready','attack','enemyAttack','cleared','over']){await page.evaluate(idle=>{state=idle;audio();},idle);assert.equal(await page.evaluate(()=>enemyMusic.state.playing),false);}
+ await page.evaluate(()=>{state='attack';lastDuration=2;lastBpm=240;lastInstrument='drums';lastMix=[{voice:'drums',notes:[{type:'kick',t:0,rawT:-.1},{type:'snare',t:.5,rawT:.5}]}];globalThis.replayMusicDone=false;playbackAttack({damages:[5,5]},'#d4f77d').then(()=>{globalThis.replayMusicDone=true});});
+ await page.waitForFunction(()=>enemyMusic.state.playing);assert(await page.evaluate(()=>Math.abs(enemyMusic.state.origin-attackMusicWindow.start)<1e-9));
+ await page.waitForFunction(()=>globalThis.replayMusicDone);assert.equal(await page.evaluate(()=>enemyMusic.state.playing),false);
+ await page.evaluate(()=>{state='enemyAttack';audio()});assert.equal(await page.evaluate(()=>enemyMusic.state.playing),false);
  await page.evaluate(()=>{state='ready';stage=1;update();});assert.equal(await page.evaluate(()=>enemyMusic.state.kind),'fly');assert.equal(await page.evaluate(()=>enemyMusic.state.bpm),150);
  await page.evaluate(()=>{enemyHp=0;completeBattle();});assert.equal(await page.evaluate(()=>enemyMusic.state.playing),false);
  const rendered=await page.evaluate(async()=>{
@@ -26,5 +30,5 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
   const partials=[48,51,55,58].map(midi=>{const hz=440*2**((midi-69)/12);let re=0,im=0;for(let i=4800;i<38400;i++){re+=a[i]*Math.cos(2*Math.PI*hz*i/48000);im+=a[i]*Math.sin(2*Math.PI*hz*i/48000);}return Math.hypot(re,im)/33600;});
   const tones=[];for(const kind of Object.keys(EnemyMusic.progressions)){const data=await render(kind);let peak=0,power=0;for(const v of data){peak=Math.max(peak,Math.abs(v));power+=v*v;}tones.push({kind,peak,rms:Math.sqrt(power/data.length)});}return {power,peak,error,difference,partials,tones};
  });assert(rendered.power>1);assert(rendered.peak<.2);assert(rendered.error<1e-6);assert(rendered.difference>10);assert(rendered.partials.every(p=>p>.001),JSON.stringify(rendered));assert(rendered.tones.every(t=>t.peak<.4&&t.rms>.025),JSON.stringify(rendered.tones));
- assert.deepEqual(errors,[]);console.log('PASS: accompaniment only during input, silent menus/count-ins/idle/combat, two-bar timing, mute, enemy change, battle end and polyphonic offline audio. '+JSON.stringify(rendered));
+ assert.deepEqual(errors,[]);console.log('PASS: chords during input and damage replay, replay downbeat alignment, silent menus/count-ins/idle/enemy counter, two-bar timing, mute, enemy change and polyphonic offline audio. '+JSON.stringify(rendered));
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

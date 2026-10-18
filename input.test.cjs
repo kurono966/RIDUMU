@@ -208,6 +208,16 @@ test('enemy HP changes on replayed note times and playback waits for the full ph
  assert.equal(g.run('attackPlayhead'),null);
  assert.equal(g.run("playedVoices.join(',')"),'bass,bass');
 });
+
+test('damage replay plays chords on its musical downbeat including early-input pre-roll, then stops them',async()=>{
+ const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();state='attack';lastInstrument='drums';last=[{type:'kick',t:0,rawT:-.1},{type:'snare',t:.5,rawT:.5}];let replayTick,musicStarts=[],musicPlaying=false;setInterval=fn=>{replayTick=fn;return 1};enemyMusic={start(at){if(!musicPlaying)musicStarts.push(at);musicPlaying=true},stop(){musicPlaying=false},setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
+ const done=g.run("playbackAttack({damages:[10,20]},'#fff')");await Promise.resolve();
+ assert.ok(Math.abs(g.run('musicStarts[0]')-.16)<1e-9);assert.equal(g.run('musicPlaying'),true);
+ g.run('ctx.currentTime=.07;replayTick()');assert.equal(g.run('enemyHp'),250);
+ g.run('ctx.currentTime=4.17;replayTick()');await done;
+ assert.equal(g.run('enemyHp'),230);assert.equal(g.run('musicPlaying'),false);assert.equal(g.run('attackMusicWindow'),null);
+ g.run("state='enemyAttack';audio()");assert.equal(g.run('musicPlaying'),false);
+});
 test('instruments cycle every three turns',()=>{
  const g=game();
  assert.equal(g.run("[1,2,3,4,5,6].map(t=>instrumentForTurn(t).id).join(',')"),'drums,bass,lead,drums,bass,lead');
