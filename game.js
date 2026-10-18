@@ -387,7 +387,7 @@ function renderPitchEditor(){
   const row=document.createElement('div');row.className='pitch-row';
   const label=document.createElement('label'),select=document.createElement('select'),preview=document.createElement('button');
   label.textContent=keys[index];select.id='pitch-choice-'+index;label.htmlFor=select.id;
-  for(let value=12;value<=107;value++){const option=document.createElement('option');option.value=value;option.textContent=midiName(value);select.append(option);}
+  for(let value=107;value>=12;value--){const option=document.createElement('option');option.value=value;option.textContent=midiName(value);select.append(option);}
   select.value=midi;select.onchange=()=>setKeyPitch(voice,mode,index,Number(select.value));
   preview.type='button';preview.textContent='試聴';preview.onclick=()=>{audio();sound(index<keys.length/2?'kick':'snare',undefined,voice,.8,.35,undefined,pitchesFor(voice,mode)[index]);};
   row.append(label,select,preview);$('pitchRows').append(row);
