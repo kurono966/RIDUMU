@@ -51,3 +51,10 @@ test('a delayed timer skips stale chords instead of scheduling a backlog',()=>{
  const f=setup();f.music.setEnemy('stone',120);f.music.start(.06);const count=f.starts.length;f.tick(20.08);
  assert.equal(f.starts.length-count,4);assert(f.starts.slice(count).every(t=>t>=20.08));
 });
+
+test('a saved progression and tone play independently of the current enemy preset',()=>{
+ const saved=Music.snapshot('crystal',138),f=setup();f.music.setEnemy('fly',150);f.music.setSnapshot(saved);saved.chords[0].notes[0]=99;
+ f.music.start(.06);assert.equal(f.music.state.bpm,138);assert.equal(f.music.state.chord,'Abmaj7');assert.equal(f.starts.length,8);
+ assert.equal(f.frequencies[0],440*2**((48-69)/12));
+ f.music.stop();f.music.setEnemy('stone',82);assert.equal(f.music.state.kind,'stone');assert.equal(f.music.state.chord,'Cm7');
+});
