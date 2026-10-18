@@ -31,7 +31,7 @@ function setKeyPitch(voice,mode,index,midi){
 }
 function inputMidi(type,pitch,voice=instrumentForTurn(turn).id){
  if(!['bass','lead'].includes(voice))return undefined;
- const index=melodicNotes()?pitchSlots().indexOf(pitch):(type==='kick'?0:1);
+ const index=melodicNotes(voice)?pitchSlots().indexOf(pitch):(type==='kick'?0:1);
  return pitchesFor(voice)[Math.max(0,index)];
 }
 try{
@@ -42,8 +42,8 @@ try{
  }
 }catch{}
 
-function sevenNotes(){return noteMode==='seven'&&instrumentForTurn(turn).id!=='drums';}
-function melodicNotes(){return ['four','seven'].includes(noteMode)&&instrumentForTurn(turn).id!=='drums';}
+function sevenNotes(voice=instrumentForTurn(turn).id){return noteMode==='seven'&&voice!=='drums';}
+function melodicNotes(voice=instrumentForTurn(turn).id){return ['four','seven'].includes(noteMode)&&voice!=='drums';}
 function melodyGuide(){const voice=instrumentForTurn(turn).id,keys=noteMode==='four'?'4音：A S K L':'7音：A S D F G H J';return keys+(voice==='drums'?'':' / '+pitchesFor(voice).map(midiName).join(' '));}
 function syncNoteMode(){
  const enabled=melodicNotes();
@@ -72,7 +72,12 @@ let filterPlaybackTimers=[];
 const synthTracks=new Map();
 let synthRecording=null;
 function beginSynthRecording(){const voice=instrumentForTurn(turn).id;if(!globalThis.Synth||!Synth.voices.includes(voice)||phase!=='parts'){synthRecording=null;return;}const point=Synth.current(voice);synthRecording={version:1,patch:point.patch,events:[{t:ctx&&recordAudioAt!==null?Math.min(0,ctx.currentTime-recordAudioAt):0,...point}]};}
-function captureSynth(voice){if(!synthRecording||voice!==instrumentForTurn(turn).id||!ctx||recordAudioAt===null||!['countin','recording'].includes(state))return;const t=ctx.currentTime-recordAudioAt;if(t<-30||t>timing().duration)return;const point={t:+t.toFixed(6),...Synth.current(voice)},events=synthRecording.events,prev=events.at(-1);if(prev&&point.t===prev.t)events[events.length-1]=point;else events.push(point);}
+function captureSynth(voice){
+ if(pendingTrackInput?.voice===voice&&pendingTrackInput.synth)appendSynthPoint(pendingTrackInput.synth,voice,pendingTrackInput.recordAt);
+ if(!synthRecording||voice!==instrumentForTurn(turn).id||!ctx||recordAudioAt===null||!['countin','recording'].includes(state))return;
+ appendSynthPoint(synthRecording,voice,recordAudioAt);
+}
+function appendSynthPoint(snapshot,voice,recordAt){const t=ctx.currentTime-recordAt;if(t<-30||t>timing().duration)return;const point={t:+t.toFixed(6),...Synth.current(voice)},events=snapshot.events,prev=events.at(-1);if(prev&&point.t===prev.t)events[events.length-1]=point;else events.push(point);}
 function recordedSynth(voice,noteTime,mix=lastMix){const snapshot=mix?.find(t=>t.voice===voice)?.synth;return snapshot?{snapshot,noteTime}:undefined;}
 function soundTimeline(mix,voice,damages,duration){
  const playable=mix.map(track=>Synth.voices.includes(track.voice)?{...track,notes:Synth.monoNotes(track.notes)}:track);
@@ -96,6 +101,32 @@ function playFilterAutomation(tracks,offset=0){clearFilterPlayback();const event
 let phase='parts',hatNotes=[],hatReady=false,lastHat=[],lastDuration=480/enemies[0].bpm,lastBpm=enemies[0].bpm,visualBeat=-1;
 let quantizeMode='off',phaseQuantizeMode='off',phaseHatPlayback=[];
 let continuousInput=false,continuousRunning=false,continuousResume=false,recordingAdvance=null;
+let pendingTrackInput=null;
+// The overlap is short enough to leave the preceding part's final subdivision
+// playable; at fast tempos it is capped at half a beat.
+const nextTrackGrace=()=>Math.min(.15,timing().beat/2);
+function upcomingInputTrack(){
+ if(!continuousRunning||state!=='recording'||recordAudioAt===null||!ctx)return null;
+ const recordAt=recordAudioAt+timing().duration,remaining=recordAt-ctx.currentTime;
+ if(remaining<=0||remaining>nextTrackGrace()+1e-9)return null;
+ const nextTurn=phase==='hat'?turn:turn+1;
+ if(phase!=='hat'&&instrumentForTurn(turn).id==='lead')return null;
+ return {voice:instrumentForTurn(nextTurn).id,turn:nextTurn,recordAt};
+}
+function anticipateTrackInput(type,source,pitch){
+ const target=upcomingInputTrack();if(type==='hat'||!target)return false;
+ if(!pendingTrackInput){
+  const point=Synth.voices.includes(target.voice)?Synth.current(target.voice):null;
+  pendingTrackInput={...target,notes:[],synth:point?{version:1,patch:point.patch,events:[{t:ctx.currentTime-target.recordAt,...point}]}:null};
+ }
+ if(pitch===undefined&&melodicNotes(target.voice))pitch=pitchSlots().at(type==='kick'?0:-1);
+ const rawT=ctx.currentTime-target.recordAt,event={type,t:0,rawT,inputT:rawT,inputTimes:[rawT],quantize:quantizeMode};
+ if(pitch!==undefined)event.pitch=pitch;
+ const midi=inputMidi(type,pitch,target.voice);if(midi!==undefined)event.midi=midi;
+ pendingTrackInput.notes.push(event);
+ playInput(type,source,event,pitch,target.voice,target.recordAt+timing().duration);
+ return true;
+}
 let autoHat=false;
 try{autoHat=localStorage.getItem('ridumu-auto-hat')==='true';}catch{}
 const autoHatControl=$('autoHat');
@@ -193,7 +224,7 @@ function castGridSkill(){
 function poisonDefeat(){
  continuousRunning=false;continuousResume=false;recordingAdvance=null;
  shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
- clearInterval(clockTimer);clockTimer=null;run++;releaseAllInputs();recordAudioAt=null;visualBeat=-1;state='over';
+ clearInterval(clockTimer);clockTimer=null;run++;releaseAllInputs();pendingTrackInput=null;recordAudioAt=null;visualBeat=-1;state='over';
  document.querySelector('.console').classList.remove('recording');$('status').textContent='POISON / 演奏中断';$('hint').textContent='毒汚染で力尽きた。危険な位置を変えるか、ダメージを承知で次の一撃を狙おう。';
  $('start').disabled=false;$('start').textContent='再挑戦 ↗';syncQuantizeControl();resetGridHazards();
 }
@@ -228,10 +259,12 @@ function updatePhaseUI(){
  $('hat').disabled=!isHat;
 }
 async function countIn(nextPhase='hat',continuationAt=null){
- releaseAllInputs();
+ const anticipated=continuationAt!==null&&pendingTrackInput?.turn===turn&&pendingTrackInput.recordAt===continuationAt?pendingTrackInput:null;
+ releaseAllInputs(undefined,anticipated);
+ pendingTrackInput=null;
  phase=nextPhase;phaseQuantizeMode=quantizeMode;updatePhaseUI();
  phaseHatPlayback=phase==='parts'?Quantize.render(hatNotes,timing().bpm,timing().duration):[];
- state='countin';recordAudioAt=null;notes=[];filterAutomation=[];renderGridHazards();
+ state='countin';recordAudioAt=null;notes=anticipated?.notes??[];filterAutomation=[];renderGridHazards();
  syncQuantizeControl();
  $('start').disabled=true;$('replay').disabled=true;
  $('start').textContent='カウントイン…';$('timer').textContent=timing().duration.toFixed(2);
@@ -245,6 +278,10 @@ async function countIn(nextPhase='hat',continuationAt=null){
  const {beat,duration,bpm}=timing(),hasCountIn=!continuousRunning||continuationAt===null;
  const recordAt=hasCountIn?ctx.currentTime+.06+4*beat:continuationAt,origin=hasCountIn?recordAt-4*beat:recordAt;
  recordAudioAt=recordAt;filterAutomation=[{t:0,amount:performanceFilter.state.amount,mode:performanceFilter.state.mode,volume:performanceFilter.state.volume}];beginSynthRecording();started=performance.now()+(recordAt-ctx.currentTime)*1000;
+ if(anticipated?.synth){synthRecording=anticipated.synth;appendSynthPoint(synthRecording,anticipated.voice,recordAt);}
+ // Apply grid effects once, in the destination turn, just like count-in input.
+ for(const note of anticipated?.notes??[])applyInputHazards(gridHazards.onInput({type:note.type,rawT:note.rawT,bpm,voice:anticipated.voice,note:{...note}}));
+ if(token!==run)return;
  const backing=phase==='parts'?backingTimeline().events:[];
  const endAt=recordAt+(continuousRunning?duration:Math.max(duration,...backing.map(event=>event.time+(event.duration??0)+.14)));
  let backingIndex=0,countBeat=0;
@@ -252,7 +289,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
  function tick(){
   if(token!==run){clearInterval(timer);return;}
   const now=ctx.currentTime;
-  if(now>=recordAt+duration)releaseAllInputs(recordAt+duration);
+  if(now>=recordAt+duration)releaseAllInputs(recordAt+duration,pendingTrackInput);
   while(backingIndex<backing.length&&recordAt+backing[backingIndex].time<now+.1){
    const event=backing[backingIndex++],at=recordAt+event.time;
    if(at>=now||(continuousRunning&&at>=now-.1))sound(event.type,Math.max(at,now),event.voice,event.voice==='hat'?.85:.6,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
@@ -293,6 +330,7 @@ function stopContinuousInput(){
  continuousRunning=false;recordingAdvance=null;run++;clearInterval(clockTimer);clockTimer=null;
  continuousResume=phase==='parts';
  releaseAllInputs();for(const voice of pitchedVoices)voice.release();
+ pendingTrackInput=null;
  if(phase==='hat'){hatNotes=[];hatReady=false;}
  notes=[];synthRecording=null;filterAutomation=[];recordAudioAt=null;visualBeat=-1;
  document.querySelector('.console').classList.remove('recording');ready();
@@ -305,19 +343,18 @@ function pitchedSound(type,t,voice,volume=1,duration,pitch,midi,recorded){
 }
 function releaseInput(source,at=ctx?.currentTime??0){
  const held=heldInputs.get(source);if(!held)return;
- if(held.note&&!held.interrupted)held.note.duration=Math.max(.025,Math.min(at,recordAudioAt+timing().duration)-held.at);
+ if(held.note&&!held.interrupted)held.note.duration=Math.max(.025,Math.min(at,held.endAt??recordAudioAt+timing().duration)-held.at);
  held.handle?.release(at);heldInputs.delete(source);
  if(held.pitch!==undefined&&![...heldInputs.values()].some(h=>h.pitch===held.pitch))$('note'+held.pitch).classList.remove('held');
  if(![...heldInputs.values()].some(h=>h.type===held.type))$(held.type).classList.remove('held');
 }
-function releaseAllInputs(at=ctx?.currentTime??0){for(const source of [...heldInputs.keys()])releaseInput(source,at);}
-function playInput(type,source,note,pitch=note?.pitch){
- const voice=type==='hat'?'hat':instrumentForTurn(turn).id;
+function releaseAllInputs(at=ctx?.currentTime??0,preserve=null){for(const [source,held] of heldInputs)if(!preserve?.notes.includes(held.note))releaseInput(source,at);}
+function playInput(type,source,note,pitch=note?.pitch,voice=type==='hat'?'hat':instrumentForTurn(turn).id,endAt=recordAudioAt+timing().duration){
  const sustain=source!==undefined&&voice!=='hat'&&voice!=='drums';
- if(Synth.voices.includes(voice))for(const held of heldInputs.values()){if(held.voice!==voice||held.interrupted)continue;if(held.note)held.note.duration=Math.max(.025,Math.min(ctx.currentTime,recordAudioAt+timing().duration)-held.at);held.interrupted=true;}
+ if(Synth.voices.includes(voice))for(const held of heldInputs.values()){if(held.voice!==voice||held.interrupted)continue;if(held.note)held.note.duration=Math.max(.025,Math.min(ctx.currentTime,held.endAt??recordAudioAt+timing().duration)-held.at);held.interrupted=true;}
  const midi=note?.midi??inputMidi(type,pitch,voice);
  const handle=sound(type,undefined,voice,1,sustain?Infinity:undefined,pitch,midi);
- if(sustain){heldInputs.set(source,{type,voice,note,handle,pitch,at:ctx.currentTime});$(type).classList.add('held');if(pitch!==undefined)$('note'+pitch).classList.add('held');}
+ if(sustain){heldInputs.set(source,{type,voice,note,handle,pitch,at:ctx.currentTime,endAt});$(type).classList.add('held');if(pitch!==undefined)$('note'+pitch).classList.add('held');}
  flash(type);
 }
 // Legacy saved performances can still replay their soft FM seventh chords.
@@ -366,6 +403,7 @@ function input(type,source,pitch){
  if(source!==undefined&&heldInputs.has(source))return;
  audio();
  if(state==='ready'){playInput(type,source,undefined,pitch);return;}
+ if(anticipateTrackInput(type,source,pitch))return;
  if((state!=='countin'&&state!=='recording')||recordAudioAt===null)return;
  if((phase==='hat')!==(type==='hat'))return;
  const rawT=ctx.currentTime-recordAudioAt;
@@ -386,8 +424,9 @@ function handleKeyDown(e){
  if(globalThis.RidumuUI?.isModalOpen()||$('synthDialog')?.open||$('codexDialog').open||$('pitchDialog').open||$('historyDialog').open||$('damageDialog').open||$('debugDialog').open)return;
  if(e.code==='Escape'&&continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){e.preventDefault();stopContinuousInput();return;}
  recordingAdvance?.();
+ const keyboardVoice=upcomingInputTrack()?.voice??instrumentForTurn(turn).id;
  if(e.code==='Space'&&e.target?.tagName==='BUTTON'&&e.target.id!=='start'&&!(e.target.id==='hat'&&phase==='hat'))return;
- if((e.code==='KeyH'&&!(sevenNotes()&&(state==='ready'||phase==='parts')))||(e.code==='Space'&&phase==='hat'&&['countin','recording'].includes(state))){e.preventDefault();input('hat');return;}
+ if((e.code==='KeyH'&&!(sevenNotes(keyboardVoice)&&(state==='ready'||phase==='parts')))||(e.code==='Space'&&phase==='hat'&&['countin','recording'].includes(state))){e.preventDefault();input('hat');return;}
  if(e.code==='Space'){
   e.preventDefault();
   if(['ready','cleared','over'].includes(state)&&!$('start').disabled)$('start').click();
@@ -395,8 +434,8 @@ function handleKeyDown(e){
  }
  const keyIndex=(noteMode==='four'?fourNoteKeys:melodyKeys).indexOf(e.code);
  const pitch=noteMode==='four'?fourNotePitches[keyIndex]:keyIndex;
- if(melodicNotes()&&keyIndex>=0){e.preventDefault();input(pitch<4?'kick':'snare','key:'+e.code,pitch);return;}
- if(melodicNotes())return;
+ if(melodicNotes(keyboardVoice)&&keyIndex>=0){e.preventDefault();input(pitch<4?'kick':'snare','key:'+e.code,pitch);return;}
+ if(melodicNotes(keyboardVoice))return;
  const type=e.code==='KeyA'?'kick':['KeyL','KeyD'].includes(e.code)?'snare':null;
  if(type){e.preventDefault();input(type,'key:'+e.code);}
 }
@@ -431,7 +470,7 @@ document.addEventListener('keyup',e=>{releaseInput('key:'+e.code);});
 });
 for(let pitch=0;pitch<7;pitch++){
  const pad=$('note'+pitch);
- pad.addEventListener('pointerdown',e=>{e.preventDefault();if(!melodicNotes()||(noteMode==='four'&&!fourNotePitches.includes(pitch)))return;pad.setPointerCapture?.(e.pointerId);input(pitch<4?'kick':'snare','pointer:'+e.pointerId,pitch);});
+ pad.addEventListener('pointerdown',e=>{e.preventDefault();if(!melodicNotes(upcomingInputTrack()?.voice)||(noteMode==='four'&&!fourNotePitches.includes(pitch)))return;pad.setPointerCapture?.(e.pointerId);input(pitch<4?'kick':'snare','pointer:'+e.pointerId,pitch);});
  for(const name of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(name,e=>{releaseInput('pointer:'+e.pointerId);});
 }
 $('noteMode').onchange=()=>{
@@ -596,6 +635,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
 }
 function completeBattle(){
  if(hp>0&&enemyHp>0)return false;
+ releaseAllInputs();pendingTrackInput=null;
  continuousRunning=false;continuousResume=false;recordingAdvance=null;
  resetGridHazards();shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
  state=hp<=0||stage===enemies.length-1?'over':'cleared';
@@ -610,7 +650,7 @@ function showRoleResult(title,factors,amount,label,a){
  renderReport(report);sequence(a);$('causeTracks').replaceChildren();$('breakdown').replaceChildren();
 }
 async function finish(continuationAt=null){
- releaseAllInputs();if(Synth.voices.includes(instrumentForTurn(turn).id))notes=Synth.monoNotes(notes);state='attack';document.querySelector('.console').classList.remove('recording');
+ releaseAllInputs(undefined,pendingTrackInput);if(Synth.voices.includes(instrumentForTurn(turn).id))notes=Synth.monoNotes(notes);state='attack';document.querySelector('.console').classList.remove('recording');
  $('timer').textContent='0.00';lastDuration=timing().duration;lastBpm=timing().bpm;
  last=Quantize.render(notes,lastBpm,lastDuration);lastHat=Quantize.render(hatNotes,lastBpm,lastDuration);
  lastInstrument=instrumentForTurn(turn).id;if(synthRecording)synthTracks.set(lastInstrument,Synth.cleanSnapshot(synthRecording,lastInstrument));synthRecording=null;filterTracks.set(lastInstrument,filterAutomation.slice());filterLastMix=Array.from(filterTracks,([voice,events])=>({voice,events:events.map(e=>({...e}))}));$('filterRecordStatus').textContent=filterAutomation.length?`エフェクト操作 ${filterAutomation.length}点を記録`:'エフェクト操作なし';saveTrack(lastInstrument,notes);

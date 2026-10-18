@@ -28,6 +28,70 @@ test('continuous input keeps four opening rimshots and eight Hat guide beats wit
  assert.equal(g.run("$('start').disabled"),false);assert.match(g.run("$('start').textContent"),/停止/);
 });
 
+test('early Drums input is retained in the next track while final Hat hits stay in Hat',async()=>{
+ const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly,heardEarly=[];setInterval=fn=>{tickEarly=fn;return 1};sound=(type,at,voice)=>heardEarly.push(voice);");
+ await g.run("countIn('hat')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('hat');ctx.currentTime=recordAudioAt+timing().duration-.1;input('kick');input('hat')");
+ assert.equal(g.run('hatNotes.length'),2);assert.equal(g.run('notes.length'),0);assert.equal(g.run('pendingTrackInput.notes.length'),1);
+ assert.equal(g.run('heardEarly.at(-2)'),'drums');
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('phase'),'parts');assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].t'),0);
+ assert.ok(Math.abs(g.run('notes[0].rawT')+.1)<1e-9);assert.equal(g.run('pendingTrackInput'),null);
+ assert.equal(g.run("heardEarly.filter(v=>v==='drums').length"),1,'adoption must not retrigger the note');
+});
+
+test('early Bass keeps its own pitch, snapshot and held duration across the boundary without modifying Drums',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;noteMode='seven';ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly,heardEarly=[];setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};sound=(type,at,voice)=>{heardEarly.push(voice);return {release(){}}};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('kick');ctx.currentTime=recordAudioAt+timing().duration-.1;handleKeyDown({code:'KeyH',preventDefault(){}})");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('pendingTrackInput.notes[0].midi'),44);assert.equal(g.run('heardEarly.at(-1)'),'bass');
+ g.run("Synth.setPatch('bass',{cutoff:1800})");
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),2);assert.equal(g.run("tracks.get('drums').length"),1);assert.equal(g.run('notes.length'),1);
+ assert.equal(g.run("heldInputs.has('key:KeyH')"),true);assert.ok(g.run('synthRecording.events[0].t')<0);
+ assert.equal(g.run('synthRecording.events.some(e=>e.patch.cutoff===1800)'),true);
+ g.run("ctx.currentTime=recordAudioAt+.4;releaseInput('key:KeyH')");assert.ok(Math.abs(g.run('notes[0].duration')-.5)<1e-9);
+ assert.equal(g.run('heardEarly.filter(v=>v===\'bass\').length'),1);
+});
+
+test('early Lead is isolated from Bass and preserves multiple quick notes and destination pitches',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=2;hatReady=true;noteMode='four';ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('kick','key:KeyA',0);ctx.currentTime=recordAudioAt+timing().duration-.12;handleKeyDown({code:'KeyS',preventDefault(){}});releaseInput('key:KeyS');ctx.currentTime+=.06;handleKeyDown({code:'KeyL',preventDefault(){}});releaseInput('key:KeyL')");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run("pendingTrackInput.notes.map(n=>n.midi).join(',')"),'63,70');
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),3);assert.equal(g.run('notes.length'),2);assert.equal(g.run("tracks.get('bass').length"),1);
+ assert.ok(Math.abs(g.run("tracks.get('bass')[0].duration")-3.99)<1e-9,'the previous held note must keep its full tail');
+ assert.ok(Math.abs(g.run('notes[1].rawT-notes[0].rawT')-.06)<1e-9);
+});
+
+test('the anticipation window scales down to half a beat at fast tempos',()=>{
+ const g=game();g.run("enemies[0].bpm=300;continuousRunning=true;state='recording';turn=1;phase='parts';recordAudioAt=10;ctx.currentTime=11.49");
+ assert.equal(g.run('nextTrackGrace()'),.1);assert.equal(g.run('upcomingInputTrack()'),null);
+ g.run('ctx.currentTime=11.51');assert.equal(g.run('upcomingInputTrack().voice'),'bass');
+});
+
+test('anticipated notes apply destination-turn hazards once when adopted',async()=>{
+ const g=game();g.run("continuousRunning=true;hatReady=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};gridHazards.add({type:'poison',slots:[0],turns:2,power:3,fromTurn:2});");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();ctx.currentTime=recordAudioAt+timing().duration-.03;input('kick')");
+ assert.equal(g.run('hp'),100);
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),2);assert.equal(g.run('hp'),97);assert.equal(g.run('notes.length'),1);
+ g.run('ctx.currentTime+=.05;tickEarly()');assert.equal(g.run('hp'),97);
+});
+
+test('outside the early window and before combat inputs still belong to the current track; stopping discards pending input',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();ctx.currentTime=recordAudioAt+timing().duration-.151;input('kick')");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('pendingTrackInput'),null);
+ g.run("ctx.currentTime+=.051;input('snare','key:KeyL');stopContinuousInput()");
+ assert.equal(g.run('pendingTrackInput'),null);assert.equal(g.run('heldInputs.size'),0);
+ g.run("continuousRunning=true;turn=3;state='recording';recordAudioAt=10;ctx.currentTime=13.9;input('snare')");
+ assert.equal(g.run('pendingTrackInput'),null);assert.equal(g.run('notes.length'),1);
+});
+
 test('auto Hat generates sixteen eighth notes and skips Hat entry in normal and continuous modes',async()=>{
  for(const continuous of [false,true]){
   const g=game();g.run(`autoHat=true;continuousRunning=${continuous};ctx.currentTime=0;ctx.resume=()=>Promise.resolve();setInterval=()=>1;`);

@@ -22,7 +22,7 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  for(const [tab,panel] of [['rhythmTab','rhythmPanel'],['ensembleTab','ensemblePanel'],['damageTab','summaryPanel'],['summaryTab','summaryPanel']]){await page.click('#'+tab);await page.waitForTimeout(40);assert(await page.locator('#'+panel).isVisible());}
  assert(await page.locator('#analysisReplay').isVisible());await page.keyboard.press('Escape');assert(!(await page.locator('#resultDetailsDialog').isVisible()));
  // A separate context exercises the real audio clock and persisted opt-in.
- const continuousContext=await browser.newContext(),continuous=await continuousContext.newPage();continuous.on('pageerror',e=>errors.push(e.message));
+ const continuousContext=await browser.newContext({hasTouch:true}),continuous=await continuousContext.newPage();continuous.on('pageerror',e=>errors.push(e.message));
  await continuous.goto(page.url());await continuous.click('#openPlaySettings');await continuous.check('#continuousInput');await continuous.click('#closePlaySettings');await continuous.reload();
  assert.equal(await continuous.locator('#continuousInput').isChecked(),true);
  await continuous.evaluate(()=>{enemies[0].bpm=240;let originalClick=clickSound;globalThis.continuousRims=[];clickSound=(...args)=>{globalThis.continuousRims.push({turn,phase,at:args[1],start:recordAudioAt});originalClick(...args)};globalThis.continuousAttacks=0;globalThis.continuousCounters=0;playbackAttack=async()=>{globalThis.continuousAttacks++};enemyCounter=async()=>{globalThis.continuousCounters++};});
@@ -49,8 +49,23 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
   assert.equal(autoSaved.notes.length,16);assert.equal(autoSaved.notes[15].t,1.875);
   if(seamless){assert.equal(await continuous.evaluate(()=>globalThis.autoRims),4);await continuous.click('#start');}
  }
+ // Anticipated notes must sound once in the destination voice, survive the
+ // real clock handoff and remain negative in raw timing/history.
+ await continuous.reload();await continuous.click('#openPlaySettings');await continuous.selectOption('#noteMode','four');await continuous.click('#closePlaySettings');
+ await continuous.evaluate(()=>{enemies[0].bpm=240;globalThis.earlyLive=[];const original=sound;sound=(...args)=>{if(args[1]===undefined)globalThis.earlyLive.push(args[2]);return original(...args)};});
+ await continuous.click('#start');await continuous.waitForFunction(()=>upcomingInputTrack()?.voice==='bass');await continuous.keyboard.press('s');
+ assert.equal(await continuous.evaluate(()=>pendingTrackInput?.notes[0].midi),39);
+ await continuous.waitForFunction(()=>turn===2&&state==='recording');
+ assert(await continuous.evaluate(()=>notes.length===1&&notes[0].rawT<0&&notes[0].t===0&&notes[0].midi===39));
+ await continuous.waitForFunction(()=>upcomingInputTrack()?.voice==='lead');await continuous.tap('#note2');
+ assert.equal(await continuous.evaluate(()=>pendingTrackInput?.notes[0].midi),63);
+ await continuous.waitForFunction(()=>turn===3&&state==='recording');
+ assert(await continuous.evaluate(()=>notes.length===1&&notes[0].rawT<0&&notes[0].midi===63));
+ assert.deepEqual(await continuous.evaluate(()=>globalThis.earlyLive),['bass','lead'],'anticipation must sound once, using each destination voice');
+ assert(await continuous.evaluate(()=>sequenceStore.list().some(entry=>entry.tracks.some(track=>track.voice==='bass'&&track.notes.some(note=>note.rawT<0)))));
+ await continuous.click('#start');
  await continuousContext.close();
- assert.deepEqual(errors,[]);console.log('PASS: nine viewports, settings and analysis, continuous phase timing, opening count-in and manual Hat metronome, persisted auto Hat in both recording modes, saved Hat notes and safe stop.');
+ assert.deepEqual(errors,[]);console.log('PASS: nine viewports, settings and analysis, continuous phase timing, opening count-in and Hat metronome, auto Hat, keyboard/touch anticipation with destination voices and saved raw timing, safe stop.');
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
 
 

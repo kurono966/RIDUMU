@@ -19,6 +19,8 @@
   }
   el('partTitle').textContent=model.title;el('nextAction').textContent=model.instruction;el('phraseProgress').value=model.progress;document.body.dataset.playState=state;
   if(continuousRunning&&state==='recording')el('nextAction').textContent=model.instruction+' · 2小節で次へ / Escで停止';
+  const upcoming=upcomingInputTrack();
+  if(upcoming)el('nextAction').textContent='次の '+upcoming.voice.toUpperCase()+' も先行入力できます';
   if(autoHat&&state==='ready')el('nextAction').textContent='HATは自動 · '+model.instruction;
   document.querySelector('#partSteps [data-part=hat]').textContent=autoHat?'1 HAT · AUTO':'1 HAT';
   document.querySelectorAll('#partSteps li').forEach(node=>{if(node.dataset.part===model.step)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');});
