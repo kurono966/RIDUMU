@@ -1,0 +1,105 @@
+/* Loaded last: performance controls always fit; the editor scrolls inside its dialog. */
+main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"header header" "arena console"}
+main>.console{overflow:hidden}
+main>.console>.controls{margin-top:auto;flex:0 0 auto}
+main>.console>.filter-control{flex:0 1 110px;min-height:92px;max-height:140px}
+main>.console.pads-collapsed>.filter-control{flex:1 1 220px;min-height:92px;max-height:none}
+main>.console .filter-pad{min-height:30px}
+main>.console .filter-control small{font-size:9px;line-height:1.2}
+main>.console .phase-strip{flex-wrap:wrap;gap:4px;letter-spacing:0;margin-top:0}
+main>.console .phase-strip #phaseLabel{flex:1 1 100px}
+main>.console .phase-strip .quantize-control select{width:auto;max-width:105px}
+main>.console .timeline{flex:1 1 40px;min-height:14px;max-height:75px}
+main>.console #hat,main>.console .pads,main>.console #melodyPads{flex-shrink:0}
+main>.console .filter-head{font-size:10px;gap:4px}
+main>.console .filter-head output{font-size:9px;white-space:nowrap}
+main>.console .filter-head .toggle-pads{padding:3px 5px}
+main>.console .filter-head select{font-size:10px;padding:3px}
+.timbre-result{color:#b6d9c2!important;font-size:10px!important;line-height:1.5!important}
+.synth-dialog{width:min(780px,calc(100vw - 20px));max-height:calc(100dvh - 24px);padding:20px;background:#191f19;color:#eff1e9;border:1px solid #657d4d;border-radius:12px;overflow:auto}
+.synth-dialog::backdrop{background:#050905bb}
+.synth-dialog h2{font-size:18px;margin:0}
+.synth-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:16px 0}
+.synth-dialog select{font:inherit;background:#242d22;color:#e7eedf;border:1px solid #657d4d;border-radius:4px;padding:6px}
+.synth-body{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.synth-parameters{display:grid;gap:12px;align-content:start}
+.synth-parameters label{font-size:12px;display:grid;gap:6px}
+.synth-parameters label>span{display:flex;justify-content:space-between;gap:10px}
+.synth-parameters output{color:#d4f77d;font-variant-numeric:tabular-nums}
+.synth-parameters input{width:100%;margin:0;accent-color:#d4f77d;min-height:24px}
+.synth-gauges{display:grid;gap:10px}
+.synth-gauges label{display:grid;grid-template-columns:24px 1fr 36px;align-items:center;gap:8px;font-size:12px}
+.synth-gauges meter{width:100%;height:18px}
+.synth-gauges meter::-webkit-meter-optimum-value{background:var(--tone-color)}
+.synth-gauges meter::-moz-meter-bar{background:var(--tone-color)}
+.synth-gauges output{text-align:right}
+#synthEffects{font-size:12px;line-height:1.7;color:#c9e5b2}
+#synthEnvelope{width:100%;height:90px;color:#d4f77d;background:#101710;border-radius:5px}
+.synth-guide{font-size:11px;color:#acb7a3;line-height:1.7}
+@media(max-width:759px){
+ main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(90px,25fr) minmax(0,75fr);grid-template-areas:"header" "arena" "console"}
+ main>.console .filter-control small{display:none}
+ main>.console>.filter-control{min-height:80px;flex-basis:85px}
+ main>.console .timeline{flex-basis:24px;min-height:10px}
+ main>.console .pad{padding:3px 6px;min-height:34px;gap:7px}
+ main>.console .key{font-size:12px;padding:3px 6px}
+ main>.console .pad-icon{display:none}
+ main>.console .controls p{display:none}
+ main>.console .primary{width:100%;min-height:36px}
+ main>.console .phase-strip #phaseLabel{flex-basis:65px;font-size:8px}
+ main>.console .phase-strip .quantize-control>span{display:none}
+ .synth-dialog{padding:14px}
+}
+@media(max-width:540px){.synth-body{grid-template-columns:1fr;gap:16px}.synth-parameters{grid-template-columns:1fr 1fr}.synth-parameters label:first-child{grid-column:1/-1}}
+@media(max-height:600px){
+ main>.console>.filter-control,main>.console.pads-collapsed>.filter-control{min-height:65px;flex-basis:75px;padding:4px}
+ main>.console .filter-control small{display:none}
+ main>.console .filter-pad{min-height:24px}
+ main>.console .timeline{min-height:8px;flex-basis:12px;margin:0}
+ main>.console .pad{min-height:29px;padding:2px 5px}
+ main>.console .key{font-size:11px;padding:2px 5px}
+ main>.console .pad b{font-size:11px}
+ main>.console .pad-icon{display:none}
+ main>.console .melody-pads,main>.console .melody-pad{min-height:30px;height:32px}
+ main>.console .controls p{display:none}
+}
+
+.live-tone-gauges{position:absolute;z-index:1;left:7px;right:90px;top:5px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;pointer-events:none}
+.live-tone-gauges[hidden]{display:none}
+.live-tone-gauges label{display:flex;gap:3px;align-items:center;font-size:9px;color:#e9efdd}
+.live-tone-gauges meter{width:100%;height:10px;min-width:0}
+.live-tone-gauges meter::-webkit-meter-optimum-value{background:var(--tone-color)}
+.live-tone-gauges meter::-moz-meter-bar{background:var(--tone-color)}
+@media(max-width:759px){
+ main:has(>.result:not([hidden])){grid-template-rows:auto minmax(70px,20fr) minmax(0,58fr) minmax(0,22fr);grid-template-areas:"header" "arena" "console" "result"}
+ main>.result{grid-area:result;position:static;min-height:0;max-height:none;width:auto;margin:0;overflow:auto;box-shadow:none}
+}
+@media(min-width:600px) and (max-width:759px) and (max-height:500px) and (orientation:landscape){
+ main{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"header header" "arena console"}
+ main:has(>.result:not([hidden])){grid-template-rows:auto minmax(0,1fr) minmax(0,33%);grid-template-areas:"header header" "arena console" "result console"}
+}
+/* A short portrait screen shows the enemy beside its information instead of clipping it below. */
+@media(max-width:759px) and (max-height:660px) and (orientation:portrait){
+ main>.arena{display:grid;grid-template-columns:minmax(0,1fr) 96px;grid-template-rows:auto auto auto auto;align-content:stretch}
+ main>.arena .enemy-info{grid-column:1;grid-row:1;display:block;padding:3px 6px 0}
+ main>.arena .enemy-info .eyebrow{display:none}
+ main>.arena .enemy-info h2{font-size:12px;margin:0}
+ main>.arena .enemy-health{width:100%;margin-top:3px}
+ main>.arena .enemy-health>div:first-child{font-size:8px;margin-bottom:3px}
+ main>.arena .discoveries{grid-column:1;grid-row:2;min-height:12px;max-height:16px;overflow:hidden;padding:1px 6px 0;font-size:7px}
+ main>.arena .enemy-intent{grid-column:1;grid-row:3;padding:1px 6px 0;font-size:7px;min-width:0}
+ main>.arena .battlefield{grid-column:2;grid-row:1/4;min-height:55px;height:auto;align-self:stretch}
+ main>.arena .creature{scale:.4}
+ main>.arena .player-strip{grid-column:1/-1;grid-row:4;padding:3px 6px;gap:4px;font-size:8px}
+}
+
+@media(max-width:540px){
+ .synth-body{display:flex;flex-direction:column;gap:12px}
+ .synth-character{display:contents}
+ .synth-character>.eyebrow{order:-2;margin-bottom:0}
+ .synth-gauges{order:-1;position:sticky;top:0;z-index:2;grid-template-columns:1fr 1fr;gap:6px 12px;background:#191f19;padding:8px 0;border-bottom:1px solid #485540}
+ .synth-parameters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .synth-parameters label{min-width:0}
+ .synth-parameters label:nth-child(2){grid-column:1/-1}
+ .synth-parameters select{width:100%;min-width:0}
+}

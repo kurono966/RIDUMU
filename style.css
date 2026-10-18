@@ -83,8 +83,6 @@ main>.console .filter-pad{flex:1 1 auto;min-height:30px;height:auto}
 main>.console .pad{min-height:35px;padding:4px 7px}
 main>.console .pad small{display:none}
 main>.console .controls{margin-top:auto;gap:5px}
-main>.console .console-content{display:flex;flex-direction:column;gap:inherit;flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;overscroll-behavior:contain}
-main>.console .console-content> *{flex-shrink:0}
 main>.console .controls{position:relative;z-index:1;flex:0 0 auto;margin-top:0;padding-top:4px;background:var(--panel)}
 main>.console .controls p{font-size:10px;line-height:1.2;margin:0}
 main>.console .primary{min-height:38px;padding:6px 10px}
