@@ -1056,3 +1056,5 @@ dialog::backdrop{
     min-height:42px
   }
 }
+/* A large, explicit opt-in for the alternate recording workflow. */
+#continuousInput{width:44px;height:28px;accent-color:var(--lime);cursor:pointer;flex-shrink:0}

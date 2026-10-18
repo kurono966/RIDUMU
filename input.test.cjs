@@ -13,6 +13,60 @@ function game(){
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
+test('continuous input omits rimshots and hands Hat to Drums on the exact phrase boundary',async()=>{
+ const g=game();g.run("continuousInput=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,rims=0;setInterval=fn=>{tickContinuous=fn;return 1};clickSound=()=>rims++;");
+ await g.run("countIn('hat')");
+ const first=g.run('recordAudioAt'),duration=g.run('timing().duration');
+ g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('hat');ctx.currentTime=recordAudioAt+timing().duration+.004;tickContinuous()");
+ assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'recording');
+ assert.equal(g.run('recordAudioAt'),first+duration);assert.equal(g.run('rims'),0);
+ assert.equal(g.run("$('start').disabled"),false);assert.match(g.run("$('start').textContent"),/停止/);
+});
+
+test('continuous handoff retains backing downbeats and accepts a new part input before the timer fires',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;hatNotes=[{type:'hat',t:0,rawT:0}];ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,backingHits=[];setInterval=fn=>{tickContinuous=fn;return 1};sound=(type,at,voice)=>backingHits.push({type,at,voice});renderReport=()=>{};sequence=()=>{};");
+ await g.run("countIn('parts')");
+ const first=g.run('recordAudioAt'),duration=g.run('timing().duration');
+ g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('kick','key:KeyA');releaseInput('key:KeyA');ctx.currentTime=recordAudioAt+timing().duration+.003;handleKeyDown({code:'KeyA',preventDefault(){}})");
+ assert.equal(g.run('turn'),2);assert.equal(g.run('state'),'recording');assert.equal(g.run('recordAudioAt'),first+duration);
+ assert.equal(g.run('notes.length'),1);assert.ok(Math.abs(g.run('notes[0].rawT')-.003)<1e-9);
+ assert.equal(g.run("backingHits.some(n=>n.voice==='drums')"),true);
+ assert.equal(g.run("tracks.get('drums').length"),1);
+});
+
+test('continuous cycle records each part once, resolves combat once and starts the next Hat automatically',async()=>{
+ const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
+ await g.run("countIn('hat')");
+ for(let part=0;part<4;part++){
+  g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input(phase==='hat'?'hat':'kick');ctx.currentTime=recordAudioAt+timing().duration+.001;tickContinuous()");
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ }
+ assert.equal(g.run('turn'),4);assert.equal(g.run('attacksContinuous'),1);assert.equal(g.run('countersContinuous'),1);
+ assert.equal(g.run('phase'),'hat');assert.equal(g.run('continuousRunning'),true);
+});
+
+test('stopping continuous input cancels stale handoffs and leaves earlier completed parts intact',async()=>{
+ const g=game();g.run("continuousInput=true;continuousRunning=true;turn=2;hatReady=true;tracks.set('drums',[{type:'kick',t:0}]);ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous;setInterval=fn=>{tickContinuous=fn;return 1};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.1;tickContinuous();input('kick');handleKeyDown({code:'Escape',preventDefault(){}});ctx.currentTime=100;tickContinuous()");
+ assert.equal(g.run('state'),'ready');assert.equal(g.run('continuousRunning'),false);assert.equal(g.run('continuousInput'),true);
+ assert.equal(g.run('notes.length'),0);assert.equal(g.run('tracks.size'),1);assert.equal(g.run('clockTimer'),null);
+});
+
+test('stop during combat prevents the next recording without interrupting combat resolution',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=3;state='recording';notes=[{type:'kick',t:0,rawT:0,midi:60}];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};let endAttack,countersContinuous=0;playbackAttack=()=>new Promise(resolve=>{endAttack=resolve});enemyCounter=async()=>{countersContinuous++};");
+ const done=g.run('finish(14)');g.run("$('start').onclick()");
+ assert.equal(g.run('state'),'attack');assert.equal(g.run('continuousRunning'),false);
+ g.run('endAttack()');await done;
+ assert.equal(g.run('state'),'ready');assert.equal(g.run('turn'),4);assert.equal(g.run('countersContinuous'),1);
+});
+
+test('restarting stopped Drums keeps the already recorded Hat instead of resetting the cycle',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;hatNotes=[{type:'hat',t:0,rawT:0}];ctx.currentTime=0;ctx.resume=()=>Promise.resolve();setInterval=()=>1;");
+ await g.run("countIn('parts')");g.run('stopContinuousInput()');assert.equal(g.run('needsHat()'),false);
+ await g.run('startTurn()');assert.equal(g.run('phase'),'parts');assert.equal(g.run('hatNotes.length'),1);
+});
+
 test('audio keeps the existing compressor and inserts the waveform analyser path once',()=>{
  const g=game();g.run(`ctx=null;let waveformConnections=0,voices=[];
  window={AudioContext:class{constructor(){this.state='running';this.destination={};this.currentTime=0;}createBiquadFilter(){return {Q:{},frequency:{setTargetAtTime(){}},connect(){}}}createGain(){return {gain:{setTargetAtTime(){}},connect(){}}}createDynamicsCompressor(){return {threshold:{},ratio:{},connect(){throw Error('direct output must be replaced by analyser route')}}}}};

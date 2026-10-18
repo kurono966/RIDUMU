@@ -21,7 +21,23 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  await page.evaluate(()=>{document.getElementById('result').hidden=false;document.getElementById('ensembleList').textContent='アンサンブル';document.getElementById('sequence').textContent='入力したリズム';});await page.click('#openResultDetails');
  for(const [tab,panel] of [['rhythmTab','rhythmPanel'],['ensembleTab','ensemblePanel'],['damageTab','summaryPanel'],['summaryTab','summaryPanel']]){await page.click('#'+tab);await page.waitForTimeout(40);assert(await page.locator('#'+panel).isVisible());}
  assert(await page.locator('#analysisReplay').isVisible());await page.keyboard.press('Escape');assert(!(await page.locator('#resultDetailsDialog').isVisible()));
- assert.deepEqual(errors,[]);console.log('PASS: nine viewports, all parts/results, effects preserve controls, settings access and keyboard isolation, analysis tabs, no duplicate IDs or runtime errors.');
+ // A separate context exercises the real audio clock and persisted opt-in.
+ const continuousContext=await browser.newContext(),continuous=await continuousContext.newPage();continuous.on('pageerror',e=>errors.push(e.message));
+ await continuous.goto(page.url());await continuous.click('#openPlaySettings');await continuous.check('#continuousInput');await continuous.click('#closePlaySettings');await continuous.reload();
+ assert.equal(await continuous.locator('#continuousInput').isChecked(),true);
+ await continuous.evaluate(()=>{enemies[0].bpm=240;let originalClick=clickSound;globalThis.continuousRims=0;clickSound=(...args)=>{globalThis.continuousRims++;originalClick(...args)};globalThis.continuousAttacks=0;globalThis.continuousCounters=0;playbackAttack=async()=>{globalThis.continuousAttacks++};enemyCounter=async()=>{globalThis.continuousCounters++};});
+ await continuous.click('#start');const starts=[];
+ for(const [turnNumber,phaseName,key] of [[1,'hat','h'],[1,'parts','a'],[2,'parts','a'],[3,'parts','l']]){
+  await continuous.waitForFunction(({turnNumber,phaseName})=>state==='recording'&&turn===turnNumber&&phase===phaseName,{turnNumber,phaseName});
+  starts.push(await continuous.evaluate(()=>recordAudioAt));await continuous.keyboard.press(key);
+ }
+ for(let i=1;i<starts.length;i++)assert(Math.abs(starts[i]-starts[i-1]-2)<1e-8,'continuous phase drift');
+ await continuous.waitForFunction(()=>turn===4&&phase==='hat'&&state==='recording');
+ assert.deepEqual(await continuous.evaluate(()=>[globalThis.continuousRims,globalThis.continuousAttacks,globalThis.continuousCounters]),[0,1,1]);
+ const recorded=await continuous.evaluate(()=>sequenceStore.list().find(entry=>entry.tracks.some(track=>track.voice==='lead')));
+ assert(recorded.tracks.some(track=>track.voice==='bass'&&track.notes.length));assert(recorded.tracks.some(track=>track.voice==='lead'&&track.notes.length));
+ await continuous.click('#start');assert.equal(await continuous.evaluate(()=>state),'ready');await continuous.waitForTimeout(2100);assert.equal(await continuous.evaluate(()=>state),'ready');await continuousContext.close();
+ assert.deepEqual(errors,[]);console.log('PASS: nine viewports, all parts/results, effects preserve controls, settings and analysis, continuous recording on the real audio clock without rimshots or phase drift, persisted opt-in, saved parts and safe stop.');
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
 
 
