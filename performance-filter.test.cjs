@@ -14,3 +14,24 @@ test('cutoff responds in opposite directions by mode',()=>{
  filter.set(0,'highpass');const highOpen=filter.state.cutoff;
  filter.set(1,'highpass');assert.ok(filter.state.cutoff>highOpen);
 });
+test('XY volume and filter are independent and smoothly applied to the audio chain',()=>{
+ const connections=[],frequencies=[],levels=[];
+ const destination={};
+ const gain={gain:{setTargetAtTime:(...args)=>levels.push(args)},connect:target=>connections.push(target)};
+ const node={Q:{value:0},frequency:{setTargetAtTime:(...args)=>frequencies.push(args)},connect:target=>connections.push(target)};
+ const context={currentTime:2,createGain:()=>gain,createBiquadFilter:()=>node};
+ filter.set(.6,'lowpass',.25);
+ assert.equal(filter.connect(context,destination),node);
+ assert.deepEqual(connections,[gain,destination]);
+ assert.deepEqual(levels.at(-1),[.25,2,.018]);
+ const cutoff=frequencies.at(-1)[0];
+ filter.set(.6,'lowpass',0);
+ assert.equal(frequencies.at(-1)[0],cutoff);
+ assert.equal(levels.at(-1)[0],0);
+ filter.set(.2,'highpass',2);
+ assert.equal(filter.state.volume,1);
+ filter.set(.4,'highpass');
+ assert.equal(filter.state.volume,1);
+ filter.set(.4,'highpass',-1);
+ assert.equal(filter.state.volume,0);
+});

@@ -69,9 +69,9 @@ let masterOutput=null,battleWaveform=null;
 const performanceFilter=globalThis.PerformanceFilter;
 let filterAutomation=[],filterTracks=new Map(),filterLastMix=[];
 let filterPlaybackTimers=[];
-function filterCapture(){if(!ctx||!recordAudioAt||!['countin','recording'].includes(state))return;const t=ctx.currentTime-recordAudioAt;if(t<0||t>timing().duration)return;const point={t:+t.toFixed(3),amount:performanceFilter.state.amount,mode:performanceFilter.state.mode};const prev=filterAutomation.at(-1);if(!prev||t-prev.t>.045||prev.mode!==point.mode)filterAutomation.push(point);else filterAutomation[filterAutomation.length-1]=point;}
+function filterCapture(){if(!ctx||!recordAudioAt||!['countin','recording'].includes(state))return;const t=ctx.currentTime-recordAudioAt;if(t<0||t>timing().duration)return;const point={t:+t.toFixed(3),amount:performanceFilter.state.amount,mode:performanceFilter.state.mode,volume:performanceFilter.state.volume};const prev=filterAutomation.at(-1);if(!prev||t-prev.t>.045||prev.mode!==point.mode)filterAutomation.push(point);else filterAutomation[filterAutomation.length-1]=point;}
 function clearFilterPlayback(){filterPlaybackTimers.forEach(clearTimeout);filterPlaybackTimers=[];}
-function playFilterAutomation(tracks,offset=0){clearFilterPlayback();const events=tracks.flatMap(t=>t.events??[]).sort((a,b)=>a.t-b.t);for(const event of events){const delay=(event.t-offset)*1000;if(delay<0)continue;filterPlaybackTimers.push(setTimeout(()=>{performanceFilter.set(event.amount,event.mode);renderFilterPad();},delay));}}
+function playFilterAutomation(tracks,offset=0){clearFilterPlayback();const events=tracks.flatMap(t=>t.events??[]).sort((a,b)=>a.t-b.t);for(const event of events){const delay=(event.t-offset)*1000;if(delay<0)continue;filterPlaybackTimers.push(setTimeout(()=>{performanceFilter.set(event.amount,event.mode,event.volume??1);renderFilterPad();},delay));}}
 
 let phase='parts',hatNotes=[],hatReady=false,lastHat=[],lastDuration=480/enemies[0].bpm,lastBpm=enemies[0].bpm,visualBeat=-1;
 let quantizeMode='off',phaseQuantizeMode='off',phaseHatPlayback=[];
@@ -347,11 +347,19 @@ setPadsVisible(padsVisible);
 togglePads.addEventListener('click',()=>setPadsVisible(document.querySelector('.console').classList.contains('pads-collapsed')));
 const filterMode=$('filterMode');
 const filterPad=$('filterPad'),filterCursor=$('filterCursor');
-function renderFilterPad(){const {amount,mode}=performanceFilter.state;filterCursor.style.bottom=(amount*100)+'%';filterPad.setAttribute('aria-valuenow',String(Math.round(amount*100)));$('filterValue').textContent=Math.round(amount*100)+'%';filterMode.value=mode;}
-function setFilterFromPointer(e){const box=filterPad.getBoundingClientRect();performanceFilter.set(Math.max(0,Math.min(1,(box.bottom-e.clientY)/box.height)),filterMode.value);renderFilterPad();filterCapture();}
+function renderFilterPad(){const {amount,mode,volume}=performanceFilter.state;filterCursor.style.left=(amount*100)+'%';filterCursor.style.bottom=(volume*100)+'%';filterPad.setAttribute('aria-valuenow',String(Math.round(amount*100)));filterPad.setAttribute('aria-valuetext',`音量 ${Math.round(volume*100)}%、フィルター ${Math.round(amount*100)}%`);$('filterValue').textContent=`VOL ${Math.round(volume*100)}% / FX ${Math.round(amount*100)}%`;filterMode.value=mode;}
+function resetFilterPad(){performanceFilter.set(0,filterMode.value,1);renderFilterPad();filterCapture();}
+function setFilterFromPointer(e){const box=filterPad.getBoundingClientRect();if(!box.width||!box.height)return;if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom){resetFilterPad();return;}performanceFilter.set((e.clientX-box.left)/box.width,filterMode.value,(box.bottom-e.clientY)/box.height);renderFilterPad();filterCapture();}
 filterPad.addEventListener('pointerdown',e=>{e.preventDefault();filterPad.setPointerCapture(e.pointerId);setFilterFromPointer(e);});
-filterPad.addEventListener('pointermove',e=>{if(filterPad.hasPointerCapture(e.pointerId))setFilterFromPointer(e);});
-filterPad.addEventListener('keydown',e=>{if(!['ArrowUp','ArrowDown','Home','End'].includes(e.key))return;e.preventDefault();const value=e.key==='Home'?0:e.key==='End'?1:performanceFilter.state.amount+(e.key==='ArrowUp'?.05:-.05);performanceFilter.set(value,filterMode.value);renderFilterPad();filterCapture();});
+filterPad.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')setFilterFromPointer(e);});
+filterPad.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||filterPad.hasPointerCapture(e.pointerId))setFilterFromPointer(e);});
+filterPad.addEventListener('pointerleave',resetFilterPad);
+filterPad.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')resetFilterPad();else setFilterFromPointer(e);});
+filterPad.addEventListener('pointercancel',resetFilterPad);
+filterPad.addEventListener('lostpointercapture',e=>{if(e.pointerType!=='mouse')resetFilterPad();});
+filterPad.addEventListener('blur',resetFilterPad);
+window.addEventListener('blur',resetFilterPad);
+filterPad.addEventListener('keydown',e=>{if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();let {amount,volume}=performanceFilter.state;if(e.key==='Home'){amount=0;volume=1;}else if(e.key==='End'){amount=1;volume=1;}else if(e.key==='ArrowUp'||e.key==='ArrowDown')volume+=e.key==='ArrowUp'?.05:-.05;else amount+=e.key==='ArrowRight'?.05:-.05;performanceFilter.set(amount,filterMode.value,volume);renderFilterPad();filterCapture();});
 filterMode.addEventListener('change',()=>{performanceFilter.set(performanceFilter.state.amount,filterMode.value);renderFilterPad();filterCapture();});renderFilterPad();
 document.addEventListener('keydown',handleKeyDown);
 document.addEventListener('keyup',e=>{releaseInput('key:'+e.code);});
@@ -541,7 +549,7 @@ async function finish(){
  releaseAllInputs();state='attack';document.querySelector('.console').classList.remove('recording');
  $('timer').textContent='0.00';lastDuration=timing().duration;lastBpm=timing().bpm;
  last=Quantize.render(notes,lastBpm,lastDuration);lastHat=Quantize.render(hatNotes,lastBpm,lastDuration);
- lastInstrument=instrumentForTurn(turn).id;filterTracks.set(lastInstrument,filterAutomation.slice());filterLastMix=Array.from(filterTracks,([voice,events])=>({voice,events:events.map(e=>({...e}))}));$('filterRecordStatus').textContent=filterAutomation.length?`フィルター操作 ${filterAutomation.length}点を記録`:'フィルター操作なし';saveTrack(lastInstrument,notes);
+ lastInstrument=instrumentForTurn(turn).id;filterTracks.set(lastInstrument,filterAutomation.slice());filterLastMix=Array.from(filterTracks,([voice,events])=>({voice,events:events.map(e=>({...e}))}));$('filterRecordStatus').textContent=filterAutomation.length?`エフェクト操作 ${filterAutomation.length}点を記録`:'エフェクト操作なし';saveTrack(lastInstrument,notes);
  $('lastInstrument').textContent=lastMix.map(track=>track.voice.toUpperCase()).join(' + ')||'SILENCE';
  $('lastQuantize').textContent='再生：'+Quantize.modes.find(m=>m.id===phaseQuantizeMode).name;
  const zones=currentZones(),preview=Rhythm.analyze(last,lastDuration,lastBpm);
