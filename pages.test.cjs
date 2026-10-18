@@ -11,7 +11,7 @@ function fixture(t){
   fs.writeFileSync(path.join(dir,'assets','bg.svg'),'<svg/>');fs.writeFileSync(path.join(dir,'assets','kick sound.wav'),version+' audio');
   fs.writeFileSync(path.join(dir,'game.test.cjs'),'test');fs.writeFileSync(path.join(dir,'README.md'),'private notes');fs.writeFileSync(path.join(dir,'scripts','internal.js'),'build tooling');
  }
- const shas={main:'a'.repeat(40),develop:'b'.repeat(40)};
+ const shas={main:'a'.repeat(40),'experiment/chatgpt':'b'.repeat(40)};
  return {stable,development,shas,output:path.join(directory,'site'),directory};
 }
 test('both sites preserve bytes and resolve relative assets without exposing source tooling',t=>{
@@ -21,9 +21,9 @@ test('both sites preserve bytes and resolve relative assets without exposing sou
  assert(fs.existsSync(path.join(f.output,'.nojekyll')));assert(fs.existsSync(path.join(f.output,'dev','.nojekyll')));
  assert.equal(JSON.parse(fs.readFileSync(path.join(f.output,'_deployment.json'))).main.commit,f.shas.main);
 });
-test('updating develop cannot change stable files; promoting develop updates stable',t=>{
+test('updating experiment/chatgpt cannot change stable files; promoting it updates stable',t=>{
  const f=fixture(t);build(f);const previous=fs.readFileSync(path.join(f.output,'game.js'));
- fs.writeFileSync(path.join(f.development,'game.js'),'development v2');const output2=path.join(f.directory,'second');build({...f,output:output2,shas:{...f.shas,develop:'c'.repeat(40)}});
+ fs.writeFileSync(path.join(f.development,'game.js'),'development v2');const output2=path.join(f.directory,'second');build({...f,output:output2,shas:{...f.shas,'experiment/chatgpt':'c'.repeat(40)}});
  assert.deepEqual(fs.readFileSync(path.join(output2,'game.js')),previous);assert.equal(fs.readFileSync(path.join(output2,'dev','game.js'),'utf8'),'development v2');
  fs.copyFileSync(path.join(f.development,'game.js'),path.join(f.stable,'game.js'));const output3=path.join(f.directory,'promoted');build({...f,output:output3});assert.equal(fs.readFileSync(path.join(output3,'game.js'),'utf8'),'development v2');
 });

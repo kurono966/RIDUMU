@@ -2,7 +2,7 @@ name: Deploy RIDUMU stable and development
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, experiment/chatgpt]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/experiment/chatgpt'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -36,7 +36,7 @@ jobs:
       - name: Checkout latest development branch
         uses: actions/checkout@v6
         with:
-          ref: develop
+          ref: experiment/chatgpt
           path: development
           persist-credentials: false
       - name: Set up Node.js
