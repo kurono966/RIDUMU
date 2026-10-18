@@ -1,5 +1,6 @@
 /* Local sequence snapshots and Standard MIDI File export; no audio data in storage. */
 (function(root){
+if(!root.Synth&&typeof require==='function')root.Synth=require('./synth.js');
 const key='ridumu.sequence-history.v1',limit=50,voices=['drums','hat','bass','lead','chord'];
 const finite=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max;
 function cleanTracks(tracks){
@@ -17,8 +18,12 @@ function cleanTracks(tracks){
    if(note.pitches!==undefined){if(!Array.isArray(note.pitches)||!note.pitches.length||note.pitches.length>12||!note.pitches.every(p=>Number.isInteger(p)&&finite(p,0,127)))throw Error('コードの音高が不正です。');n.pitches=[...note.pitches];}
    if(typeof note.quantize==='string')n.quantize=note.quantize.slice(0,24);
    return n;
-  });return {voice:track.voice,notes};
+  });const result={voice:track.voice,notes};if(track.synth!==undefined){if(!['bass','lead'].includes(track.voice)||!root.Synth)throw Error('シンセパートが不正です。');result.synth=root.Synth.cleanSnapshot(track.synth,track.voice);}if(track.effects!==undefined)result.effects=cleanEffects(track.effects);return result;
  });
+}
+function cleanEffects(events){
+ if(!Array.isArray(events)||events.length>8192)throw Error('エフェクト履歴が不正です。');let previous=-1;
+ return events.map(e=>{if(!e||!finite(e.t,0,120)||e.t<previous||!finite(e.amount,0,1)||!finite(e.volume,0,1)||!['lowpass','highpass'].includes(e.mode))throw Error('エフェクト履歴が不正です。');previous=e.t;return {t:e.t,amount:e.amount,volume:e.volume,mode:e.mode};});
 }
 function validate(value){
  if(!value||value.version!==1||!finite(value.bpm,40,240)||!finite(value.duration,.1,120))throw Error('RIDUMUのシーケンスJSONを選んでください。');

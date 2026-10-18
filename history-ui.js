@@ -13,21 +13,22 @@ globalThis.captureHistory=info=>{
 globalThis.stopHistoryPlayback=()=>{
  clearInterval(historyClock);historyClock=null;
  historyHandles.forEach(handle=>handle?.release?.());historyHandles=[];
- const wasPlaying=historyPlaying;historyPlaying=null;if(wasPlaying&&$('historyDialog').open)renderHistory();
+ const wasPlaying=historyPlaying;historyPlaying=null;if(wasPlaying&&typeof clearFilterPlayback==='function')clearFilterPlayback();if(wasPlaying&&$('historyDialog').open)renderHistory();
 };
 async function playHistory(entry){
  if(historyPlaying===entry.id){stopHistoryPlayback();return;}
  stopReplay();audio();historyPlaying=entry.id;renderHistory();
  await ctx.resume();if(globalThis.DrumAudio)await DrumAudio.ready;
  if(historyPlaying!==entry.id)return;
- const timeline=Rhythm.mixTimeline(entry.tracks,null,[],entry.duration),origin=ctx.currentTime+.06;
- const end=Math.max(timeline.duration,...timeline.events.map(event=>event.at+(event.voice==='drums'||event.voice==='hat'?(DrumAudio.duration(event.voice==='hat'?'hat':event.type)||.2):(event.duration??(event.voice==='bass'?.15:event.voice==='chord'?.32:.17))+.25)));
+ if(typeof playFilterAutomation==='function')playFilterAutomation(entry.tracks.map(t=>({voice:t.voice,events:t.effects??[]})));
+ const timeline=typeof soundTimeline==='function'?soundTimeline(entry.tracks,null,[],entry.duration):Rhythm.mixTimeline(entry.tracks,null,[],entry.duration),origin=ctx.currentTime+.06;
+ const end=Math.max(timeline.duration,...timeline.events.filter(event=>!entry.tracks.find(t=>t.voice===event.voice)?.synth).map(event=>event.at+(event.voice==='drums'||event.voice==='hat'?(DrumAudio.duration(event.voice==='hat'?'hat':event.type)||.2):(event.duration??(event.voice==='bass'?.15:event.voice==='chord'?.32:.17))+Math.max(.25,entry.tracks.find(t=>t.voice===event.voice)?.synth?.patch.release??0))));
  let index=0;
  function tick(){
   const elapsed=ctx.currentTime-origin;
   while(index<timeline.events.length&&timeline.events[index].at<=elapsed+.1){
    const event=timeline.events[index++];
-   const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice==='chord'?.9:.8,event.duration,event.pitch,event.midi,event.pitches);
+   const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice==='chord'?.9:.8,event.duration,event.pitch,event.midi,event.pitches,entry.tracks.find(t=>t.voice===event.voice)?.synth?{snapshot:entry.tracks.find(t=>t.voice===event.voice).synth,noteTime:event.time}:undefined);
    if(handle?.release)historyHandles.push(handle);
   }
   if(elapsed>=end)stopHistoryPlayback();
