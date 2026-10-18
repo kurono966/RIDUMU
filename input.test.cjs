@@ -545,15 +545,15 @@ test('final battle resolution applies ensemble attack and shield bonuses once',a
  await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.ok(g.run('shield')>24);assert.ok(g.run('resolved.total')>=0);
 });
 
-test('timbre correction applies once after groove/ensemble without replacing the drum element',async()=>{
+test('articulation style applies once after groove/ensemble without replacing the drum element',async()=>{
  const g=game();g.run(`state='ready';turn=1;notes=[{type:'kick',t:0,rawT:0},{type:'snare',t:1,rawT:1}];hatNotes=[{type:'hat',t:0,rawT:0}];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};`);
  await g.run('finish()');
  g.run(`const bassPatch=Synth.patch({wave:'square',cutoff:12000,sustain:.6});synthTracks.set('bass',{version:1,patch:bassPatch,events:[{t:0,patch:bassPatch,pad:Synth.pad()}]});notes=[{type:'kick',t:0,rawT:0,midi:36,duration:1}];`);
  await g.run('finish()');
- assert.equal(g.run('cycleBass.shield'),g.run("Math.round(cycleBass.rawShield*Synth.modifiers(toneProfile('bass')).shield)"));
+ assert.equal(g.run('cycleBass.shield'),g.run("Math.round(cycleBass.rawShield*Synth.style(synthTracks.get('bass'),tracks.get('bass'),lastDuration).shield)"));
  g.run(`const leadPatch=Synth.patch({wave:'sine',cutoff:400,release:2});synthTracks.set('lead',{version:1,patch:leadPatch,events:[{t:0,patch:leadPatch,pad:Synth.pad()}]});notes=[{type:'kick',t:.5,rawT:.5,midi:60,duration:1}];let capturedTimbre;const baseExplain=CombatFeedback.explain;CombatFeedback={...CombatFeedback,explain:(a,...args)=>{capturedTimbre=a;return baseExplain(a,...args)}};`);
  await g.run('finish()');
- g.run(`const drumNotes=tracks.get('drums'),zonesForTest=currentZones(),baseAttack=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(Quantize.render(drumNotes,lastBpm,lastDuration),lastDuration,lastBpm),Groove.analyzeRelations(drumNotes,hatNotes,lastBpm,lastDuration)),drumNotes,lastBpm,zonesForTest,cycleLead),cycleEnsemble),appliedTone=Synth.combine(toneProfile('bass'),toneProfile('lead'));`);
+ g.run(`const drumNotes=tracks.get('drums'),zonesForTest=currentZones(),baseAttack=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(Quantize.render(drumNotes,lastBpm,lastDuration),lastDuration,lastBpm),Groove.analyzeRelations(drumNotes,hatNotes,lastBpm,lastDuration)),drumNotes,lastBpm,zonesForTest,cycleLead),cycleEnsemble),bassStyle=Synth.style(synthTracks.get('bass'),tracks.get('bass'),lastDuration),leadStyle=Synth.style(synthTracks.get('lead'),tracks.get('lead'),lastDuration),appliedTone={attack:1+((bassStyle.attack-1)+(leadStyle.attack-1))*.5,weaken:0};`);
  assert.equal(g.run('capturedTimbre.power'),g.run('baseAttack.power*appliedTone.attack'));
  assert.equal(g.run('capturedTimbre.element'),g.run('baseAttack.element'));
  assert.equal(g.run('capturedTimbre.timbreWeaken'),g.run('appliedTone.weaken'));
