@@ -337,7 +337,7 @@ function handleKeyDown(e){
  const pitch=noteMode==='four'?fourNotePitches[keyIndex]:keyIndex;
  if(melodicNotes()&&keyIndex>=0){e.preventDefault();input(pitch<4?'kick':'snare','key:'+e.code,pitch);return;}
  if(melodicNotes())return;
- const type=e.code==='KeyA'?'kick':e.code==='KeyL'?'snare':null;
+ const type=e.code==='KeyA'?'kick':['KeyL','KeyD'].includes(e.code)?'snare':null;
  if(type){e.preventDefault();input(type,'key:'+e.code);}
 }
 const togglePads=$('togglePads');
