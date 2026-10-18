@@ -66,7 +66,7 @@ main>header{grid-area:header;padding:0 0 9px;min-width:0}
 /* Instrument indicators share the existing player HUD. */
 .instrument{margin-left:auto;color:var(--lime);font-size:9px;letter-spacing:1px;white-space:nowrap}#turn{margin-left:0;white-space:nowrap}.player-strip .bar{flex:1;min-width:24px;max-width:130px}.pad b{white-space:nowrap;font-size:15px;letter-spacing:1px}@media(max-width:740px){.instrument{font-size:8px;letter-spacing:.4px}.player-strip{gap:7px}.player-strip b{font-size:9px}.pad b{font-size:13px}}
 
-/* Playtest: keep the actual controls visible. The result is an overlay, never a layout row. */
+/* Keep the performance controls visible within the viewport. */
 html,body{width:100%;height:100%;margin:0;overflow:hidden}
 main{position:relative;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"header header" "arena console";gap:8px;overflow:hidden}
 main>.intro,main>footer{display:none}
@@ -123,13 +123,20 @@ main>.result h2{font-size:18px;margin:2px}
 }
 
 /* Larger performance XY-like vertical strip, optional instrument pads. */
-main>.console .filter-control{flex-grow:3;flex-basis:170px;min-height:120px}
-main>.console .filter-pad{min-height:90px}
+main>.console .filter-control{flex:0 1 110px;min-height:85px}
+main>.console .filter-pad{min-height:35px}
 main>.console .filter-head{flex-wrap:wrap}
 main>.console .filter-head .toggle-pads{font:inherit;font-size:10px;color:#d4f77d;background:#273125;border:1px solid #657d4d;border-radius:5px;padding:5px 7px;white-space:nowrap}
 main>.console .filter-head .toggle-pads[aria-pressed="false"]{color:#eee;background:#414339}
 main>.console.pads-collapsed #hat,main>.console.pads-collapsed .pads,main>.console.pads-collapsed #melodyPads{display:none!important}
 main>.console.pads-collapsed .filter-control{flex-grow:6;flex-basis:230px;min-height:150px}
 main>.console.pads-collapsed .filter-pad{min-height:115px}
-@media(max-width:759px){main>.console .filter-control{flex-basis:130px;min-height:100px}main>.console .filter-pad{min-height:65px}main>.console.pads-collapsed .filter-control{flex-basis:230px;min-height:145px}main>.console.pads-collapsed .filter-pad{min-height:115px}}
-@media(max-height:600px){main>.console .filter-control{min-height:65px}main>.console .filter-pad{min-height:42px}main>.console.pads-collapsed .filter-control{min-height:100px}main>.console.pads-collapsed .filter-pad{min-height:65px}}
+@media(max-width:759px){main>.console .filter-control{flex-basis:80px;min-height:65px}main>.console .filter-pad{min-height:28px}main>.console.pads-collapsed .filter-control{flex-basis:230px;min-height:145px}main>.console.pads-collapsed .filter-pad{min-height:115px}}
+@media(max-height:600px){main>.console .filter-control{flex-basis:75px;min-height:60px}main>.console .filter-pad{min-height:24px}main>.console.pads-collapsed .filter-control{min-height:100px}main>.console.pads-collapsed .filter-pad{min-height:65px}}
+
+/* Reserve a separate row for results below the enemy in the left column. */
+@media(min-width:760px){
+ main:has(>.result:not([hidden])){grid-template-rows:auto minmax(0,1fr) minmax(0,38%);grid-template-areas:"header header" "arena console" "result console"}
+ main>.result{grid-area:result;position:static;width:auto;min-width:0;min-height:0;max-height:none;margin:0;overflow:auto}
+ main>.arena .enemy-info,main>.arena .discoveries,main>.arena .enemy-intent,main>.arena .player-strip{flex-shrink:0}
+}
