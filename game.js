@@ -115,7 +115,7 @@ function soundTimeline(mix,voice,damages,duration){
 }
 function toneProfile(voice){const snap=synthTracks.get(voice);return globalThis.Synth&&snap?Synth.profile(snap,Quantize.render(tracks.get(voice)??[],lastBpm,lastDuration),lastDuration):{fire:0,water:0,wind:0,earth:0};}
 function toneResult(voice){if(!globalThis.Synth)return '';const p=toneProfile(voice);if(!Object.values(p).some(Boolean))return voice.toUpperCase()+'：無音・音色補正なし';return voice.toUpperCase()+' 音色：'+Synth.describe(p);}
-function showToneResult(voices){const el=$('timbreResult');if(el)el.textContent=voices.map(toneResult).filter(Boolean).join('。')+(voices.length?'。攻撃・命中は各パート1/2。盾はBass全量＋Lead半量。湿潤は今回の敵反撃のみ・上限12%。':'');}
+function showToneResult(voices){const el=$('timbreResult');if(el)el.textContent=voices.length?'音色は属性を変えません。短音・長音の演奏との相性が戦闘スタイルに影響します。':'';}
 if(globalThis.Synth)Synth.subscribe(captureSynth);
 function filterCapture(){if(!ctx||!recordAudioAt||!['countin','recording'].includes(state))return;const t=ctx.currentTime-recordAudioAt;if(t<0||t>timing().duration)return;const point={t:+t.toFixed(3),amount:performanceFilter.state.amount,mode:performanceFilter.state.mode,volume:performanceFilter.state.volume};const prev=filterAutomation.at(-1);if(!prev||t-prev.t>.045||prev.mode!==point.mode)filterAutomation.push(point);else filterAutomation[filterAutomation.length-1]=point;}
 function clearFilterPlayback(){filterPlaybackTimers.forEach(clearTimeout);filterPlaybackTimers=[];}
