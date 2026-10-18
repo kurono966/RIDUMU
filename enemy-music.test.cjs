@@ -22,6 +22,14 @@ test('all enemy progressions loop on the same eight-beat boundary as a recorded 
  }
 });
 
+test('finite playback never schedules the first chord of the next loop, including delayed stop and unmute',()=>{
+ for(const bpm of [82,120,240]){const f=setup(),start=.16,end=start+480/bpm;f.music.setEnemy('stone',bpm);f.music.start(start,end);f.tick(start);
+  for(let i=1;i<4;i++)f.tick(start+i*120/bpm-.03);
+  f.tick(end-.08);f.tick(end+.2);assert.equal(f.starts.length,16);assert(f.starts.every(t=>t<end));
+  f.music.setMuted(true);f.music.setMuted(false);assert.equal(f.starts.length,16);
+ }
+});
+
 test('enemy timbres differ in waveform, envelope or harmonic layer rather than only filter brightness',()=>{
  const tones=Object.values(Music.progressions).map(p=>JSON.stringify([p.wave,p.harmonic??0,p.attack,p.decay,p.sustain,p.release]));
  assert.equal(new Set(tones).size,6);

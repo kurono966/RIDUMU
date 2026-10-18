@@ -30,7 +30,7 @@
  function create(ctx,output=ctx.destination,options={}){
   const every=options.setInterval??setInterval,cancel=options.clearInterval??clearInterval;
   const bus=ctx.createGain();bus.gain.value=1;bus.connect(output);
-  const active=new Set();let kind='stone',bpm=82,playing=false,muted=false,timer=null,origin=0,next=0,anchor=null,shown=-1,rotation=0,saved=null;
+  const active=new Set();let kind='stone',bpm=82,playing=false,muted=false,timer=null,origin=0,next=0,anchor=null,shown=-1,rotation=0,saved=null,sequenceEnd=Infinity;
   const chordAt=index=>saved?saved.chords[(rotation+index)%4]:chords[progression(kind).chords[(rotation+index)%4]];
   const chordSeconds=()=>(saved?.chordBeats??chordBeats)*60/bpm,at=index=>origin+index*chordSeconds();
   function play(index,start,length){
@@ -59,7 +59,7 @@
    const now=ctx.currentTime;
    // Skip missed chords after a delayed tab timer instead of creating a burst.
    if(at(next)<now-.15)next=Math.max(next,Math.floor((now-origin)/chordSeconds()));
-   while(Math.min(at(next),anchor??Infinity)<now+.12){
+   while(Math.min(at(next),anchor??Infinity)<now+.12&&at(next)<sequenceEnd-1e-9){
     if(anchor!==null&&at(next)>=anchor-1e-9){rotation=(rotation+Math.max(0,Math.ceil((anchor-origin)/chordSeconds()-1e-9)))%4;origin=anchor;anchor=null;next=0;shown=-1;}
     const start=at(next),length=anchor===null?chordSeconds():Math.min(chordSeconds(),anchor-start);
     if(!muted&&start>=now-.15&&length>0){const voice=play(next,Math.max(now,start),length);if(anchor!==null)voice.stop(anchor);}
@@ -75,14 +75,14 @@
     options.onChord?.(chords[progression(kind).chords[0]].name);if(resume)api.start();
    },
    setSnapshot(value){const next=cleanSnapshot(value);api.stop();saved=next;kind='recorded';bpm=next.bpm;shown=-1;},
-   start(start=ctx.currentTime+.06){if(playing)return;playing=true;origin=start;next=0;anchor=null;shown=-1;rotation=0;timer=every(tick,25);tick();},
+   start(start=ctx.currentTime+.06,end=Infinity){if(playing)return;playing=true;origin=start;sequenceEnd=end;next=0;anchor=null;shown=-1;rotation=0;timer=every(tick,25);tick();},
    align(start){if(!Number.isFinite(start)||start<ctx.currentTime-.15)return;if(!playing){api.start(start);return;}if(Math.abs(origin-start)<1e-6)return;anchor=start;stopVoices(start);tick();},
    stop(){playing=false;if(timer!==null)cancel(timer);timer=null;anchor=null;stopVoices();},
    setMuted(value){
     value=!!value;if(value===muted)return;muted=value;
     bus.gain.setTargetAtTime(value?0:1,ctx.currentTime,.015);
     if(value)stopVoices();
-    else if(playing&&ctx.state==='running'&&ctx.currentTime>=origin){const index=Math.floor((ctx.currentTime-origin)/chordSeconds());next=index+1;play(index,ctx.currentTime+.01,Math.max(.04,at(next)-ctx.currentTime));tick();}
+    else if(playing&&ctx.state==='running'&&ctx.currentTime>=origin&&ctx.currentTime+.01<sequenceEnd){const index=Math.floor((ctx.currentTime-origin)/chordSeconds());next=index+1;play(index,ctx.currentTime+.01,Math.max(.04,Math.min(at(next),sequenceEnd)-ctx.currentTime));tick();}
    },
    get state(){const index=Math.max(0,Math.floor((ctx.currentTime-origin)/chordSeconds()));return {kind,bpm,playing,muted,origin,next,anchor,chordDuration:chordSeconds(),loopDuration:4*chordSeconds(),voices:active.size,chord:chordAt(index).name};}
   };

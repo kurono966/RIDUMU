@@ -24,7 +24,7 @@ async function playHistory(entry){
  if(typeof playFilterAutomation==='function')playFilterAutomation(entry.tracks.map(t=>({voice:t.voice,events:t.effects??[]})));
  const timeline=typeof soundTimeline==='function'?soundTimeline(entry.tracks,null,[],entry.duration):Rhythm.mixTimeline(entry.tracks,null,[],entry.duration),origin=ctx.currentTime+.06;
  const end=Math.max(timeline.duration,...timeline.events.filter(event=>!entry.tracks.find(t=>t.voice===event.voice)?.synth).map(event=>event.at+(event.voice==='drums'||event.voice==='hat'?(DrumAudio.duration(event.voice==='hat'?'hat':event.type)||.2):(event.duration??(event.voice==='bass'?.15:event.voice==='chord'?.32:.17))+Math.max(.25,entry.tracks.find(t=>t.voice===event.voice)?.synth?.patch.release??0))));
- if(entry.accompaniment)globalThis.startSavedMusic?.(entry.accompaniment,origin-timeline.offset,origin+end,'history');
+ if(entry.accompaniment)globalThis.startSavedMusic?.(entry.accompaniment,origin-timeline.offset,origin-timeline.offset+entry.duration,'history');
  let index=0;
  function tick(){
   const elapsed=ctx.currentTime-origin;

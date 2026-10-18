@@ -25,7 +25,7 @@ test('history replay starts its saved accompaniment on the grid downbeat and sto
  const x=fixture(),saved=require('./enemy-music.js').snapshot('ghost',120),data=info();data.accompaniment=saved;data.tracks[0].notes[0]={type:'kick',t:0,rawT:-.1,midi:45,duration:.7};
  x.run('let musicCalls=[],musicStops=[];globalThis.startSavedMusic=(...args)=>musicCalls.push(args);globalThis.stopSavedMusic=owner=>musicStops.push(owner);captureHistory('+JSON.stringify(data)+')');
  await x.run('playHistory(sequenceStore.list()[0])');assert.equal(x.run('musicCalls[0][0].tone.wave'),'sine');assert.ok(Math.abs(x.run('musicCalls[0][1]')-.16)<1e-9);assert.equal(x.run('musicCalls[0][3]'),'history');
- x.run('stopHistoryPlayback()');assert.equal(x.run('musicStops.at(-1)'),'history');
+ assert.ok(Math.abs(x.run('musicCalls[0][2]')-4.16)<1e-9);x.run('stopHistoryPlayback()');assert.equal(x.run('musicStops.at(-1)'),'history');
 });
 test('JSON import restores a sequence and rejects unrelated or oversized files',async()=>{
  const x=fixture(),entry=H.snapshot(info());x.$('historyImport').files=[{size:100,text:async()=>JSON.stringify(entry)}];await x.run('$("historyImport").onchange()');assert.equal(x.run('sequenceStore.list().length'),1);

@@ -83,7 +83,7 @@ function syncEnemyMusic(){
  if(snapshot){if(musicSnapshot!==snapshot){enemyMusic.setSnapshot(snapshot);musicSnapshot=snapshot;}}
  else{enemyMusic.setEnemy(enemies[stage].kind,timing().bpm);musicSnapshot=null;}
  enemyMusic.setMuted(muted);
- if(document.hidden||(!performing&&!replay))enemyMusic.stop();else enemyMusic.start(replay?replay.start:recordAudioAt);
+ if(document.hidden||(!performing&&!replay))enemyMusic.stop();else enemyMusic.start(replay?replay.start:recordAudioAt,replay?replay.end:recordAudioAt+timing().duration);
  $('enemyBpm').textContent='BPM '+(snapshot?.bpm??timing().bpm)+' · '+enemyMusic.state.chord;
  $('enemyBpm').title=snapshot?snapshot.chords.map(c=>c.name).join(' → '):EnemyMusic.progression(enemies[stage].kind).chords.map(id=>EnemyMusic.chords[id].name).join(' → ');
 }
@@ -620,7 +620,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
  $('hint').textContent='重ねたリズムを再生。Drumsが攻撃、Bassが盾、Leadが支援になる。';
  $('damage').textContent='0';
  const origin=ctx.currentTime+.06;
- enemyMusic?.stop();attackMusicWindow={start:origin-timeline.offset,end:origin+timeline.duration,accompaniment:lastAccompaniment??globalThis.EnemyMusic?.snapshot?.(enemies[stage].kind,lastBpm)};syncEnemyMusic();
+ enemyMusic?.stop();attackMusicWindow={start:origin-timeline.offset,end:origin-timeline.offset+lastDuration,accompaniment:lastAccompaniment??globalThis.EnemyMusic?.snapshot?.(enemies[stage].kind,lastBpm)};syncEnemyMusic();
  playFilterAutomation(filterLastMix);
  let scheduled=0,shown=0,total=0,flashTimer;
  await new Promise(resolve=>{
@@ -753,7 +753,7 @@ $('replay').onclick=()=>{
  audio();if(replaying){stopReplay();return;}globalThis.stopHistoryPlayback?.();
  replaying=true;$('replay').textContent='■ 再生を停止';playFilterAutomation(filterLastMix);
  const timeline=soundTimeline(lastMix,null,[],lastDuration);
- startSavedMusic(lastAccompaniment,ctx.currentTime-timeline.offset,ctx.currentTime+timeline.duration,'result');
+ startSavedMusic(lastAccompaniment,ctx.currentTime-timeline.offset,ctx.currentTime-timeline.offset+lastDuration,'result');
  timeline.events.forEach(event=>replayTimers.push(setTimeout(()=>{
   sound(event.type,undefined,event.voice,.8,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
   if(event.voice===lastInstrument)flash(event.type);
