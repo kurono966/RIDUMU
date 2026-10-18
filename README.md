@@ -1,5 +1,20 @@
 # RIDUMU
 
+## 公開URLとブランチ運用
+
+- 安定版（`main`）：https://kurono966.github.io/RIDUMU/
+- 開発版（`develop`）：https://kurono966.github.io/RIDUMU/dev/
+
+通常の開発は `git switch develop` → 編集・テスト → `git push origin develop` で進め、開発版URLで動作を確認します。安定版へ反映するときは、GitHubで **base: main / compare: develop** のPull Requestを作成し、確認後にマージします。`main` へのマージでも自動公開されます。`experiment/chatgpt` の既存ゲーム変更は自動で取り込みません。必要な変更だけをレビューして `develop` に移してください。
+
+`.github/workflows/pages.yml` が `main` / `develop` のプッシュ時に両ブランチの最新版を取得し、`main` のゲームをルート、`develop` のゲームを `dev/` に配置した単一のPages成果物を公開します。全体を共通のconcurrencyグループで直列実行し、進行中のデプロイはキャンセルしません。待機後に最新の両ブランチを取得するため、一方の更新で他方を古い成果物に戻すことを防ぎます。GitHubが待機中の古い実行を新しい実行に置き換える場合もありますが、後続の実行は必ず両方の最新版を含みます。
+
+両ブランチのテストと、HTML・CSS・JavaScriptの参照先検証に成功した場合だけ公開します。ゲーム本体の内容は書き換えず、公開対象はルートの静的ファイルと `assets/` に限定します。`.git`・テスト・ワークフロー・ビルドスクリプトは配信しません。`dev/` は生成時の開発版配置先として予約します。公開された `_deployment.json` で両ブランチの配信コミットを確認できます。ビルド処理自体は `main` の `scripts/build-pages.cjs` を使うため、公開処理の変更も両ブランチで同期してください。
+
+初回設定・復旧時はリポジトリの **Settings → Pages → Build and deployment → Source: GitHub Actions** を選びます。**Settings → Environments → github-pages → Deployment branches and tags** で `main` と `develop` を許可してください。Actionsは有効化し、公式 `actions/*` を許可します。公開ジョブにはワークフロー内で `contents: read` / `pages: write` / `id-token: write` を指定済みで、PATやリポジトリ全体の書き込み権限は不要です。手動で再公開するときは **Actions → Deploy RIDUMU stable and development → Run workflow** で `main` または `develop` を指定します。片方のブランチがない場合は公開を失敗させ、前の公開サイトを維持します。
+
+両URLは同一オリジンのため、既存仕様の `localStorage`（設定・履歴等）は共有されます。コードの配信はブランチ別に分離しています。ローカル検証は `node --test *.test.cjs`。独立した2つのチェックアウトを用意すれば `node scripts/build-pages.cjs <mainのフォルダー> <developのフォルダー> <新しい出力フォルダー>` でも同じ成果物を作れます。
+
 index.html をブラウザで開くと遊べます。インストール、サーバー、外部API、ネット接続は不要です。
 
 ## 演奏の流れ
