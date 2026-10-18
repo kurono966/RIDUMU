@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="ui.css?v=4">
     <link rel="stylesheet" href="pitch.css?v=1">
     <link rel="stylesheet" href="experience.css?v=1">
+    <link rel="stylesheet" href="element-meter.css?v=1">
   </head>
   <body class="game-ui">
     <main id="game">
@@ -145,6 +146,15 @@
             4 LEAD
           </li>
         </ol>
+        <div id="elementMeter" class="element-meter" aria-label="ドラムの予測属性">
+          <span id="elementStatus">待機</span>
+          <button id="element-earth" type="button">▰ 土</button>
+          <button id="element-wind" type="button">≋ 風</button>
+          <button id="element-fire" type="button">▲ 火</button>
+          <button id="element-lightning" type="button">ϟ 雷</button>
+          <button id="elementMore" type="button" aria-label="属性のスコアとヒント">?</button>
+          <output id="elementHint" class="element-hint" hidden></output>
+        </div>
         <div class="console-top">
           <div>
             <span class="live-dot" id="liveDot"></span>
@@ -509,10 +519,22 @@
       <div id="historyList"></div>
       <p class="history-note">MIDIは音符・テンポのデータです。外部ソフトでは音色が変わります。JSONはRIDUMUで読み戻せます。</p>
     </dialog>
+    <dialog id="elementDialog" class="workspace-dialog" aria-labelledby="elementTitle">
+      <h2 id="elementTitle">ドラムと属性</h2>
+      <button id="closeElementDialog" type="button">閉じる</button>
+      <p id="elementExplanation"></p>
+      <table><thead><tr><th>属性</th><th>判定スコア</th><th>表示割合</th></tr></thead><tbody id="elementScores"></tbody></table>
+      <p>割合は表示用です。戦闘は元のスコアで判定します。少ない入力では傾向が大きく変わります。</p>
+      <details id="element-help-earth"><summary>▰ 土</summary><p>キック中心で、間を空ける。規則的な間隔や、間を置いて打つキックも土につながります。</p></details>
+      <details id="element-help-wind"><summary>≋ 風</summary><p>キックとスネアを交互に刻む。交互演奏に加え、スネアの割合、細かい刻み、跳ねるグルーヴも関係します。</p></details>
+      <details id="element-help-fire"><summary>▲ 火</summary><p>後半に向かって音を増やす。短い連打や密度の集中も火につながります。</p></details>
+      <details id="element-help-lightning"><summary>ϟ 雷</summary><p>裏拍やシンコペーションを使う。間隔の変化や再現された揺れも雷につながります。</p></details>
+    </dialog>
     <script src="rhythm.js?v=2"></script>
     <script src="quantize.js"></script>
     <script src="groove.js"></script>
-    <script src="feedback.js?v=2"></script>
+    <script src="feedback.js?v=3"></script>
+    <script src="element-meter.js?v=1"></script>
     <script src="feedback-ui.js?v=2"></script>
     <script src="grid-effects.js?v=2"></script>
     <script src="ensemble.js?v=2"></script>
@@ -531,12 +553,13 @@
     <script src="enemy-music.js?v=5"></script>
     <script src="performance-review.js?v=1"></script>
     <script src="feedback-audio.js?v=1"></script>
-    <script src="game.js?v=22"></script>
+    <script src="game.js?v=23"></script>
     <script src="synth-ui.js?v=4"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js"></script>
-    <script src="ui.js?v=2"></script>
+    <script src="ui.js?v=3"></script>
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=1"></script>
+    <script src="element-meter-ui.js?v=1"></script>
   </body>
 </html>

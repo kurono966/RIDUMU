@@ -127,6 +127,6 @@ function discover(known,kind,report){
  if(report.hitCount>0)for(const weak of report.weaknesses){if(!next[kind].includes(weak.id)){next[kind].push(weak.id);fresh.push(weak.id);}}
  return {known:next,fresh};
 }
-root.CombatFeedback={explain,marks,discover,discoveryNames};
+root.CombatFeedback={explain,marks,discover,discoveryNames,elementCause};
 if(typeof module!=='undefined')module.exports=root.CombatFeedback;
 })(typeof window!=='undefined'?window:globalThis);

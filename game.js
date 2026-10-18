@@ -183,7 +183,7 @@ function syncQuantizeControl(){
 function timing(){const bpm=enemies[stage].bpm,beat=60/bpm;return {bpm,beat,duration:beat*8,step:beat/4,slots:32};}
 function prepareTracksForTurn(){
  // A new drum turn starts a fresh three-part phrase.
- if(instrumentForTurn(turn).id==='drums'){filterTracks.clear();filterLastMix=[];synthTracks.clear();tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
+ if(instrumentForTurn(turn).id==='drums'){globalThis.ElementMeterUI?.reset();filterTracks.clear();filterLastMix=[];synthTracks.clear();tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
 }
 function nextRecordingPhase(){
  // The generated Hat uses the same event format as a manual performance, so
@@ -710,6 +710,7 @@ async function finish(continuationAt=null){
   if(cycleBass.repetition>.3)causes.push('同じBassの反復 → シールド効率上昇');
   showRoleResult('低音の防壁',causes,shield,'SHIELD',preview);showToneResult(['bass']);globalThis.PitchUI?.result(cycleBass,null,null,null);globalThis.ExperienceUI?.shield(shield-before);rememberSequence('attack');
  }else if(lastInstrument==='drums'){
+  globalThis.ElementMeterUI?.finalize(tracks.get('drums')??[],hatNotes,lastBpm,lastDuration);
   feedbackCarryShield=shield;
   showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,'自由なリズムを記録。次はBassで盾を作ろう。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
  }else{
@@ -789,6 +790,7 @@ function drawGridHazards(w,h){
 }
 const canvas=$('scope'),paint=canvas.getContext('2d');
 function draw(){
+ globalThis.ElementMeterUI?.observe();
  const box=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
  if(canvas.width!==Math.round(box.width*ratio)||canvas.height!==Math.round(box.height*ratio)){canvas.width=Math.round(box.width*ratio);canvas.height=Math.round(box.height*ratio);}
  paint.setTransform(ratio,0,0,ratio,0,0);const w=box.width,h=box.height;
