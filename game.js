@@ -96,6 +96,18 @@ function playFilterAutomation(tracks,offset=0){clearFilterPlayback();const event
 let phase='parts',hatNotes=[],hatReady=false,lastHat=[],lastDuration=480/enemies[0].bpm,lastBpm=enemies[0].bpm,visualBeat=-1;
 let quantizeMode='off',phaseQuantizeMode='off',phaseHatPlayback=[];
 let continuousInput=false,continuousRunning=false,continuousResume=false,recordingAdvance=null;
+let autoHat=false;
+try{autoHat=localStorage.getItem('ridumu-auto-hat')==='true';}catch{}
+const autoHatControl=$('autoHat');
+if(autoHatControl){
+ autoHatControl.checked=autoHat;
+ autoHatControl.onchange=()=>{
+  if(!['ready','cleared','over'].includes(state)){autoHatControl.checked=autoHat;return;}
+  autoHat=autoHatControl.checked;
+  try{localStorage.setItem('ridumu-auto-hat',String(autoHat));}catch{}
+  if(state==='ready')ready();
+ };
+}
 try{continuousInput=localStorage.getItem('ridumu-continuous-input')==='true';}catch{}
 const continuousControl=$('continuousInput');
 if(continuousControl){
@@ -109,6 +121,7 @@ if(continuousControl){
 function syncQuantizeControl(){
  syncNoteMode();
  if(continuousControl)continuousControl.disabled=!['ready','cleared','over'].includes(state);
+ if(autoHatControl)autoHatControl.disabled=!['ready','cleared','over'].includes(state);
  $('quantizeMode').disabled=!['ready','cleared','over'].includes(state);
  const mode=Quantize.modes.find(m=>m.id===quantizeMode);
  $('quantizeMode').title=mode.description;
@@ -117,6 +130,16 @@ function timing(){const bpm=enemies[stage].bpm,beat=60/bpm;return {bpm,beat,dura
 function prepareTracksForTurn(){
  // A new drum turn starts a fresh three-part phrase.
  if(instrumentForTurn(turn).id==='drums'){filterTracks.clear();filterLastMix=[];synthTracks.clear();tracks.clear();hatNotes=[];hatReady=false;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
+}
+function nextRecordingPhase(){
+ // The generated Hat uses the same event format as a manual performance, so
+ // backing playback, groove analysis and saved sequences share one path.
+ if(!hatReady&&autoHat){
+  const {beat}=timing();
+  hatNotes=Array.from({length:16},(_,i)=>({type:'hat',t:i*beat/2,rawT:i*beat/2,quantize:'off'}));
+  hatReady=true;
+ }
+ return hatReady?'parts':'hat';
 }
 function saveTrack(voice,played){
  if(played.length)tracks.set(voice,played.map(n=>({...n})));
@@ -219,7 +242,8 @@ async function countIn(nextPhase='hat',continuationAt=null){
  // a new count-in or the previous backing track's release tail.
  if(continuationAt===null){await ctx.resume();if(globalThis.DrumAudio)await globalThis.DrumAudio.ready;}
  if(token!==run)return;
- const {beat,duration,bpm}=timing(),recordAt=continuousRunning?(continuationAt??ctx.currentTime+.06):ctx.currentTime+.06+4*beat,origin=continuousRunning?recordAt:recordAt-4*beat;
+ const {beat,duration,bpm}=timing(),hasCountIn=!continuousRunning||continuationAt===null;
+ const recordAt=hasCountIn?ctx.currentTime+.06+4*beat:continuationAt,origin=hasCountIn?recordAt-4*beat:recordAt;
  recordAudioAt=recordAt;filterAutomation=[{t:0,amount:performanceFilter.state.amount,mode:performanceFilter.state.mode,volume:performanceFilter.state.volume}];beginSynthRecording();started=performance.now()+(recordAt-ctx.currentTime)*1000;
  const backing=phase==='parts'?backingTimeline().events:[];
  const endAt=recordAt+(continuousRunning?duration:Math.max(duration,...backing.map(event=>event.time+(event.duration??0)+.14)));
@@ -233,7 +257,9 @@ async function countIn(nextPhase='hat',continuationAt=null){
    const event=backing[backingIndex++],at=recordAt+event.time;
    if(at>=now||(continuousRunning&&at>=now-.1))sound(event.type,Math.max(at,now),event.voice,event.voice==='hat'?.85:.6,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
   }
-  const countLength=continuousRunning?0:phase==='hat'?12:4;
+  // Keep the opening four beats and a beat guide throughout manual Hat input.
+  // Continuous part-to-part handoffs still have no added count-in.
+  const countLength=(hasCountIn?4:0)+(phase==='hat'?8:0);
   while(countBeat<countLength&&origin+countBeat*beat<now+.1){
    const at=origin+countBeat*beat;
    if(at>=now)clickSound('rim',at,countBeat%4===0);
@@ -441,7 +467,7 @@ $('quantizeMode').onchange=()=>{
  syncQuantizeControl();$('hint').textContent=Quantize.modes.find(m=>m.id===quantizeMode).description;
 };
 function update(){updateInstrument();renderDiscoveries();$('enemyBpm').textContent='BPM '+timing().bpm;$('bpmValue').textContent=timing().bpm;$('timer').textContent=timing().duration.toFixed(2);const enemy=enemies[stage];$('enemyName').textContent=enemy.name;$('enemyDesc').textContent=enemy.description;$('enemyHp').textContent=`${enemyHp} / ${enemy.hp}`;$('enemyBar').style.width=`${enemyHp/enemy.hp*100}%`;$('playerHp').textContent=`${hp} / 100`;$('playerBar').style.width=`${hp}%`;$('turn').textContent=`TURN ${String(battleRound()).padStart(2,'0')}`;$('stage').textContent=`ENCOUNTER ${String(stage+1).padStart(2,'0')} / ${String(enemies.length).padStart(2,'0')}`;$('sector').textContent=stage+1;$('enemy').className=`creature ${enemy.kind}`;renderGridHazards();}
-function needsHat(){return !hatReady||(instrumentForTurn(turn).id==='drums'&&!continuousResume);}
+function needsHat(){return !autoHat&&(!hatReady||(instrumentForTurn(turn).id==='drums'&&!continuousResume));}
 function ready(label='演奏開始 ↗'){
  state='ready';advanceGridHazards();$('start').disabled=false;syncQuantizeControl();$('start').textContent=label;$('status').textContent='READY TO PLAY';
  const createHat=needsHat();
@@ -450,7 +476,7 @@ function ready(label='演奏開始 ↗'){
  $('hint').textContent+=' · '+({drums:'攻撃を構築',bass:'低音で盾を作る',lead:'旋律で支援 → 戦闘'}[instrumentForTurn(turn).id]);
  if(gridHazards.active().length)$('hint').textContent='SPACEで開始 · 紫の帯は毒。入力は可能。';
 }
-function startTurn(){advanceGridHazards();if(!continuousResume)prepareTracksForTurn();continuousResume=false;return countIn(hatReady?'parts':'hat');}
+function startTurn(){advanceGridHazards();if(!continuousResume)prepareTracksForTurn();continuousResume=false;return countIn(nextRecordingPhase());}
 $('start').onclick=()=>{
  if(continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){stopContinuousInput();return;}
  audio();stopReplay();
@@ -648,7 +674,7 @@ async function finish(continuationAt=null){
   // Combat still resolves normally after Lead. The next cycle starts itself;
   // only Drums -> Bass -> Lead share the previous exact recording boundary.
   prepareTracksForTurn();
-  return countIn(hatReady?'parts':'hat',lastInstrument==='lead'?null:continuationAt);
+  return countIn(nextRecordingPhase(),lastInstrument==='lead'?null:continuationAt);
  }
  ready();
 }

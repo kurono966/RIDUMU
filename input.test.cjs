@@ -13,14 +13,39 @@ function game(){
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
-test('continuous input omits rimshots and hands Hat to Drums on the exact phrase boundary',async()=>{
+test('continuous input keeps four opening rimshots and eight Hat guide beats without a gap before Drums',async()=>{
  const g=game();g.run("continuousInput=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,rims=0;setInterval=fn=>{tickContinuous=fn;return 1};clickSound=()=>rims++;");
  await g.run("countIn('hat')");
  const first=g.run('recordAudioAt'),duration=g.run('timing().duration');
- g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('hat');ctx.currentTime=recordAudioAt+timing().duration+.004;tickContinuous()");
+ assert.equal(first,2.06);assert.equal(g.run('state'),'countin');
+ for(let beat=1;beat<12;beat++){
+  g.run(`ctx.currentTime=.06+${beat}*.5-.05;tickContinuous()`);
+  if(beat===4)g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('hat')");
+ }
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.004;tickContinuous()');
  assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'recording');
- assert.equal(g.run('recordAudioAt'),first+duration);assert.equal(g.run('rims'),0);
+ assert.equal(g.run('recordAudioAt'),first+duration);assert.equal(g.run('rims'),12);
  assert.equal(g.run("$('start').disabled"),false);assert.match(g.run("$('start').textContent"),/停止/);
+});
+
+test('auto Hat generates sixteen eighth notes and skips Hat entry in normal and continuous modes',async()=>{
+ for(const continuous of [false,true]){
+  const g=game();g.run(`autoHat=true;continuousRunning=${continuous};ctx.currentTime=0;ctx.resume=()=>Promise.resolve();setInterval=()=>1;`);
+  assert.equal(g.run('needsHat()'),false);await g.run('startTurn()');
+  assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'countin');assert.equal(g.run('recordAudioAt'),2.06);
+  assert.equal(g.run('hatReady'),true);assert.equal(g.run('hatNotes.length'),16);
+  assert.equal(g.run('hatNotes.every((n,i)=>n.type===\'hat\'&&n.t===i*.25&&n.rawT===n.t)'),true);
+  assert.equal(g.run("backingTimeline().events.filter(n=>n.voice==='hat').length"),16);
+  g.run("notes=[{type:'kick',t:0}];saveTrack('drums',notes)");assert.equal(g.run("lastMix.find(t=>t.voice==='hat').notes.length"),16);
+ }
+});
+
+test('auto Hat refreshes with each cycle tempo and leaves an existing manually recorded Hat intact',()=>{
+ const g=game();g.run("autoHat=true;hatReady=true;hatNotes=[{type:'hat',t:.07,rawT:.07}];nextRecordingPhase()");
+ assert.equal(g.run('hatNotes[0].t'),.07);
+ g.run('enemies[0].bpm=150;prepareTracksForTurn();nextRecordingPhase()');
+ assert.equal(g.run('hatNotes.length'),16);assert.equal(g.run('hatNotes[1].t'),.2);assert.equal(g.run('hatNotes[15].t'),3);
+ g.run('autoHat=false;prepareTracksForTurn()');assert.equal(g.run('nextRecordingPhase()'),'hat');
 });
 
 test('continuous handoff retains backing downbeats and accepts a new part input before the timer fires',async()=>{

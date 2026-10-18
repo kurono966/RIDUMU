@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="grid-hazards.css?v=1">
     <link rel="stylesheet" href="combat.css?v=3">
     <link rel="stylesheet" href="synth.css?v=2">
-    <link rel="stylesheet" href="ui.css?v=2">
+    <link rel="stylesheet" href="ui.css?v=3">
   </head>
   <body class="game-ui">
     <main id="game">
@@ -261,7 +261,9 @@
       <fieldset>
         <legend>タイミング</legend>
         <label for="continuousInput"><span>連続入力</span><input id="continuousInput" type="checkbox" aria-describedby="continuousHelp"></label>
-        <p id="continuousHelp" class="setting-help">一度開始すると、HAT → DRUMS → BASS → LEADを休まず入力。リムショットとパート間の開始操作を省き、戦闘後も自動で続きます。停止ボタン／Escで中断（入力中のパートは録り直し）。</p>
+        <p id="continuousHelp" class="setting-help">最初は4拍のリムショットで準備し、HAT → DRUMS → BASS → LEADを続けて入力。パート間の開始操作を省き、戦闘後も自動で続きます。停止ボタン／Escで中断（入力中のパートは録り直し）。</p>
+        <label for="autoHat"><span>ハイハット自動入力</span><input id="autoHat" type="checkbox" aria-describedby="autoHatHelp"></label>
+        <p id="autoHatHelp" class="setting-help">2小節の8分音符を自動で作り、HATの入力を省略してDRUMSから演奏します。通常入力・連続入力の両方で使えます。</p>
         <label class="quantize-control" for="quantizeMode"><span>再生補正</span><select id="quantizeMode">
   <option value="off">生演奏</option>
   <option value="just">ジャスト</option>
@@ -511,8 +513,8 @@
     <script src="evaluation-debug.js"></script>
     <script src="battle-waveform.js"></script>
     <script src="performance-filter.js?v=2"></script>
-    <script src="game.js?v=11"></script>
-    <script src="synth-ui.js?v=2"></script>
+    <script src="game.js?v=12"></script>
+    <script src="synth-ui.js?v=3"></script>
     <script src="history-ui.js?v=3"></script>
     <script src="evaluation-debug-ui.js"></script>
     <script src="ui.js?v=2"></script>

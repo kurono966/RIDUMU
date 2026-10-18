@@ -25,7 +25,7 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  const continuousContext=await browser.newContext(),continuous=await continuousContext.newPage();continuous.on('pageerror',e=>errors.push(e.message));
  await continuous.goto(page.url());await continuous.click('#openPlaySettings');await continuous.check('#continuousInput');await continuous.click('#closePlaySettings');await continuous.reload();
  assert.equal(await continuous.locator('#continuousInput').isChecked(),true);
- await continuous.evaluate(()=>{enemies[0].bpm=240;let originalClick=clickSound;globalThis.continuousRims=0;clickSound=(...args)=>{globalThis.continuousRims++;originalClick(...args)};globalThis.continuousAttacks=0;globalThis.continuousCounters=0;playbackAttack=async()=>{globalThis.continuousAttacks++};enemyCounter=async()=>{globalThis.continuousCounters++};});
+ await continuous.evaluate(()=>{enemies[0].bpm=240;let originalClick=clickSound;globalThis.continuousRims=[];clickSound=(...args)=>{globalThis.continuousRims.push({turn,phase,at:args[1],start:recordAudioAt});originalClick(...args)};globalThis.continuousAttacks=0;globalThis.continuousCounters=0;playbackAttack=async()=>{globalThis.continuousAttacks++};enemyCounter=async()=>{globalThis.continuousCounters++};});
  await continuous.click('#start');const starts=[];
  for(const [turnNumber,phaseName,key] of [[1,'hat','h'],[1,'parts','a'],[2,'parts','a'],[3,'parts','l']]){
   await continuous.waitForFunction(({turnNumber,phaseName})=>state==='recording'&&turn===turnNumber&&phase===phaseName,{turnNumber,phaseName});
@@ -33,11 +33,24 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  }
  for(let i=1;i<starts.length;i++)assert(Math.abs(starts[i]-starts[i-1]-2)<1e-8,'continuous phase drift');
  await continuous.waitForFunction(()=>turn===4&&phase==='hat'&&state==='recording');
- assert.deepEqual(await continuous.evaluate(()=>[globalThis.continuousRims,globalThis.continuousAttacks,globalThis.continuousCounters]),[0,1,1]);
+ assert.deepEqual(await continuous.evaluate(()=>[globalThis.continuousRims.filter(n=>n.turn===1&&n.phase==='hat').length,globalThis.continuousRims.filter(n=>n.phase==='parts').length,globalThis.continuousAttacks,globalThis.continuousCounters]),[12,0,1,1]);
  const recorded=await continuous.evaluate(()=>sequenceStore.list().find(entry=>entry.tracks.some(track=>track.voice==='lead')));
  assert(recorded.tracks.some(track=>track.voice==='bass'&&track.notes.length));assert(recorded.tracks.some(track=>track.voice==='lead'&&track.notes.length));
- await continuous.click('#start');assert.equal(await continuous.evaluate(()=>state),'ready');await continuous.waitForTimeout(2100);assert.equal(await continuous.evaluate(()=>state),'ready');await continuousContext.close();
- assert.deepEqual(errors,[]);console.log('PASS: nine viewports, all parts/results, effects preserve controls, settings and analysis, continuous recording on the real audio clock without rimshots or phase drift, persisted opt-in, saved parts and safe stop.');
+ await continuous.click('#start');assert.equal(await continuous.evaluate(()=>state),'ready');await continuous.waitForTimeout(2100);assert.equal(await continuous.evaluate(()=>state),'ready');
+ for(const seamless of [false,true]){
+  await continuous.reload();await continuous.click('#openPlaySettings');await continuous.check('#autoHat');await continuous.locator('#continuousInput').setChecked(seamless);await continuous.click('#closePlaySettings');await continuous.reload();
+  assert(await continuous.locator('#autoHat').isChecked());assert.equal(await continuous.locator('#continuousInput').isChecked(),seamless);
+  await continuous.evaluate(()=>{enemies[0].bpm=240;let original=clickSound;globalThis.autoRims=0;clickSound=(...args)=>{globalThis.autoRims++;original(...args)};});
+  await continuous.click('#start');assert(await continuous.evaluate(()=>recordAudioAt-ctx.currentTime>.7),'auto Hat must retain the opening count-in');
+  await continuous.waitForFunction(()=>state==='recording'&&turn===1);assert.equal(await continuous.evaluate(()=>phase),'parts');
+  assert.deepEqual(await continuous.evaluate(()=>[hatReady,hatNotes.length,hatNotes[1].t,globalThis.autoRims]),[true,16,.125,4]);
+  await continuous.keyboard.press('a');await continuous.waitForFunction(()=>turn===2&&['ready','recording'].includes(state));
+  const autoSaved=await continuous.evaluate(()=>sequenceStore.list()[0].tracks.find(t=>t.voice==='hat'));
+  assert.equal(autoSaved.notes.length,16);assert.equal(autoSaved.notes[15].t,1.875);
+  if(seamless){assert.equal(await continuous.evaluate(()=>globalThis.autoRims),4);await continuous.click('#start');}
+ }
+ await continuousContext.close();
+ assert.deepEqual(errors,[]);console.log('PASS: nine viewports, settings and analysis, continuous phase timing, opening count-in and manual Hat metronome, persisted auto Hat in both recording modes, saved Hat notes and safe stop.');
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
 
 
