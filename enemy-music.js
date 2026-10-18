@@ -26,17 +26,17 @@
    const spec=progression(kind),chord=chords[spec.chords[(rotation+index)%spec.chords.length]];
    const filter=ctx.createBiquadFilter(),amp=ctx.createGain(),sources=[];
    filter.type='lowpass';filter.frequency.value=spec.cutoff;filter.Q.value=.5;filter.connect(amp);amp.connect(bus);
-   // Soft attacks and restrained midrange leave room for live drums and melody.
-   const peak=.048/Math.sqrt(chord.notes.length),hold=start+Math.max(.04,length-.08),end=hold+.2;
+   // A stronger sustained level keeps the chords present beneath live playing.
+   const peak=.105/Math.sqrt(chord.notes.length),sustain=.82,hold=start+Math.max(.04,length-.08),end=hold+.2;
    amp.gain.setValueAtTime(0,start);amp.gain.linearRampToValueAtTime(peak,start+.035);
-   amp.gain.linearRampToValueAtTime(peak*.65,start+.09);amp.gain.setValueAtTime(peak*.65,Math.max(start+.09,hold));amp.gain.linearRampToValueAtTime(0,Math.max(start+.1,end));
+   amp.gain.linearRampToValueAtTime(peak*sustain,start+.09);amp.gain.setValueAtTime(peak*sustain,Math.max(start+.09,hold));amp.gain.linearRampToValueAtTime(0,Math.max(start+.1,end));
    const naturalEnd=Math.max(start+.12,end+.02);
    for(const midi of chord.notes){
     const osc=ctx.createOscillator();osc.type='triangle';osc.frequency.value=440*2**((midi-69)/12);osc.detune.value=(sources.length%2?1:-1)*spec.detune;
     osc.connect(filter);osc.start(start);osc.stop(naturalEnd);sources.push(osc);
    }
    let cut=Infinity;
-   const handle={stop(time=ctx.currentTime){if(time>=cut||time>=naturalEnd)return;cut=time;const t=Math.max(start,time);amp.gain.cancelScheduledValues(t);amp.gain.setValueAtTime(time<=start?0:peak*.65,t);amp.gain.linearRampToValueAtTime(0,t+.025);for(const osc of sources)osc.stop(Math.min(naturalEnd,t+.03));}};
+   const handle={stop(time=ctx.currentTime){if(time>=cut||time>=naturalEnd)return;cut=time;const t=Math.max(start,time);amp.gain.cancelScheduledValues(t);amp.gain.setValueAtTime(time<=start?0:peak*sustain,t);amp.gain.linearRampToValueAtTime(0,t+.025);for(const osc of sources)osc.stop(Math.min(naturalEnd,t+.03));}};
    active.add(handle);sources[0].onended=()=>{active.delete(handle);for(const osc of sources)osc.disconnect();filter.disconnect();amp.disconnect();};
    return handle;
   }
