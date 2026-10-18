@@ -37,16 +37,16 @@ function build({stable,development,output,shas}){
  stable=path.resolve(stable);development=path.resolve(development);output=path.resolve(output);
  if(inside(stable,output)||inside(development,output)||inside(output,stable)||inside(output,development))throw Error('Output and source folders must be separate.');
  if(fs.existsSync(output))throw Error('Output already exists; choose a new empty destination.');
- if(!shas||!['main','develop'].every(k=>/^[a-f0-9]{40}$/.test(shas[k])))throw Error('Both source commit SHAs are required.');
+ if(!shas||!['main','experiment/chatgpt'].every(k=>/^[a-f0-9]{40}$/.test(shas[k])))throw Error('Both source commit SHAs are required.');
  publishBranch(stable,output,'https://kurono966.github.io/RIDUMU/');
  publishBranch(development,path.join(output,'dev'),'https://kurono966.github.io/RIDUMU/dev/');
- fs.writeFileSync(path.join(output,'_deployment.json'),JSON.stringify({version:1,main:{commit:shas.main,path:'/'},develop:{commit:shas.develop,path:'/dev/'}},null,2)+'\n');
+ fs.writeFileSync(path.join(output,'_deployment.json'),JSON.stringify({version:1,main:{commit:shas.main,path:'/'},'experiment/chatgpt':{commit:shas['experiment/chatgpt'],path:'/dev/'}},null,2)+'\n');
 }
 if(require.main===module){
  const [stable,development,output]=process.argv.slice(2);
- if(!stable||!development||!output)throw Error('Usage: node scripts/build-pages.cjs <main checkout> <develop checkout> <output>');
+ if(!stable||!development||!output)throw Error('Usage: node scripts/build-pages.cjs <main checkout> <experiment/chatgpt checkout> <output>');
  const sha=folder=>execFileSync('git',['-C',folder,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
- build({stable,development,output,shas:{main:sha(stable),develop:sha(development)}});
+ build({stable,development,output,shas:{main:sha(stable),'experiment/chatgpt':sha(development)}});
  console.log('Validated stable / and development /dev/; source games were copied unchanged.');
 }
 module.exports={build,validateSite};
