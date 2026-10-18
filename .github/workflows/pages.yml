@@ -1,28 +1,63 @@
-name: Deploy RIDUMU playtest
+name: Deploy RIDUMU stable and development
+
 on:
   push:
-    branches: [experiment/chatgpt]
+    branches: [main, develop]
   workflow_dispatch:
+
 permissions:
   contents: read
-  pages: write
-  id-token: write
+
+# Both branches replace the same Pages artifact. Serialize the entire build and
+# deployment, and fetch BOTH latest branch heads after acquiring this lock.
 concurrency:
-  group: ridumu-playtest-pages
-  cancel-in-progress: true
+  group: ridumu-pages
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout experiment branch
-        uses: actions/checkout@v4
-      - name: Upload static game
-        uses: actions/upload-pages-artifact@v3
+      - name: Checkout latest stable branch
+        uses: actions/checkout@v6
         with:
-          path: .
-      - name: Deploy to GitHub Pages
+          ref: main
+          path: stable
+          persist-credentials: false
+      - name: Checkout latest development branch
+        uses: actions/checkout@v6
+        with:
+          ref: develop
+          path: development
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Test stable branch
+        working-directory: stable
+        run: node --test *.test.cjs
+      - name: Test development branch
+        working-directory: development
+        run: node --test *.test.cjs
+      - name: Assemble and validate both sites
+        run: node stable/scripts/build-pages.cjs stable development _site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload combined site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Deploy both versions to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
