@@ -49,7 +49,7 @@
   lines.sort((a,b)=>b.score-a.score);const chosen=lines.slice(0,2);if(chosen.some(l=>l.text.includes('シールド貫通')||l.text.includes('狙いづらさ'))){const risk=lines.find(l=>l.text.includes('狙いづらさ')),pierce=lines.find(l=>l.text.includes('シールド貫通'));if(risk&&pierce){chosen[0]=pierce;chosen[1]=risk;}}
   const compact=text=>text.replace(/（[^）]*）/g,'').replace('↯ 大きな跳躍','↯跳躍').replace('↯ 跳躍の狙いづらさ → ','').replace('シールド貫通','貫通').replace('命中効率','命中').replace('シールド','盾').replace('上昇旋律','上昇').replace('下降旋律','下降').replace(/\.0%/g,'%');
   summary=chosen.map(l=>compact(l.text)).join(' / ');el('pitchAnalysis').hidden=!rows.length;el('pitchOutcome').textContent=summary;el('pitchOutcome').title=lines.map(l=>l.text).join('\n');el('pitchOutcome').hidden=!summary;lines[0]?.highlight();
-  if(bass?.pitch)battleWaveform?.trigger('pitch',{low:Math.max(0,bass.pitch.effects.shield),high:bass.pitch.effects.attack});root.RidumuUI?.refresh();
+  if(bass?.pitch&&!root.ExperienceUI)battleWaveform?.trigger('pitch',{low:Math.max(0,bass.pitch.effects.shield),high:bass.pitch.effects.attack});root.RidumuUI?.refresh();
  }
  root.PitchUI={draw,result,get summary(){return summary;},clearSelection(){selected=null;},clear(){summary='';selected=null;el('pitchAnalysis').hidden=true;el('pitchOutcome').hidden=true;}};
  try{el('pitchAnalysis').open=localStorage.getItem('ridumu-pitch-details')==='true';}catch{}

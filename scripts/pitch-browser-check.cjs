@@ -14,7 +14,7 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
   state='recording';phase='parts';recordAudioAt=ctx.currentTime;notes=[72,60,60,67,60,60].map((midi,i)=>({type:'kick',midi,register:PitchCombat.register(midi,[60,67,72]),t:i*.3,rawT:i*.3,duration:.22}));});
  await page.evaluate(()=>finish());
  const combat=await page.evaluate(()=>pitchCheck);assert.equal(combat.actual.hp,combat.expected.hp);assert.equal(combat.actual.shield,combat.expected.shield);assert(combat.reduction.pitch>0);assert(combat.guard.pierce>0);assert(combat.guard.multiplier>.8);assert(combat.bass.shield>0);
- assert.match(await page.locator('#pitchOutcome').textContent(),/命中 -/);
+ assert.match(await page.locator('#pitchDetails').textContent(),/命中効率 -/);
  const entry=await page.evaluate(()=>sequenceStore.list()[0]);assert.equal(entry.tracks.find(t=>t.voice==='bass').notes[0].register,0);assert.equal(entry.tracks.find(t=>t.voice==='lead').notes[0].midi,72);
  await page.click('#openResultDetails');await page.locator('#pitchAnalysis summary').click();assert.equal(await page.locator('#pitchDetails svg').count(),2);assert.match(await page.locator('#pitchDetails').textContent(),/シールド貫通/);assert.match(await page.locator('#pitchDetails').textContent(),/命中効率/);
  await page.locator('.pitch-cause').filter({hasText:'大きな跳躍'}).click();assert(await page.locator('.pitch-highlight').count()>0);if(process.env.RIDUMU_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'pitch-analysis.png')});await page.click('#closeResultDetails');

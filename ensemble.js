@@ -2,7 +2,7 @@
 (function(root){
  const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
  const raw=n=>n.inputT??n.rawT??n.t;
- function analyze(tracks,bpm=120,duration=480/bpm){
+ function analyze(tracks,bpm=120,duration=480/bpm,disabled=null){
   const step=60/bpm/4,slots=Math.round(duration/step),tolerance=Math.min(.055,step*.4);
   const source=tracks&&typeof tracks.get==='function'?{drums:tracks.get('drums'),bass:tracks.get('bass'),lead:tracks.get('lead')}:Array.isArray(tracks)?Object.fromEntries(tracks.map(t=>[t.voice,t.notes])):tracks;
   function clean(voice){
@@ -54,7 +54,7 @@
   add('callResponse','CALL & RESPONSE',Math.min(1,.6+motifs.length*.15)*(motifs.length?1:0),motifs.slice(0,2),'短いリズムの形を別パートが返した');
   const selected=candidates.sort((a,b)=>b.score-a.score).slice(0,2);
   const bonus={attack:0,shield:0,support:0,accuracy:0,shieldEfficiency:0,element:0,resistance:0,break:0};
-  selected.forEach((s,i)=>{const strength=s.score*(i?.6:1),pct=n=>Math.round(n*100);
+  selected.forEach((s,i)=>{if(s.id===disabled)return;const strength=s.score*(i?.6:1),pct=n=>Math.round(n*100);
    if(s.id==='grooveLock'){const attack=.1*strength,shield=4*strength;bonus.attack+=attack;bonus.shield+=shield;s.effect=`攻撃 +${pct(attack)}% / 盾 +${Math.round(shield)}`;}
    if(s.id==='response'){bonus.support+=.18*strength;s.effect=`Lead支援 +${pct(.18*strength)}%`;}
    if(s.id==='interlock'){bonus.accuracy+=.05*strength;bonus.shieldEfficiency+=.1*strength;s.effect=`命中効率 +${pct(.05*strength)}% / 盾効率 +${pct(.1*strength)}%`;}
@@ -62,7 +62,7 @@
    if(s.id==='callResponse'){bonus.element+=.12*strength;bonus.resistance+=.08*strength;s.effect=`属性効果 +${pct(.12*strength)}% / 敵攻撃 −${pct(.08*strength)}%`;}
   });
   bonus.attack=Math.min(.18,bonus.attack);bonus.shield=Math.min(6,Math.round(bonus.shield));
-  return {scores:{grooveLock:0,response:0,interlock:0,unison:0,callResponse:0,...Object.fromEntries(candidates.map(s=>[s.id,s.score]))},selected,bonus};
+  return {scores:{grooveLock:0,response:0,interlock:0,unison:0,callResponse:0,...Object.fromEntries(candidates.map(s=>[s.id,s.score]))},selected:selected.filter(s=>s.id!==disabled),bonus};
  }
  function support(base,ensemble){const next={...base},b=ensemble.bonus;for(const k of ['attack','expose','accuracy','element','shieldEfficiency','weaken'])next[k]=(base[k]??0)*(1+b.support);return next;}
  function attack(base,ensemble){const b=ensemble.bonus,multiplier=1+Math.min(.2,b.attack+b.break*.25),power=base.power*multiplier;return {...base,power,powerSteps:[...(base.powerSteps??[{label:'Drums',value:base.power,multiplier:1}]),{label:'シナジー（ブレイク込み）',value:power,multiplier}],accuracy:clamp(base.accuracy+b.accuracy,0,.99),effect:clamp(base.effect*(1+b.element)),breakPower:clamp((base.breakPower??0)+b.break)};}

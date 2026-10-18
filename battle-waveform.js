@@ -35,6 +35,7 @@
    if(e.rise){paint.lineWidth=1+e.rise*8;paint.beginPath();paint.moveTo(w*.25,h*.7);paint.lineTo(w*.55,h*(.7-e.rise*2));paint.stroke();}
    if(e.fall){paint.lineWidth=1;paint.strokeStyle='#8edcdd';paint.beginPath();for(let i=0;i<40;i++){const x=w*(.3+i/100),y=h*(.35+i/140)+Math.sin(i*.6+time*3)*h*.025;if(i)paint.lineTo(x,y);else paint.moveTo(x,y);}paint.stroke();}
    if(e.pierce){paint.strokeStyle='#c6b0ff';paint.lineWidth=1+e.pierce*3;paint.beginPath();paint.moveTo(w*.3,h*.7);paint.lineTo(w*.52,h*.3);paint.lineTo(w*.47,h*.55);paint.lineTo(w*.7,h*.3);paint.stroke();}
+   if(e.repeat){paint.strokeStyle='#efd88b';paint.lineWidth=1;for(const y of [.42,.5]){paint.beginPath();paint.moveTo(w*.35,h*y);paint.lineTo(w*.65,h*y);paint.stroke();}}
    if(e.low||e.high){paint.strokeStyle=e.high?'#efa568':'#8edcdd';paint.lineWidth=1+(e.low??0)*20;paint.beginPath();paint.ellipse(w*.5,h*.58,w*.28,h*.2,0,0,Math.PI*2);paint.stroke();if(e.high){paint.beginPath();paint.moveTo(w*.5,h*.4);paint.lineTo(w*.7,h*.25);paint.stroke();}}
    paint.restore();
   }
