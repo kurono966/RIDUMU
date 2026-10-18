@@ -1,16 +1,11 @@
-/* Beneficial grid effects are independent of playback quantization and hazards. */
+/* Shared grid coordinates. Legacy zone APIs remain inert for old debug data. */
 (function(root){
- const definitions=new Map([
-  ['power',{role:'drums',label:'POWER',color:'#ffae75'}],
-  ['shield',{role:'bass',label:'SHIELD',color:'#8edcdd'}],
-  ['boost',{role:'lead',label:'BOOST',color:'#c5adff'}]
- ]);
+ const definitions=new Map();
  const extensionTypes=['poison','mute','delay','echo','break','heal','forceQuantize'];
  function register(type,definition){definitions.set(type,{...definition});}
  function slot(note,bpm){return Math.max(0,Math.min(31,Math.round((note.inputT??note.rawT??note.t)/(60/bpm/4))));}
  function create(round=1,enemyIndex=0){
-  const shift=((round-1)*5+enemyIndex*3)%32;
-  return ['power','shield','boost'].map((type,i)=>({type,slots:[2+i*3,13+i*3,24+i*2].map(q=>(q+shift)%32)}));
+  return [];
  }
  function inspect(notes,role,zones,bpm){
   const occupied=new Set(notes.map(n=>slot(n,bpm))),result={};

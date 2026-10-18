@@ -538,10 +538,10 @@ function renderBattlePlan(){
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
  $('enemyIntent').hidden=ended;
  $('enemyIntent').textContent=ended?'':`予告：${attackNames[enemies[stage].kind]} / 威力 ${enemies[stage].attack}${enemies[stage].gridSkill?' ＋ 毒汚染':''} · LEAD後`;
- const names=currentZones().map(zone=>GridEffects.definitions.get(zone.type).label+'：'+zone.slots.map(q=>q+1).join('・')+'番');
+ const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
- $('scope').title=names.join('\n');$('scope').setAttribute('aria-label','演奏シーケンサー。P＝攻撃、S＝盾、B＝支援。紫の帯は毒。'+names.join('。'));
+ $('scope').title=names.join('\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
 
 }
 function rememberSequence(kind,mix=lastMix){
@@ -607,7 +607,6 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
     flash(event.type);
     const damage=event.damages.reduce((a,b)=>a+b,0);
     const element=Object.keys(elements).find(key=>elements[key][2]===color);
-    if(currentZones().some(zone=>zone.type==='power'&&zone.slots.includes(GridEffects.slot(event,lastBpm))))battleWaveform?.trigger('power',{element,groove:activeReport?.groove,amount:.8});
     if(event.damages.length){
      total+=damage;enemyHp=Math.max(0,enemyHp-damage);showHitFeedback(damage);
      if(damage>0){
@@ -662,22 +661,19 @@ async function finish(continuationAt=null){
   cycleBass.rawShield=cycleBass.shield;const tone=Synth.modifiers(toneProfile('bass'));cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(90,shield+cycleBass.shield);if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
-  if(cycleBass.zone)causes.push(`SHIELDゾーン ${cycleBass.zone}か所 → 追加シールド`);
-  else if(cycleBass.repetition>.3)causes.push('同じBassの反復 → シールド効率上昇');
+  if(cycleBass.repetition>.3)causes.push('同じBassの反復 → シールド効率上昇');
   showRoleResult('低音の防壁',causes,shield,'SHIELD',preview);showToneResult(['bass']);rememberSequence('attack');
  }else if(lastInstrument==='drums'){
-  const power=GridEffects.inspect(notes,'drums',zones,lastBpm).power??0;
-  showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,power?`POWERゾーン ${power}か所 → 攻撃強化`:'自由なリズムを記録。次はBassで盾を作ろう。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
+  showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,'自由なリズムを記録。次はBassで盾を作ろう。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
  }else{
   cycleEnsemble=Ensemble.analyze(tracks,lastBpm,lastDuration);
   cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones),cycleEnsemble);
   const toneShield=Math.round((cycleBass?.rawShield??0)*(Synth.modifiers(toneProfile('lead')).shield-1)*.5);
   const bonus=toneShield+Math.round((cycleBass?.shield??0)*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield;
-  shield=Math.max(0,Math.min(90,shield+bonus));if(bonus>0)battleWaveform?.trigger('shield');if(cycleLead.zone)battleWaveform?.trigger('boost');renderBattlePlan();
+  shield=Math.max(0,Math.min(90,shield+bonus));if(bonus>0)battleWaveform?.trigger('shield');renderBattlePlan();
   const drums=tracks.get('drums')??[],rendered=Quantize.render(drums,lastBpm,lastDuration);
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
   const a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
-  a.powerCells=zones.find(z=>z.type==='power').slots;
   const tone=Synth.combine(toneProfile('bass'),toneProfile('lead'));
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a.powerSteps=[...(a.powerSteps??[]),{label:'Bass / Lead音色（各1/2：炎↑・水／土↓）',value:a.power,multiplier:tone.attack}];
@@ -685,8 +681,8 @@ async function finish(continuationAt=null){
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
-  const extras=[];if(a.powerHits)extras.push({id:'powerZone',source:'power-zone',tag:'POWER！',text:`POWER ${a.powerHits}か所 → Drumsの攻撃強化`,priority:2});
-  if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description+(cycleLead.zone?' / BOOSTで支援強化':''),priority:3});
+  const extras=[];
+  if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description,priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
   report.hasSupport=notes.length>0;renderReport(report);showToneResult(['bass','lead']);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 ${bonus>=0?'+':''}${bonus}、音色分 ${toneShield>=0?'+':''}${toneShield}）`;
   if(lastInstrument==='drums'){
@@ -747,14 +743,6 @@ function draw(){
  const duration=attackPlayhead!==null?lastDuration:timing().duration;
  paint.clearRect(0,0,w,h);
  if(['ready','countin','recording'].includes(state)){
-  for(const zone of currentZones()){
-   const definition=GridEffects.definitions.get(zone.type),active=definition.role===instrumentForTurn(turn).id;
-   for(const q of zone.slots){const x=22+(w-24)*q/32,cell=(w-24)/32;
-    paint.fillStyle=definition.color+(active?'35':'14');paint.fillRect(x,0,cell,h);
-    paint.fillStyle=definition.color;paint.fillRect(x,h-2,cell,2);
-    if(active&&cell>=7){paint.font='8px Arial';paint.textAlign='center';paint.fillText(definition.label[0],x+cell/2,h-5);paint.textAlign='start';}
-   }
-  }
   drawGridHazards(w,h);
  }
  // Neutral line weights separate sixteenths, beats and bars from colored effects.

@@ -134,17 +134,17 @@ test('same input always produces identical damage result',()=>{
   assert.deepEqual(r1,r2);
   assert.deepEqual(R.resolve(base,{kind:'machine'}),r1);
 });
-test('groove, zone, Lead and ensemble modifiers remain deterministic together',()=>{
+test('groove, Lead and ensemble remain deterministic without retired zone bonuses',()=>{
  const G=require('./groove.js'),C=require('./performance-combat.js'),E=require('./ensemble.js');
  const drums=[0,1,2].map(t=>({type:'kick',t,rawT:t})),bass=drums.map(n=>({...n,duration:.5,midi:36})),lead=[0,.6,1.2].map((t,i)=>({type:'snare',t,rawT:t,midi:60+i*3,duration:.2}));
  const hat=Array.from({length:8},(_,i)=>({type:'hat',t:i*.5,rawT:i*.5}));
  const ensemble=E.analyze({drums,bass,lead}),support=E.support(C.lead(lead,120,4,[]),ensemble);
  const base=G.enrich(R.analyze(drums),G.analyzeRelations(drums,hat,120,4));
  const a=E.attack(C.enhance(base,drums,120,[{type:'power',slots:[0,8,16]}],support),ensemble);
- assert.equal(a.powerHits,3);assert.ok(ensemble.selected.length>0);assert.ok(a.power>base.power);
+ assert.equal(a.powerHits,0);assert.ok(ensemble.selected.length>0);assert.ok(a.power>base.power);
  const snapshot=JSON.stringify(a),result=R.resolve(a,{kind:'stone'});
  for(let i=0;i<50;i++)assert.deepEqual(R.resolve(a,{kind:'stone'}),result);
- assert.equal(JSON.stringify(a),snapshot);assert.equal(result.calculation.powerSteps.length,4);
+ assert.equal(JSON.stringify(a),snapshot);assert.equal(result.calculation.powerSteps.length,3);
  assert.equal(result.calculation.hitDetails.length,a.hits);
 });
 

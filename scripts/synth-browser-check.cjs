@@ -5,6 +5,7 @@ const root=path.resolve(__dirname,'..');
  browser=await chromium.launch({headless:true,args:['--disable-logging'],executablePath:process.env.RIDUMU_CHROME||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(require('node:url').pathToFileURL(path.join(root,'index.html')).href);await page.waitForFunction(()=>globalThis.Synth&&document.getElementById('openSynth').onclick);
+ assert.deepEqual(await page.evaluate(()=>currentZones()),[]);assert.doesNotMatch(await page.locator('#scope').getAttribute('aria-label'),/P＝|S＝|B＝|POWER|BOOST/);
  await page.click('#toggleEffects');
  for(const [width,height] of [[1280,720],[1024,600],[390,844],[320,568],[320,480],[844,390],[667,375],[740,360]]){
   await page.setViewportSize({width,height});

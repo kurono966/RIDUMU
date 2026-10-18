@@ -13,8 +13,8 @@
   const sustain=covered/duration;
   const repeated=[...slots].filter(q=>q<16&&slots.has(q+16)).length;
   const repetition=2*repeated/Math.max(1,slots.size);
-  const zone=root.GridEffects.inspect(notes,'bass',zones,bpm).shield??0;
-  const shield=Math.round((8+Math.min(12,slots.size*1.5)+Math.min(12,strong*3)+18*sustain+Math.min(10,locked*2))*(1+.2*repetition)+Math.min(15,zone*5));
+  const zone=0;
+  const shield=Math.round((8+Math.min(12,slots.size*1.5)+Math.min(12,strong*3)+18*sustain+Math.min(10,locked*2))*(1+.2*repetition));
   return {shield,strong,sustain,repetition,locked,zone};
  }
  function lead(notes,bpm,duration,zones){
@@ -25,17 +25,17 @@
   const pairs=Math.max(1,pitches.length-1),unique=new Set(pitches.map(p=>p%12)).size;
   const held=clamp(sorted.reduce((s,n)=>s+(n.duration??.12),0)/duration);
   const off=sorted.filter(n=>root.GridEffects.slot(n,bpm)%4!==0).length/sorted.length;
-  const zone=root.GridEffects.inspect(notes,'lead',zones,bpm).boost??0,mult=1+Math.min(.6,zone*.2);
-  const result={attack:(.06+.16*rising/pairs)*mult,expose:(.04+.14*off)*mult,accuracy:(.025+.075*same/pairs)*mult,element:(.04+.1*clamp(unique/5))*mult,shieldEfficiency:(.05+.2*held)*mult,weaken:(.03+.15*falling/pairs)*mult,zone};
+  const zone=0;
+  const result={attack:(.06+.16*rising/pairs),expose:(.04+.14*off),accuracy:(.025+.075*same/pairs),element:(.04+.1*clamp(unique/5)),shieldEfficiency:(.05+.2*held),weaken:(.03+.15*falling/pairs),zone};
   result.description=rising>falling&&rising>same?'上昇フレーズ → 攻撃を後押し':falling>rising&&falling>same?'下降フレーズ → 敵の攻撃を弱めた':held>.45?'長い旋律 → シールド効率上昇':'繰り返す旋律 → 命中効率を支援';
   return result;
  }
  function enhance(a,drums,bpm,zones,support){
-  const powerHits=root.GridEffects.inspect(drums,'drums',zones,bpm).power??0;
-  const powerMultiplier=1+Math.min(.24,powerHits*.08);
+  // Ignore retired P/S/B zones even when supplied by an old debug snapshot.
+  const powerHits=0,powerMultiplier=1;
   const supportMultiplier=1+support.attack+support.expose;
-  const powerSteps=[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1},{label:`POWERゾーン ${powerHits}か所`,value:a.power*powerMultiplier,multiplier:powerMultiplier},{label:'Leadの攻撃支援・弱点露出',value:a.power*powerMultiplier*supportMultiplier,multiplier:supportMultiplier}];
-  return {...a,power:a.power*powerMultiplier*supportMultiplier,powerSteps,accuracy:clamp(a.accuracy+support.accuracy,0,.99),effect:clamp(a.effect*(1+support.element)),powerHits,powerMultiplier,breakPower:clamp(a.weight*.45+a.hits/16+support.expose)};
+  const powerSteps=[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1},{label:'Leadの攻撃支援・弱点露出',value:a.power*supportMultiplier,multiplier:supportMultiplier}];
+  return {...a,power:a.power*supportMultiplier,powerSteps,accuracy:clamp(a.accuracy+support.accuracy,0,.99),effect:clamp(a.effect*(1+support.element)),powerHits,powerMultiplier,breakPower:clamp(a.weight*.45+a.hits/16+support.expose)};
  }
  function receive(hp,shield,attack,reduction=0){
   const incoming=Math.max(0,Math.round(attack*(1-clamp(reduction,0,.65))));
