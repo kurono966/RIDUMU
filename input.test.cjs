@@ -13,6 +13,158 @@ function game(){
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
+test('chord accompaniment is restricted to the live input window and never starts in idle or combat',()=>{
+ const g=game();g.run("let musicStarts=[],musicStops=0;enemyMusic={start:at=>musicStarts.push(at),stop:()=>musicStops++,setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
+ for(const state of ['ready','countin','attack','enemyAttack','cleared','over'])g.run(`state='${state}';syncEnemyMusic()`);
+ assert.equal(g.run('musicStarts.length'),0);
+ g.run("state='recording';recordAudioAt=10;ctx.currentTime=10.1;syncEnemyMusic()");assert.equal(g.run('musicStarts[0]'),10);
+ g.run('ctx.currentTime=9.9;syncEnemyMusic();ctx.currentTime=14;syncEnemyMusic()');assert.equal(g.run('musicStarts.length'),1);
+ assert.equal(g.run('musicStops'),8);
+});
+
+test('continuous input keeps four opening rimshots and eight Hat guide beats without a gap before Drums',async()=>{
+ const g=game();g.run("continuousInput=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,rims=0;setInterval=fn=>{tickContinuous=fn;return 1};clickSound=()=>rims++;");
+ await g.run("countIn('hat')");
+ const first=g.run('recordAudioAt'),duration=g.run('timing().duration');
+ assert.equal(first,2.06);assert.equal(g.run('state'),'countin');
+ for(let beat=1;beat<12;beat++){
+  g.run(`ctx.currentTime=.06+${beat}*.5-.05;tickContinuous()`);
+  if(beat===4)g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('hat')");
+ }
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.004;tickContinuous()');
+ assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'recording');
+ assert.equal(g.run('recordAudioAt'),first+duration);assert.equal(g.run('rims'),12);
+ assert.equal(g.run("$('start').disabled"),false);assert.match(g.run("$('start').textContent"),/停止/);
+});
+
+test('early Drums input is retained in the next track while final Hat hits stay in Hat',async()=>{
+ const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly,heardEarly=[];setInterval=fn=>{tickEarly=fn;return 1};sound=(type,at,voice)=>heardEarly.push(voice);");
+ await g.run("countIn('hat')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('hat');ctx.currentTime=recordAudioAt+timing().duration-.1;input('kick');input('hat')");
+ assert.equal(g.run('hatNotes.length'),2);assert.equal(g.run('notes.length'),0);assert.equal(g.run('pendingTrackInput.notes.length'),1);
+ assert.equal(g.run('heardEarly.at(-2)'),'drums');
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('phase'),'parts');assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].t'),0);
+ assert.ok(Math.abs(g.run('notes[0].rawT')+.1)<1e-9);assert.equal(g.run('pendingTrackInput'),null);
+ assert.equal(g.run("heardEarly.filter(v=>v==='drums').length"),1,'adoption must not retrigger the note');
+});
+
+test('early Bass keeps its own pitch, snapshot and held duration across the boundary without modifying Drums',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;noteMode='seven';ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly,heardEarly=[];setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};sound=(type,at,voice)=>{heardEarly.push(voice);return {release(){}}};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('kick');ctx.currentTime=recordAudioAt+timing().duration-.1;handleKeyDown({code:'KeyH',preventDefault(){}})");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('pendingTrackInput.notes[0].midi'),44);assert.equal(g.run('heardEarly.at(-1)'),'bass');
+ g.run("Synth.setPatch('bass',{cutoff:1800})");
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),2);assert.equal(g.run("tracks.get('drums').length"),1);assert.equal(g.run('notes.length'),1);
+ assert.equal(g.run("heldInputs.has('key:KeyH')"),true);assert.ok(g.run('synthRecording.events[0].t')<0);
+ assert.equal(g.run('synthRecording.events.some(e=>e.patch.cutoff===1800)'),true);
+ g.run("ctx.currentTime=recordAudioAt+.4;releaseInput('key:KeyH')");assert.ok(Math.abs(g.run('notes[0].duration')-.5)<1e-9);
+ assert.equal(g.run('heardEarly.filter(v=>v===\'bass\').length'),1);
+});
+
+test('early Lead is isolated from Bass and preserves multiple quick notes and destination pitches',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=2;hatReady=true;noteMode='four';ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();input('kick','key:KeyA',0);ctx.currentTime=recordAudioAt+timing().duration-.12;handleKeyDown({code:'KeyS',preventDefault(){}});releaseInput('key:KeyS');ctx.currentTime+=.06;handleKeyDown({code:'KeyL',preventDefault(){}});releaseInput('key:KeyL')");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run("pendingTrackInput.notes.map(n=>n.midi).join(',')"),'63,70');
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),3);assert.equal(g.run('notes.length'),2);assert.equal(g.run("tracks.get('bass').length"),1);
+ assert.ok(Math.abs(g.run("tracks.get('bass')[0].duration")-3.99)<1e-9,'the previous held note must keep its full tail');
+ assert.ok(Math.abs(g.run('notes[1].rawT-notes[0].rawT')-.06)<1e-9);
+});
+
+test('the anticipation window scales down to half a beat at fast tempos',()=>{
+ const g=game();g.run("enemies[0].bpm=300;continuousRunning=true;state='recording';turn=1;phase='parts';recordAudioAt=10;ctx.currentTime=11.49");
+ assert.equal(g.run('nextTrackGrace()'),.1);assert.equal(g.run('upcomingInputTrack()'),null);
+ g.run('ctx.currentTime=11.51');assert.equal(g.run('upcomingInputTrack().voice'),'bass');
+});
+
+test('anticipated notes apply destination-turn hazards once when adopted',async()=>{
+ const g=game();g.run("continuousRunning=true;hatReady=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};renderReport=()=>{};sequence=()=>{};gridHazards.add({type:'poison',slots:[0],turns:2,power:3,fromTurn:2});");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();ctx.currentTime=recordAudioAt+timing().duration-.03;input('kick')");
+ assert.equal(g.run('hp'),100);
+ g.run('ctx.currentTime=recordAudioAt+timing().duration+.001;tickEarly()');
+ assert.equal(g.run('turn'),2);assert.equal(g.run('hp'),97);assert.equal(g.run('notes.length'),1);
+ g.run('ctx.currentTime+=.05;tickEarly()');assert.equal(g.run('hp'),97);
+});
+
+test('outside the early window and before combat inputs still belong to the current track; stopping discards pending input',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickEarly;setInterval=fn=>{tickEarly=fn;return 1};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.01;tickEarly();ctx.currentTime=recordAudioAt+timing().duration-.151;input('kick')");
+ assert.equal(g.run('notes.length'),1);assert.equal(g.run('pendingTrackInput'),null);
+ g.run("ctx.currentTime+=.051;input('snare','key:KeyL');stopContinuousInput()");
+ assert.equal(g.run('pendingTrackInput'),null);assert.equal(g.run('heldInputs.size'),0);
+ g.run("continuousRunning=true;turn=3;state='recording';recordAudioAt=10;ctx.currentTime=13.9;input('snare')");
+ assert.equal(g.run('pendingTrackInput'),null);assert.equal(g.run('notes.length'),1);
+});
+
+test('auto Hat generates sixteen eighth notes and skips Hat entry in normal and continuous modes',async()=>{
+ for(const continuous of [false,true]){
+  const g=game();g.run(`autoHat=true;continuousRunning=${continuous};ctx.currentTime=0;ctx.resume=()=>Promise.resolve();setInterval=()=>1;`);
+  assert.equal(g.run('needsHat()'),false);await g.run('startTurn()');
+  assert.equal(g.run('phase'),'parts');assert.equal(g.run('state'),'countin');assert.equal(g.run('recordAudioAt'),2.06);
+  assert.equal(g.run('hatReady'),true);assert.equal(g.run('hatNotes.length'),16);
+  assert.equal(g.run('hatNotes.every((n,i)=>n.type===\'hat\'&&n.t===i*.25&&n.rawT===n.t)'),true);
+  assert.equal(g.run("backingTimeline().events.filter(n=>n.voice==='hat').length"),16);
+  g.run("notes=[{type:'kick',t:0}];saveTrack('drums',notes)");assert.equal(g.run("lastMix.find(t=>t.voice==='hat').notes.length"),16);
+ }
+});
+
+test('auto Hat refreshes with each cycle tempo and leaves an existing manually recorded Hat intact',()=>{
+ const g=game();g.run("autoHat=true;hatReady=true;hatNotes=[{type:'hat',t:.07,rawT:.07}];nextRecordingPhase()");
+ assert.equal(g.run('hatNotes[0].t'),.07);
+ g.run('enemies[0].bpm=150;prepareTracksForTurn();nextRecordingPhase()');
+ assert.equal(g.run('hatNotes.length'),16);assert.equal(g.run('hatNotes[1].t'),.2);assert.equal(g.run('hatNotes[15].t'),3);
+ g.run('autoHat=false;prepareTracksForTurn()');assert.equal(g.run('nextRecordingPhase()'),'hat');
+});
+
+test('continuous handoff retains backing downbeats and accepts a new part input before the timer fires',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;hatNotes=[{type:'hat',t:0,rawT:0}];ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,backingHits=[];setInterval=fn=>{tickContinuous=fn;return 1};sound=(type,at,voice)=>backingHits.push({type,at,voice});renderReport=()=>{};sequence=()=>{};");
+ await g.run("countIn('parts')");
+ const first=g.run('recordAudioAt'),duration=g.run('timing().duration');
+ g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input('kick','key:KeyA');releaseInput('key:KeyA');ctx.currentTime=recordAudioAt+timing().duration+.003;handleKeyDown({code:'KeyA',preventDefault(){}})");
+ assert.equal(g.run('turn'),2);assert.equal(g.run('state'),'recording');assert.equal(g.run('recordAudioAt'),first+duration);
+ assert.equal(g.run('notes.length'),1);assert.ok(Math.abs(g.run('notes[0].rawT')-.003)<1e-9);
+ assert.equal(g.run("backingHits.some(n=>n.voice==='drums')"),true);
+ assert.equal(g.run("tracks.get('drums').length"),1);
+});
+
+test('continuous cycle records each part once, resolves combat once and starts the next Hat automatically',async()=>{
+ const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
+ await g.run("countIn('hat')");
+ for(let part=0;part<4;part++){
+  g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input(phase==='hat'?'hat':'kick');ctx.currentTime=recordAudioAt+timing().duration+.001;tickContinuous()");
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ }
+ assert.equal(g.run('turn'),4);assert.equal(g.run('attacksContinuous'),1);assert.equal(g.run('countersContinuous'),1);
+ assert.equal(g.run('phase'),'hat');assert.equal(g.run('continuousRunning'),true);
+});
+
+test('stopping continuous input cancels stale handoffs and leaves earlier completed parts intact',async()=>{
+ const g=game();g.run("continuousInput=true;continuousRunning=true;turn=2;hatReady=true;tracks.set('drums',[{type:'kick',t:0}]);ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous;setInterval=fn=>{tickContinuous=fn;return 1};");
+ await g.run("countIn('parts')");
+ g.run("ctx.currentTime=recordAudioAt+.1;tickContinuous();input('kick');handleKeyDown({code:'Escape',preventDefault(){}});ctx.currentTime=100;tickContinuous()");
+ assert.equal(g.run('state'),'ready');assert.equal(g.run('continuousRunning'),false);assert.equal(g.run('continuousInput'),true);
+ assert.equal(g.run('notes.length'),0);assert.equal(g.run('tracks.size'),1);assert.equal(g.run('clockTimer'),null);
+});
+
+test('stop during combat prevents the next recording without interrupting combat resolution',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=3;state='recording';notes=[{type:'kick',t:0,rawT:0,midi:60}];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};let endAttack,countersContinuous=0;playbackAttack=()=>new Promise(resolve=>{endAttack=resolve});enemyCounter=async()=>{countersContinuous++};");
+ const done=g.run('finish(14)');g.run("$('start').onclick()");
+ assert.equal(g.run('state'),'attack');assert.equal(g.run('continuousRunning'),false);
+ g.run('endAttack()');await done;
+ assert.equal(g.run('state'),'ready');assert.equal(g.run('turn'),4);assert.equal(g.run('countersContinuous'),1);
+});
+
+test('restarting stopped Drums keeps the already recorded Hat instead of resetting the cycle',async()=>{
+ const g=game();g.run("continuousRunning=true;turn=1;hatReady=true;hatNotes=[{type:'hat',t:0,rawT:0}];ctx.currentTime=0;ctx.resume=()=>Promise.resolve();setInterval=()=>1;");
+ await g.run("countIn('parts')");g.run('stopContinuousInput()');assert.equal(g.run('needsHat()'),false);
+ await g.run('startTurn()');assert.equal(g.run('phase'),'parts');assert.equal(g.run('hatNotes.length'),1);
+});
+
 test('audio keeps the existing compressor and inserts the waveform analyser path once',()=>{
  const g=game();g.run(`ctx=null;let waveformConnections=0,voices=[];
  window={AudioContext:class{constructor(){this.state='running';this.destination={};this.currentTime=0;}createBiquadFilter(){return {Q:{},frequency:{setTargetAtTime(){}},connect(){}}}createGain(){return {gain:{setTargetAtTime(){}},connect(){}}}createDynamicsCompressor(){return {threshold:{},ratio:{},connect(){throw Error('direct output must be replaced by analyser route')}}}}};
@@ -55,6 +207,16 @@ test('enemy HP changes on replayed note times and playback waits for the full ph
  g.run('ctx.currentTime=4.07;playbackTick()');await playback;
  assert.equal(g.run('attackPlayhead'),null);
  assert.equal(g.run("playedVoices.join(',')"),'bass,bass');
+});
+
+test('damage replay plays chords on its musical downbeat including early-input pre-roll, then stops them',async()=>{
+ const g=game();g.run("ctx.currentTime=0;ctx.resume=()=>Promise.resolve();state='attack';lastInstrument='drums';last=[{type:'kick',t:0,rawT:-.1},{type:'snare',t:.5,rawT:.5}];let replayTick,musicStarts=[],musicPlaying=false;setInterval=fn=>{replayTick=fn;return 1};enemyMusic={start(at){if(!musicPlaying)musicStarts.push(at);musicPlaying=true},stop(){musicPlaying=false},setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
+ const done=g.run("playbackAttack({damages:[10,20]},'#fff')");await Promise.resolve();
+ assert.ok(Math.abs(g.run('musicStarts[0]')-.16)<1e-9);assert.equal(g.run('musicPlaying'),true);
+ g.run('ctx.currentTime=.07;replayTick()');assert.equal(g.run('enemyHp'),250);
+ g.run('ctx.currentTime=4.17;replayTick()');await done;
+ assert.equal(g.run('enemyHp'),230);assert.equal(g.run('musicPlaying'),false);assert.equal(g.run('attackMusicWindow'),null);
+ g.run("state='enemyAttack';audio()");assert.equal(g.run('musicPlaying'),false);
 });
 test('instruments cycle every three turns',()=>{
  const g=game();

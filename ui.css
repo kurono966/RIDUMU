@@ -1,0 +1,1060 @@
+/* Viewport composition. Audio, combat and instrument skins live in their own modules. */
+.visually-hidden{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip-path:inset(50%);
+  white-space:nowrap;
+  border:0!important
+}
+#game{
+  max-width:1600px;
+  margin:auto;
+  padding:16px;
+  gap:12px;
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+  grid-template-rows:44px minmax(0,1fr);
+  grid-template-areas:"header header" "arena console"
+}
+#game:has(>.result:not([hidden])){
+  grid-template-rows:44px minmax(0,1fr) 190px;
+  grid-template-areas:"header header" "arena console" "result console"
+}
+#game>header{
+  padding:0 2px 8px;
+  gap:10px;
+  flex-wrap:nowrap
+}
+#game .brand{
+  font-size:28px;
+  margin-right:auto
+}
+#game header button{
+  margin-left:0;
+  min-height:40px;
+  font-size:13px
+}
+.utility-button,.restore-pads{
+  border:1px solid #566345;
+  border-radius:7px;
+  background:#262e20;
+  color:#e5edda;
+  padding:10px 14px
+}
+#game>.arena{
+  position:relative;
+  border-radius:16px
+}
+#game .enemy-info{
+  padding:20px 20px 0;
+  gap:16px
+}
+#game .enemy-info h2{
+  font-size:23px;
+  margin:0
+}
+#game .enemy-info .eyebrow{
+  font-size:10px;
+  margin-bottom:8px
+}
+#game #enemyDesc,#game .coordinate,#game .field-label{
+  display:none
+}
+#game .enemy-health{
+  width:150px
+}
+#game .enemy-health>div:first-child{
+  font-size:12px;
+  margin-bottom:8px
+}
+#game .bar{
+  height:8px
+}
+#game .discoveries{
+  padding:10px 20px 0;
+  font-size:12px
+}
+#game .enemy-intent{
+  font-size:12px;
+  margin:8px 20px
+}
+#game .battlefield{
+  flex:1;
+  min-height:50px;
+  height:auto
+}
+#game .creature{
+  scale:1.3
+}
+#game .player-strip{
+  padding:16px;
+  gap:9px;
+  font-size:12px
+}
+#game .player-strip b{
+  font-size:12px
+}
+#game .instrument,#game #turn{
+  font-size:10px
+}
+#game .player-strip .bar{
+  min-width:25px
+}
+#game #impact{
+  font-size:48px
+}
+/* Performance controls always have their own space, independent of overlays. */
+#game>.console{
+  padding:22px;
+  gap:12px;
+  border-radius:16px;
+  overflow:hidden
+}
+#game .performance-heading{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0
+}
+.section-label{
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:2px
+}
+#game #partTitle{
+  font-size:28px;
+  margin:5px 0 0;
+  line-height:1.2
+}
+.beat-meter{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  font-size:10px;
+  color:var(--muted)
+}
+#game #beatLights{
+  display:flex;
+  gap:7px
+}
+#game #beatLights i{
+  width:12px;
+  height:12px
+}
+.next-action{
+  margin:0;
+  font-size:15px;
+  line-height:1.5;
+  color:#d3ddc8;
+  flex-shrink:0
+}
+.part-steps{
+  display:flex;
+  gap:6px;
+  list-style:none;
+  padding:0;
+  margin:0;
+  flex-shrink:0
+}
+.part-steps li{
+  flex:1;
+  font-size:11px;
+  padding:8px 4px;
+  border-radius:5px;
+  background:#252a21;
+  color:#929e85;
+  text-align:center
+}
+.part-steps li[aria-current=step]{
+  background:var(--lime);
+  color:#202715;
+  font-weight:bold
+}
+#game .console-top{
+  font-size:12px;
+  letter-spacing:0
+}
+#game .timeline{
+  flex:1 1 160px;
+  min-height:64px;
+  max-height:260px;
+  margin:0;
+  background:#10160f;
+  border-radius:8px;
+  overflow:hidden
+}
+#game .lane{
+  font-size:11px;
+  left:5px
+}
+#phraseProgress{
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:5px;
+  appearance:none;
+  border:0;
+  background:#303b26
+}
+#phraseProgress::-webkit-progress-bar{
+  background:#303b26
+}
+#phraseProgress::-webkit-progress-value{
+  background:var(--orange)
+}
+#game .console>.hat{
+  display:none
+}
+#game .console.hat-phase>.hat{
+  display:flex
+}
+#game .console.hat-phase>.pads,#game .console.hat-phase>.melody-pads{
+  display:none
+}
+#game .console.seven-notes:not(.hat-phase)>.pads{
+  display:none
+}
+#game .console.seven-notes:not(.hat-phase)>.melody-pads{
+  display:grid
+}
+#game .console>.pads{
+  gap:12px
+}
+#game .console .pad{
+  min-height:112px;
+  padding:18px;
+  gap:14px
+}
+#game .console .pad b{
+  font-size:19px
+}
+#game .console .key{
+  font-size:23px;
+  padding:9px 12px
+}
+#game .console .pad small,#game .pad-icon{
+  display:none
+}
+#game .console .melody-pads{
+  height:112px;
+  min-height:112px;
+  gap:6px;
+  grid-template-columns:repeat(7,minmax(0,1fr))
+}
+#game .console.four-notes>.melody-pads{
+  grid-template-columns:repeat(4,minmax(0,1fr))
+}
+#game .console .melody-pad{
+  height:auto;
+  min-height:48px;
+  font-size:15px
+}
+#game .melody-pad b{
+  font-size:19px
+}
+#game .melody-pad span{
+  font-size:12px
+}
+#game .melody-pad[hidden]{
+  display:none
+}
+#game .restore-pads{
+  display:none;
+  min-height:80px
+}
+#game .pads-collapsed>#hat,#game .pads-collapsed>.pads,#game .pads-collapsed>#melodyPads{
+  display:none!important
+}
+#game .pads-collapsed>.restore-pads{
+  display:block
+}
+#game .console>.controls{
+  margin-top:auto;
+  padding-top:0;
+  gap:8px;
+  flex:0 0 auto
+}
+#game .controls #start{
+  flex:1;
+  min-width:0;
+  width:auto;
+  min-height:56px;
+  font-size:17px;
+  padding:12px
+}
+#game .controls .utility-button{
+  min-width:52px;
+  min-height:56px;
+  padding:10px;
+  font-size:13px
+}
+#game #toggleEffects[aria-expanded=true]{
+  border-color:var(--lime);
+  color:var(--lime)
+}
+/* Effects overlay the battlefield, never the instrument or transport. */
+#game .effects-panel{
+  position:absolute;
+  inset:auto 12px 60px;
+  z-index:12;
+  height:min(300px,calc(100% - 24px));
+  padding:12px;
+  background:#171f19fa;
+  border:1px solid #809268;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  box-shadow:0 10px 35px #0009
+}
+#game .effects-panel[hidden]{
+  display:none
+}
+.panel-heading,.dialog-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px
+}
+.panel-heading h2{
+  margin:0;
+  font-size:16px
+}
+.panel-heading button{
+  min-height:36px
+}
+.effects-panel .filter-control{
+  flex:1;
+  min-height:0;
+  padding:0;
+  border:0;
+  background:none
+}
+.effects-panel .filter-pad{
+  flex:1;
+  min-height:40px;
+  height:auto
+}
+.effects-panel .filter-head{
+  font-size:12px
+}
+.effects-panel .filter-head select{
+  min-height:36px;
+  font-size:13px
+}
+.effects-panel small{
+  font-size:11px
+}
+/* A concise result, with the original analysis kept in a separate workspace. */
+#game>.result{
+  position:relative;
+  grid-area:result;
+  inset:auto;
+  width:auto;
+  max-height:none;
+  overflow:hidden;
+  display:flex;
+  justify-content:flex-start;
+  gap:5px;
+  padding:14px 18px;
+  border-radius:14px
+}
+#game>.result[hidden]{
+  display:none!important
+}
+#game .result-heading .eyebrow{
+  font-size:11px;
+  margin:0
+}
+#game .result-content{
+  padding:0;
+  align-items:center;
+  gap:10px
+}
+#game .result h2{
+  font-size:22px;
+  margin:3px 0
+}
+#game .damage b{
+  font-size:38px
+}
+#game .damage span{
+  font-size:11px;
+  margin-top:2px
+}
+#game .damage strong{
+  font-size:23px;
+  color:var(--lime)
+}
+#game .damage [hidden]{
+  display:none
+}
+#game .result p.result-cause,#game .result p.result-feedback{
+  font-size:12px;
+  margin:0;
+  line-height:1.4;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+#game .result-feedback{
+  color:var(--orange)
+}
+#game #openResultDetails{
+  align-self:flex-start;
+  border:0;
+  background:none;
+  color:var(--lime);
+  font-size:12px;
+  padding:5px 0;
+  min-height:30px
+}
+#game #replay{
+  font-size:12px;
+  padding:7px 10px;
+  min-height:32px
+}
+/* Dialogs scroll internally;
+opening settings does not reflow the game. */
+dialog{
+  max-height:calc(100dvh - 24px);
+  max-width:calc(100vw - 24px);
+  overflow:auto
+}
+dialog::backdrop{
+  background:#050904c9;
+  backdrop-filter:blur(4px)
+}
+.workspace-dialog{
+  width:650px;
+  border:1px solid #697c50;
+  border-radius:16px;
+  background:#191f17;
+  color:#eef4e5;
+  padding:22px
+}
+.dialog-heading{
+  margin-bottom:16px
+}
+.dialog-heading h2{
+  font-size:22px;
+  margin:0
+}
+.workspace-dialog button,.workspace-dialog select{
+  min-height:44px
+}
+.workspace-dialog .small{
+  font-size:13px
+}
+.settings-dialog fieldset{
+  border:1px solid #3c4932;
+  border-radius:10px;
+  padding:14px;
+  margin:14px 0;
+  min-width:0
+}
+.settings-dialog legend{
+  font-size:14px;
+  color:var(--lime);
+  padding:0 6px
+}
+.settings-dialog label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-size:14px
+}
+.settings-dialog select{
+  background:#293123;
+  color:#f1f5e9;
+  font-size:14px;
+  border:1px solid #61714d;
+  border-radius:5px;
+  padding:8px;
+  width:auto!important;
+  max-width:65%
+}
+.setting-help,.settings-dialog details{
+  font-size:13px;
+  line-height:1.7;
+  color:#bdc9af
+}
+.settings-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px
+}
+.settings-dialog details summary{
+  cursor:pointer;
+  padding:10px 0
+}
+.analysis-dialog .result-tabs{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  border-bottom:1px solid #4c5c3c;
+  margin:16px 0
+}
+.analysis-dialog .result-tabs button{
+  display:block!important;
+  flex:1;
+  min-width:70px;
+  background:#242d20;
+  border:0;
+  border-bottom:3px solid transparent;
+  color:#c6d1b9;
+  font-size:13px
+}
+.analysis-dialog .result-tabs button[aria-pressed=true]{
+  border-color:var(--lime);
+  color:var(--lime)
+}
+.analysis-context{
+  font-size:13px;
+  line-height:1.6;
+  color:#bbc8af
+}
+.analysis-context p{
+  margin:8px 0
+}
+.analysis-dialog .summary-panel h3{
+  display:block;
+  font-size:15px
+}
+.analysis-dialog .factors li,.analysis-dialog .breakdown{
+  font-size:13px;
+  line-height:1.7
+}
+.analysis-dialog #damageLabel{
+  font-size:13px;
+  min-height:44px
+}
+.analysis-dialog #rhythmPanel,.analysis-dialog #ensemblePanel,.analysis-dialog .breakdown,.analysis-dialog .detail-hint{
+  display:none
+}
+.analysis-dialog[data-panel=rhythm] #summaryPanel,.analysis-dialog[data-panel=ensemble] #summaryPanel{
+  display:none
+}
+.analysis-dialog[data-panel=rhythm] #rhythmPanel,.analysis-dialog[data-panel=ensemble] #ensemblePanel{
+  display:block
+}
+.analysis-dialog[data-panel=damage] .breakdown,.analysis-dialog[data-panel=damage] .detail-hint{
+  display:grid
+}
+.analysis-dialog[data-panel=damage] .factors,.analysis-dialog[data-panel=damage] .summary-hint{
+  display:none
+}
+.analysis-dialog .summary-hint{
+  display:block;
+  font-size:13px
+}
+.analysis-dialog .timbre-result{
+  font-size:13px!important
+}
+.analysis-dialog .seq-row label{
+  font-size:11px;
+  width:48px
+}
+.analysis-dialog .cell{
+  height:16px
+}
+.game-ui[data-play-state=recording] #openMenu{
+  opacity:.55
+}
+@media(max-height:720px){
+  #game>.console{
+    padding:16px;
+    gap:8px
+  }
+  #game #partTitle{
+    font-size:24px
+  }
+  #game .console .pad,#game .console .melody-pads{
+    min-height:88px;
+    height:88px
+  }
+  #game .part-steps li{
+    padding:5px
+  }
+  #game:has(>.result:not([hidden])){
+    grid-template-rows:44px minmax(0,1fr) 170px
+  }
+  #game .creature{
+    scale:1
+  }
+  #game .result-feedback{
+    display:none
+  }
+}
+@media(max-width:759px) and (orientation:portrait){
+  #game,#game:has(>.result:not([hidden])){
+    padding:8px;
+    gap:8px;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:40px minmax(150px,.85fr) minmax(0,1.25fr);
+    grid-template-areas:"header" "arena" "console"
+  }
+  #game .brand{
+    font-size:24px
+  }
+  #game .enemy-info{
+    padding:12px 12px 0;
+    gap:8px
+  }
+  #game .enemy-info h2{
+    font-size:19px
+  }
+  #game .enemy-health{
+    width:115px
+  }
+  #game .discoveries{
+    display:none
+  }
+  #game .enemy-intent{
+    font-size:11px;
+    margin:6px 12px
+  }
+  #game .player-strip{
+    padding:10px;
+    font-size:11px
+  }
+  #game .instrument,#game #turn{
+    display:none
+  }
+  #game .creature{
+    scale:.9
+  }
+  #game>.console{
+    padding:14px;
+    gap:9px
+  }
+  #game #partTitle{
+    font-size:23px
+  }
+  #game .next-action{
+    font-size:13px
+  }
+  #game .console-top{
+    display:none
+  }
+  #game .timeline{
+    min-height:48px
+  }
+  #game .console .pad{
+    height:94px;
+    min-height:94px;
+    padding:12px
+  }
+  #game .console .pad b{
+    font-size:16px
+  }
+  #game .console .key{
+    font-size:19px
+  }
+  #game .console .melody-pads{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    height:94px;
+    min-height:94px;
+    gap:6px
+  }
+  #game .melody-pad b{
+    font-size:17px
+  }
+  #game .console .melody-pad{
+    min-height:44px
+  }
+  #game .console.four-notes>.melody-pads{
+    height:74px;
+    min-height:74px
+  }
+  #game .controls #start,#game .controls .utility-button{
+    min-height:50px
+  }
+  #game .controls #start{
+    font-size:15px
+  }
+  #game>.result{
+    grid-area:arena;
+    align-self:end;
+    z-index:7;
+    height:84px;
+    padding:8px 12px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:3px 8px;
+    border-radius:0 0 16px 16px
+  }
+  #game .result-heading{
+    display:none
+  }
+  #game .result-content{
+    grid-column:1;
+    grid-row:1/3;
+    min-width:0
+  }
+  #game .result h2{
+    font-size:16px
+  }
+  #game .result .element{
+    font-size:11px
+  }
+  #game .damage b{
+    font-size:28px
+  }
+  #game .damage span{
+    font-size:10px
+  }
+  #game .damage{
+    min-width:55px
+  }
+  #game #openResultDetails{
+    grid-column:2;
+    grid-row:1/3;
+    align-self:center;
+    min-height:44px;
+    max-width:64px;
+    font-size:12px
+  }
+  #game .result-cause,#game .result-feedback{
+    display:none!important
+  }
+  #game:has(>.result:not([hidden]))>.arena{
+    padding-bottom:84px
+  }
+  #game .effects-panel{
+    inset:6px;
+    height:auto;
+    padding:8px;
+    gap:4px
+  }
+  #game .effects-panel .panel-heading h2{
+    font-size:14px
+  }
+  #game .effects-panel .filter-control small{
+    display:none
+  }
+  #game .effects-panel .filter-head select{
+    min-height:30px
+  }
+  #game .effects-panel .panel-heading button{
+    min-height:32px;
+    padding:5px 10px
+  }
+}
+@media(max-width:759px) and (max-height:650px) and (orientation:portrait){
+  #game,#game:has(>.result:not([hidden])){
+    padding:6px;
+    gap:6px;
+    grid-template-rows:36px minmax(120px,1fr) 278px
+  }
+  #game header button{
+    min-height:34px;
+    font-size:12px;
+    padding:6px 9px
+  }
+  #game>.console{
+    padding:10px;
+    gap:6px
+  }
+  #game .section-label,#game .part-steps{
+    display:none
+  }
+  #game #partTitle{
+    font-size:21px;
+    margin:0
+  }
+  #game .next-action{
+    font-size:12px;
+    line-height:1.4;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+  #game .timeline{
+    min-height:40px
+  }
+  #game .enemy-info{
+    padding:8px 10px 0
+  }
+  #game .enemy-info h2{
+    font-size:16px
+  }
+  #game .enemy-info .eyebrow{
+    margin-bottom:4px;
+    font-size:9px
+  }
+  #game .enemy-health{
+    width:100px
+  }
+  #game .enemy-intent{
+    display:none
+  }
+  #game .creature{
+    scale:.65
+  }
+  #game .player-strip{
+    padding:7px 10px
+  }
+  #game:has(>.result:not([hidden]))>.arena{
+    padding-bottom:60px
+  }
+  #game>.result{
+    height:60px;
+    padding:5px 10px
+  }
+  #game .result h2{
+    font-size:14px
+  }
+  #game .result .element{
+    font-size:10px
+  }
+  #game .damage b{
+    font-size:24px
+  }
+  #game .console .key{
+    font-size:17px;
+    padding:7px
+  }
+  #game .console .pad{
+    gap:8px
+  }
+  #game .console .pad b{
+    font-size:14px
+  }
+  #game .effects-panel .panel-heading{
+    position:absolute;
+    right:5px;
+    top:5px;
+    z-index:3
+  }
+  #game .effects-panel .panel-heading h2{
+    display:none
+  }
+  #game .effects-panel .filter-head{
+    padding-right:65px
+  }
+  #game .effects-panel .filter-head output{
+    display:none
+  }
+}
+@media(max-height:500px) and (orientation:landscape){
+  #game,#game:has(>.result:not([hidden])){
+    padding:6px;
+    gap:6px;
+    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+    grid-template-rows:32px minmax(0,1fr);
+    grid-template-areas:"header header" "arena console"
+  }
+  #game .brand{
+    font-size:22px
+  }
+  #game header button{
+    min-height:30px;
+    padding:4px 9px;
+    font-size:12px
+  }
+  #game>.console{
+    padding:10px;
+    gap:6px
+  }
+  #game .section-label,#game .part-steps,#game .console-top{
+    display:none
+  }
+  #game #partTitle{
+    font-size:21px;
+    margin:0
+  }
+  #game .next-action{
+    font-size:12px;
+    line-height:1.4
+  }
+  #game .timeline{
+    min-height:40px
+  }
+  #game .console .pad,#game .console .melody-pads{
+    height:88px;
+    min-height:88px
+  }
+  #game .console .melody-pads{
+    grid-template-columns:repeat(4,minmax(0,1fr))
+  }
+  #game .console .melody-pad{
+    min-height:40px
+  }
+  #game .console.four-notes>.melody-pads{
+    height:64px;
+    min-height:64px
+  }
+  #game .console .pad{
+    padding:10px;
+    gap:8px
+  }
+  #game .console .pad b{
+    font-size:14px
+  }
+  #game .console .key{
+    font-size:18px;
+    padding:7px
+  }
+  #game .controls #start,#game .controls .utility-button{
+    min-height:44px;
+    font-size:13px
+  }
+  #game .enemy-info{
+    padding:10px;
+    display:block
+  }
+  #game .enemy-info h2{
+    font-size:18px
+  }
+  #game .enemy-health{
+    width:100%;
+    margin-top:8px
+  }
+  #game .discoveries,#game .enemy-intent{
+    display:none
+  }
+  #game .creature{
+    scale:.75
+  }
+  #game .player-strip{
+    padding:8px;
+    font-size:11px
+  }
+  #game .instrument,#game #turn{
+    display:none
+  }
+  #game>.result{
+    position:absolute;
+    left:6px;
+    bottom:6px;
+    width:calc(45% - 8px);
+    height:68px;
+    padding:6px 10px;
+    z-index:7;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    gap:8px
+  }
+  #game .result-heading,#game .result-cause,#game .result-feedback{
+    display:none!important
+  }
+  #game .result-content{
+    flex:1;
+    gap:6px
+  }
+  #game .result h2{
+    font-size:14px
+  }
+  #game .damage b{
+    font-size:25px
+  }
+  #game #openResultDetails{
+    max-width:54px;
+    min-height:44px;
+    align-self:center
+  }
+  #game:has(>.result:not([hidden]))>.arena{
+    padding-bottom:68px
+  }
+  #game .effects-panel{
+    inset:6px;
+    height:auto
+  }
+}
+/* Keep the compact enemy HUD readable beside its illustration. */
+@media(max-width:759px) and (max-height:650px) and (orientation:portrait){
+  #game .enemy-info{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    width:65%;
+    gap:4px
+  }
+  #game .enemy-info>div:first-child{
+    width:100%
+  }
+  #game .enemy-health{
+    width:100%;
+    max-width:160px
+  }
+  #game .enemy-health>div:first-child{
+    white-space:nowrap;
+    font-size:11px;
+    gap:6px;
+    margin-bottom:4px
+  }
+  #game .enemy-info .eyebrow{
+    display:none
+  }
+  #game .enemy-info .enemy-title{
+    flex-wrap:wrap;
+    gap:4px
+  }
+  #game .enemy-health .bar{
+    width:100%
+  }
+}
+@media(max-width:759px) and (max-height:650px) and (orientation:portrait){
+  #game,#game:has(>.result:not([hidden])){
+    grid-template-rows:36px minmax(120px,1fr) 270px
+  }
+  #game>.arena{
+    display:grid;
+    grid-template-columns:65% 35%;
+    grid-template-rows:minmax(0,1fr) 28px
+  }
+  #game .enemy-info{
+    grid-column:1;
+    grid-row:1;
+    width:100%;
+    padding:6px 10px 0;
+    gap:2px
+  }
+  #game .enemy-health{
+    margin:0
+  }
+  #game .enemy-info .enemy-title{
+    gap:2px
+  }
+  #game .enemy-info h2{
+    font-size:15px
+  }
+  #game .battlefield{
+    grid-column:2;
+    grid-row:1;
+    min-height:0;
+    width:100%;
+    height:auto
+  }
+  #game .player-strip{
+    grid-column:1/-1;
+    grid-row:2;
+    padding:5px 10px;
+    font-size:11px
+  }
+  #game .player-strip b{
+    font-size:11px
+  }
+  #game .timeline{
+    min-height:36px
+  }
+  #game .console .pad,#game .console .melody-pads{
+    height:90px;
+    min-height:90px
+  }
+  #game .console .melody-pad{
+    min-height:42px
+  }
+}
+/* A large, explicit opt-in for the alternate recording workflow. */
+#continuousInput,#autoHat{width:44px;height:28px;accent-color:var(--lime);cursor:pointer;flex-shrink:0}
