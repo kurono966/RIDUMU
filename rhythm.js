@@ -72,14 +72,14 @@ function resolve(a,enemy){
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
  // A perfectly even Kick/Snare alternation is one viable style, not a universal
  // answer. Contrast rhythm motifs across enemies; do not punish all repetition.
- const straight=clamp((a.alternation-.65)/.35)*clamp((a.regularity-.65)/.35)*clamp((a.repetition-.35)/.65);
+ const straight=clamp(((a.alternation??0)-.65)/.35)*clamp(((a.regularity??0)-.65)/.35)*clamp(((a.repetition??0)-.35)/.65);
  const motifs={
-  stone:{label:'岩への重いキック・間',fit:clamp(.65*a.weight+.35*a.charged),straightPenalty:.65},
-  fly:{label:'翼獣への交互の刻み',fit:clamp(.7*a.alternation+.3*a.regularity),straightPenalty:0},
-  machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*a.syncopation+.35*a.offbeat),straightPenalty:.65},
-  plant:{label:'植物への後半加速・連打',fit:clamp(.7*a.densityRise+.3*a.bursts),straightPenalty:.65},
-  ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-a.regularity)),straightPenalty:.65},
-  crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*a.alternation+.35*a.regularity),straightPenalty:0}
+  stone:{label:'岩への重いキック・間',fit:clamp(.65*(a.weight??0)+.35*(a.charged??0)),straightPenalty:.65},
+  fly:{label:'翼獣への交互の刻み',fit:clamp(.7*(a.alternation??0)+.3*(a.regularity??0)),straightPenalty:0},
+  machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*(a.syncopation??0)+.35*(a.offbeat??0)),straightPenalty:.65},
+  plant:{label:'植物への後半加速・連打',fit:clamp(.7*(a.densityRise??0)+.3*(a.bursts??0)),straightPenalty:.65},
+  ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-(a.regularity??1))),straightPenalty:.65},
+  crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*(a.alternation??0)+.35*(a.regularity??0)),straightPenalty:0}
  };
  const motif=motifs[enemy.kind];
  const motifMultiplier=motif?clamp(1+.4*motif.fit-motif.straightPenalty*straight,.3,1.5):1;
