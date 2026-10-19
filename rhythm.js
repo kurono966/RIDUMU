@@ -70,6 +70,20 @@ function resolve(a,enemy){
  if(enemy.kind==='plant')affinity=a.element==='fire'?1.5:a.element==='wind'?.85:1;
  if(enemy.kind==='ghost'){affinity=a.element==='lightning'?1.3:a.element==='earth'?.85:1;aim-=.14*(1-Math.max(a.groove?.laidBack??0,a.groove?.drunk??0,a.groove?.swing??0));}
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
+ // A perfectly even Kick/Snare alternation is one viable style, not a universal
+ // answer. Contrast rhythm motifs across enemies; do not punish all repetition.
+ const straight=clamp((a.alternation-.65)/.35)*clamp((a.regularity-.65)/.35)*clamp((a.repetition-.35)/.65);
+ const motifs={
+  stone:{label:'岩への重いキック・間',fit:clamp(.65*a.weight+.35*a.charged),straightPenalty:.42},
+  fly:{label:'翼獣への交互の刻み',fit:clamp(.7*a.alternation+.3*a.regularity),straightPenalty:0},
+  machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*a.syncopation+.35*a.offbeat),straightPenalty:.45},
+  plant:{label:'植物への後半加速・連打',fit:clamp(.7*a.densityRise+.3*a.bursts),straightPenalty:.4},
+  ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-a.regularity)),straightPenalty:.45},
+  crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*a.alternation+.35*a.regularity),straightPenalty:0}
+ };
+ const motif=motifs[enemy.kind];
+ const motifMultiplier=motif?clamp(1+.55*motif.fit-motif.straightPenalty*straight,.48,1.6):1;
+ affinity*=motifMultiplier;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -90,7 +104,8 @@ function resolve(a,enemy){
   tactical=1+.45*a.syncopation+.2*a.bursts;
   tacticalLabel='強化への変則リズム';
  }
- const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
+ const affinitySteps=[{label:'属性・攻撃形態と敵の相性・リズム形',multiplier:affinity}];
+ if(motif)affinitySteps.push({label:motif.label+(motif.straightPenalty?' / 単純交互への耐性':''),multiplier:motifMultiplier});
  if(tactical!==1){affinity*=tactical;affinitySteps.push({label:tacticalLabel,multiplier:tactical});}
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
@@ -109,7 +124,9 @@ function resolve(a,enemy){
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
  // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality
  // provides the performance multiplier without a second stability penalty.
- const accuracyMultiplier=clamp(aim),rhythmMultiplier=a.performanceQuality?.multiplier??1,efficiency=accuracyMultiplier*rhythmMultiplier;
+ const accuracyMultiplier=clamp(aim),rawRhythmMultiplier=a.performanceQuality?.multiplier??1;
+ // Consistency remains useful, but no longer overwhelms tactical rhythm choice.
+ const rhythmMultiplier=1+(rawRhythmMultiplier-1)*.55,efficiency=accuracyMultiplier*rhythmMultiplier;
  const hitDetails=[];
  const rounded=value=>efficiency===0?0:Math.max(1,Math.round(value));
  const damages=Array.from({length:a.count?a.hits:0},(_,index)=>{
