@@ -610,7 +610,7 @@ $('start').onclick=()=>{
  if(continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){stopContinuousInput();return;}
  audio();stopReplay();
  if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
- if(state==='over'){if(gameMode==='roguelite')prepareMode('roguelite');else{resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}}
+ if(state==='over'){if(gameMode==='roguelite')prepareMode('roguelite');else{enemies.splice(0,enemies.length,...standardEnemies.map(copyEnemy));resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}}
  else if(state==='cleared'){resetGridHazards();stage++;enemyHp=enemies[stage].hp;if(gameMode==='roguelite')applyRogueReward();else hp=Math.min(100,hp+28);turn=1;update();}
  else if(state!=='ready')return;
  continuousRunning=continuousInput;startTurn();
