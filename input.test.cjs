@@ -501,7 +501,7 @@ test('a held bass note takes poison once, while release and preview replay do no
  const g=game();g.run("turn=2;gridHazards.add({type:'poison',slots:[4],turns:4,power:3});ctx.currentTime=10.5;input('kick','key:KeyA');input('kick','key:KeyA');ctx.currentTime=10.7;releaseInput('key:KeyA');state='ready';input('kick');sound('kick');");assert.equal(g.run('hp'),97);assert.equal(g.run('notes.length'),1);assert.ok(Math.abs(g.run('notes[0].duration')-.2)<1e-9);
 });
 test('enemy skill is forecast, starts next turn, and new waves coexist',()=>{
- const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);renderGridHazards();castGridSkill()");assert.match(g.run("$('enemyIntent').textContent"),/強打/);g.run('turn=9;renderBattlePlan()');assert.match(g.run("$('enemyIntent').textContent"),/毒汚染/);assert.equal(g.run('gridHazards.active().length'),0);
+ const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);renderGridHazards();castGridSkill()");assert.match(g.run("$('enemyIntent').textContent"),/強打/);g.run('turn=15;renderBattlePlan()');assert.match(g.run("$('enemyIntent').textContent"),/毒汚染/);assert.equal(g.run('gridHazards.active().length'),0);
  g.run('turn=4;ready();ready()');assert.equal(g.run('gridHazards.active()[0].remainingTurns'),4);assert.equal(g.run("$('hazardBar').hidden"),false);
  g.run('turn=6;advanceGridHazards();castGridSkill();turn=7;ready()');assert.equal(g.run('gridHazards.active().length'),2);assert.equal(g.run('gridHazards.active()[0].remainingTurns'),1);
 });
