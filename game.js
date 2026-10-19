@@ -7,6 +7,52 @@ const enemies=[
  {name:'薄明の残響',kind:'ghost',bpm:72,hp:270,description:'輪郭がほどけ、影だけが遅れて揺れる。',attack:100},
  {name:'晶殻の甲虫',kind:'crystal',bpm:138,hp:340,guard:.30,description:'透明な装甲が、二つの響きを返す。',attack:116}
 ];
+
+// Game mode and encounter progression; normal mode keeps the original lineup.
+const standardEnemies=enemies.map(enemy=>structuredClone(enemy));
+let gameMode='normal',rewardChoice='heal',rogueFloor=0;
+function prepareMode(mode){
+ gameMode=mode==='roguelite'?'roguelite':'normal';
+ const ordered=standardEnemies.map(e=>structuredClone(e));
+ if(gameMode==='roguelite'){
+  for(let i=ordered.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ordered[i],ordered[j]]=[ordered[j],ordered[i]];}
+ }
+ enemies.splice(0,enemies.length,...ordered);
+ rogueFloor=0;rewardChoice='heal';
+ if(typeof stage!=='undefined'){
+  stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;
+  shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
+  tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];
+  resetGridHazards();state='ready';$('result').hidden=true;update();ready();
+ }
+ document.body.dataset.gameMode=gameMode;
+ const badge=document.getElementById('modeBadge');
+ if(badge)badge.textContent=gameMode==='roguelite'?'ROGUELITE · FLOOR 1':'STANDARD';
+}
+function applyRogueReward(){
+ if(gameMode!=='roguelite')return;
+ if(rewardChoice==='heal')hp=Math.min(100,hp+45);
+ else if(rewardChoice==='weaken')enemies[stage].attack=Math.max(1,Math.round(enemies[stage].attack*.8));
+ else if(rewardChoice==='break')enemyHp=Math.max(1,Math.round(enemyHp*.82));
+ rogueFloor++;
+ const badge=document.getElementById('modeBadge');
+ if(badge)badge.textContent='ROGUELITE · FLOOR '+(rogueFloor+1);
+}
+function chooseRogueReward(){
+ const dialog=document.getElementById('rogueRewardDialog');
+ if(!dialog||gameMode!=='roguelite')return Promise.resolve();
+ return new Promise(resolve=>{
+  const choose=event=>{
+   const button=event.target.closest('[data-rogue-reward]');
+   if(!button)return;
+   rewardChoice=button.dataset.rogueReward;
+   dialog.removeEventListener('click',choose);
+   dialog.close();resolve();
+  };
+  dialog.addEventListener('click',choose);
+  dialog.showModal();
+ });
+}
 const elements={earth:['土','重震','#d4f77d'],wind:['風','風裂','#9adfd5'],fire:['火','烈火','#ffa26d'],lightning:['雷','雷走','#c6b0ff']};
 const instruments=[
  {id:'drums',name:'DRUMS',labels:['KICK','SNARE'],hints:['深く、響かせる。','鋭く、切り込む。'],lanes:['K','S']},
@@ -550,12 +596,21 @@ function ready(label='演奏開始 ↗'){
  if(gridHazards.active().length)$('hint').textContent='SPACEで開始 · 紫の帯は毒。入力は可能。';
 }
 function startTurn(){advanceGridHazards();if(!continuousResume)prepareTracksForTurn();continuousResume=false;return countIn(nextRecordingPhase());}
+let rogueRewardConfirmed=false;
+$('start').addEventListener('click',async event=>{
+ if(gameMode!=='roguelite'||state!=='cleared'||rogueRewardConfirmed)return;
+ event.stopImmediatePropagation();
+ await chooseRogueReward();
+ rogueRewardConfirmed=true;
+ $('start').click();
+ rogueRewardConfirmed=false;
+},true);
 $('start').onclick=()=>{
  if(continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){stopContinuousInput();return;}
  audio();stopReplay();
  if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
- if(state==='over'){resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}
- else if(state==='cleared'){resetGridHazards();stage++;enemyHp=enemies[stage].hp;hp=Math.min(100,hp+28);turn=1;update();}
+ if(state==='over'){if(gameMode==='roguelite')prepareMode('roguelite');else{resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}}
+ else if(state==='cleared'){resetGridHazards();stage++;enemyHp=enemies[stage].hp;if(gameMode==='roguelite')applyRogueReward();else hp=Math.min(100,hp+28);turn=1;update();}
  else if(state!=='ready')return;
  continuousRunning=continuousInput;startTurn();
 };
