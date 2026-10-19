@@ -832,7 +832,8 @@ async function finish(continuationAt=null){
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a.powerSteps=[...(a.powerSteps??[]),{label:'Bass / Lead音色と演奏の相性（各1/2）',value:a.power,multiplier:tone.attack}];
   if(globalThis.PitchCombat)Object.assign(a,PitchCombat.apply(a,cycleBass?.pitch,cycleLead?.pitch));
-   const result=Rhythm.resolve(a,enemies[stage]),report=CombatFeedback.explain(a,result,enemies[stage],'drums');activeReport=report;
+   const combatEnemy={...enemies[stage],intentId:enemyIntent().id};
+   const result=Rhythm.resolve(a,combatEnemy),report=CombatFeedback.explain(a,result,combatEnemy,'drums');activeReport=report;
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
