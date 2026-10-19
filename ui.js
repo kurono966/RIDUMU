@@ -32,6 +32,28 @@
  }
  api.refresh=refresh;
  function open(dialog){if(typeof releaseAllInputs==='function')releaseAllInputs();dialog.showModal();}
+ const fullscreenButton=el('toggleFullscreen'),fullscreenHelp=el('fullscreenHelp');
+ function updateFullscreen(){
+  const active=!!document.fullscreenElement;
+  fullscreenButton.textContent=active?'フルスクリーンを終了':'フルスクリーンにする';
+  fullscreenButton.setAttribute('aria-pressed',String(active));
+  fullscreenButton.disabled=!active&&typeof document.documentElement.requestFullscreen!=='function';
+  fullscreenHelp.textContent=fullscreenButton.disabled?'このブラウザでは全画面表示に対応していません。':active?'全画面表示中です。このボタンまたはEscキーで終了できます。':'ブラウザの表示領域を広く使います。Escキーでも終了できます。';
+ }
+ fullscreenButton.addEventListener('click',async()=>{
+  try{
+   if(document.fullscreenElement)await document.exitFullscreen();
+   else if(typeof document.documentElement.requestFullscreen==='function')await document.documentElement.requestFullscreen();
+   else return;
+   if(settings.open)settings.close();
+  }catch(error){
+   fullscreenHelp.textContent='フルスクリーンに切り替えられませんでした。ブラウザの設定や対応状況を確認してください。';
+   return;
+  }
+  updateFullscreen();
+ });
+ document.addEventListener('fullscreenchange',updateFullscreen);
+ updateFullscreen();
  el('openMenu').onclick=el('openPlaySettings').onclick=()=>open(settings);el('closePlaySettings').onclick=()=>settings.close();el('openResultDetails').onclick=()=>open(analysis);el('closeResultDetails').onclick=()=>analysis.close();
  const replay=document.createElement('button');replay.type='button';replay.className='small';replay.id='analysisReplay';replay.textContent='▶ 演奏を再生';replay.onclick=()=>el('replay').click();analysis.querySelector('.analysis-context').prepend(replay);
  for(const [trigger,dialog,parent] of [['openSynth','synthDialog',settings],['pitchSetup','pitchDialog',settings],['openHistory','historyDialog',settings],['openCodex','codexDialog',settings],['openDebug','debugDialog',settings],['damageLabel','damageDialog',analysis]]){
