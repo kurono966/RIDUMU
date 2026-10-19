@@ -627,11 +627,11 @@ const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電
 // Each enemy cycles through three clearly telegraphed tactics. The choice is
 // stable throughout HAT / DRUMS / BASS / LEAD of the same battle round.
 function enemyIntent(){
- const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%5;
- if(pattern===0)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
- if(pattern===1)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'攻撃せず装甲を強化。今こそ攻撃を集中し、Leadの跳躍で装甲を貫こう。'};
- if(pattern===2)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
- if(pattern===3){
+ const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%6;
+ if(pattern===1)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
+ if(pattern===0||pattern===4)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'攻撃せず装甲を強化。今こそ攻撃を集中し、Leadの跳躍で装甲を貫こう。'};
+ if(pattern===3)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
+ if(pattern===2){
   if(['plant','ghost','stone'].includes(enemy.kind))return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'敵がHPを回復する。攻撃を集中して回復量を上回ろう。'};
   return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'次回以降の攻撃を強化する。無傷のターンで攻めよう。'};
  }
