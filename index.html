@@ -18,8 +18,30 @@
     <link rel="stylesheet" href="element-meter.css?v=1">
   </head>
   <body class="game-ui">
+    <section id="titleScreen" class="title-screen" aria-labelledby="titleHeading">
+      <div class="title-panel">
+        <p class="title-kicker">RHYTHM × ROGUELITE</p>
+        <h1 id="titleHeading">RIDUMU<span class="dot">.</span></h1>
+        <p>あなたのリズムで、道を切り拓け。</p>
+        <div class="title-choices">
+          <button type="button" data-choose-mode="normal"><strong>通常モード</strong><span>従来の6体に順番に挑戦。今までどおりのRIDUMU。</span></button>
+          <button type="button" data-choose-mode="roguelite"><strong>ローグライトモード</strong><span>敵の順番が変化。勝利ごとに報酬を選び、敗北したら最初から。</span></button>
+        </div>
+      </div>
+    </section>
+    <dialog id="rogueRewardDialog" class="rogue-rewards" aria-labelledby="rewardTitle">
+      <h2 id="rewardTitle">勝利報酬を選ぶ</h2>
+      <p>次の敵に持ち込む強化を1つ選択。</p>
+      <div class="reward-choices">
+        <button type="button" data-rogue-reward="heal">休息 <small>HPを45回復</small></button>
+        <button type="button" data-rogue-reward="weaken">弱体化 <small>次の敵の攻撃 −20%</small></button>
+        <button type="button" data-rogue-reward="break">奇襲 <small>次の敵のHP −18%</small></button>
+      </div>
+    </dialog>
     <main id="game">
       <header>
+        <button type="button" id="returnTitle" class="small" title="タイトルへ戻る">タイトル</button>
+        <span id="modeBadge" class="mode-badge">STANDARD</span>
         <a class="brand" href="./index.html">RI<span>DU</span>MU<span class="dot">.</span></a>
         <button id="openMenu" type="button" class="utility-button" aria-haspopup="dialog" aria-controls="playSettingsDialog">
           メニュー
@@ -555,7 +577,7 @@
     <script src="enemy-music.js?v=6"></script>
     <script src="performance-review.js?v=1"></script>
     <script src="feedback-audio.js?v=1"></script>
-    <script src="game.js?v=23"></script>
+    <script src="game.js?v=24"></script>
     <script src="synth-ui.js?v=4"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js"></script>
@@ -563,5 +585,7 @@
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=1"></script>
     <script src="element-meter-ui.js?v=1"></script>
+    <script src="title-screen.js?v=1"></script>
+    <link rel="stylesheet" href="title-screen.css?v=1">
   </body>
 </html>
