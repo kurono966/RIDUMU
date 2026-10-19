@@ -188,3 +188,13 @@ test('straight alternating drums are an enemy-specific choice, not a universal d
  const flyStraight=R.resolve(comparable(straight),{kind:'fly'}),flyOther=R.resolve(comparable(offbeat),{kind:'fly'});
  assert.ok(flyStraight.total>flyOther.total,'flying enemy should still reward alternating regular rhythm');
 });
+
+test('deliberate offbeat accents favor lightning even with kick or snare bias',()=>{
+ const sync=[0,.375,.75,1.25,1.75,2.375,2.75,3.25,3.75];
+ for(const voice of ['kick','snare']){
+  const a=R.analyze(sync.map(t=>({t,type:voice})),4,120);
+  assert.equal(a.element,'lightning',voice+' syncopation should favor lightning');
+ }
+ const straight=R.analyze([0,.5,1,1.5,2,2.5,3,3.5].map(t=>({t,type:'kick'})),4,120);
+ assert.equal(straight.element,'earth','straight kick pulse must remain earth');
+});
