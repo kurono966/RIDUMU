@@ -83,7 +83,6 @@ function resolve(a,enemy){
  };
  const motif=motifs[enemy.kind];
  const motifMultiplier=motif?clamp(1+.55*motif.fit-motif.straightPenalty*straight,.48,1.6):1;
- affinity*=motifMultiplier;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -104,8 +103,8 @@ function resolve(a,enemy){
   tactical=1+.45*a.syncopation+.2*a.bursts;
   tacticalLabel='強化への変則リズム';
  }
- const affinitySteps=[{label:'属性・攻撃形態と敵の相性・リズム形',multiplier:affinity}];
- if(motif)affinitySteps.push({label:motif.label+(motif.straightPenalty?' / 単純交互への耐性':''),multiplier:motifMultiplier});
+ const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
+ if(motif){affinity*=motifMultiplier;affinitySteps.push({label:motif.label+(motif.straightPenalty?' / 単純交互への耐性':''),multiplier:motifMultiplier});}
  if(tactical!==1){affinity*=tactical;affinitySteps.push({label:tacticalLabel,multiplier:tactical});}
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
