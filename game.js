@@ -624,16 +624,27 @@ let feedbackCarryShield=0;
 const battleRound=()=>Math.floor((turn-1)/3)+1;
 const currentZones=()=>GridEffects.create(battleRound(),stage);
 const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電撃放射',plant:'毒棘の噴射',ghost:'残響の衝撃波',crystal:'晶殻の衝撃波'};
+// Each enemy cycles through three clearly telegraphed tactics. The choice is
+// stable throughout HAT / DRUMS / BASS / LEAD of the same battle round.
+function enemyIntent(){
+ const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%3;
+ if(pattern===0)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
+ if(pattern===1)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
+ return {id:'special',name:attackNames[enemy.kind]+'・溜め',power:1.06,pierce:0,poison:!!enemy.gridSkill,hint:enemy.gridSkill?'攻撃後に毒汚染。HPを守り、次の演奏で危険マスを避けよう。':'Leadの下降旋律を4音以上で作ると追加で威力を下げられる。'};
+}
+function enemyIntentDamage(intent=enemyIntent()){
+ return Math.max(1,Math.round(enemies[stage].attack*intent.power));
+}
 function renderBattlePlan(){
  $('shieldValue').textContent='盾 '+shield;
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
  $('enemyIntent').hidden=ended;
- $('enemyIntent').textContent=ended?'':`予告：${attackNames[enemies[stage].kind]} / 威力 ${enemies[stage].attack}${enemies[stage].guard?' · 装甲軽減 '+Math.round(enemies[stage].guard*100)+'%':''}${enemies[stage].gridSkill?' ＋ 毒汚染':''} · LEAD後`;
+ const intent=enemyIntent();
+ $('enemyIntent').textContent=ended?'':`予告：${intent.name} / 威力 ${enemyIntentDamage(intent)}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
  const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
- $('scope').title=names.join('\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
-
+ $('scope').title=names.join('\\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
 }
 function rememberSequence(kind,mix=lastMix){
  globalThis.captureEvaluationDebug?.({parts:Array.from(tracks),hats:hatNotes,bpm:lastBpm,duration:lastDuration,zones:currentZones(),enemy:enemies[stage]});
@@ -649,23 +660,32 @@ function enemyAttackSound(kind){
 }
 async function enemyCounter(a,report,result){
  attackMusicWindow=null;enemyMusic?.stop();
- state='enemyAttack';releaseAllInputs();$('replay').disabled=true;
- $('status').textContent='ENEMY / '+attackNames[enemies[stage].kind];$('hint').textContent='BassのシールドとLeadの支援で迎え撃つ。';
+ state='enemyAttack';releaseAllInputs();$('replay').disabled=true;\n const intent=enemyIntent();
+ $('status').textContent='ENEMY / '+intent.name;$('hint').textContent=intent.hint;
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
  reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
  await wait(180);
  const beforeTimbre=Math.min(.55,(cycleLead?.weaken??0)+(cycleEnsemble?.bonus.resistance??0)+(a.count&&a.element==='earth'?.2*a.effect:0));
  const reduction=PerformanceCombat.reduction(cycleLead,cycleBass,cycleEnsemble,a).total;
- const received=PerformanceCombat.receive(hp,shield,enemies[stage].attack,reduction);
+ // The telegraphed attack is resolved against the same performance that the player prepared.
+ const leadDown=cycleLead?.pitch?.effects?.weaken??0;
+ const specialCounter=intent.id==='special'&&!intent.poison&&leadDown>=.05?.25:0;
+ const incoming=enemyIntentDamage(intent)*(1-specialCounter);
+ const mitigated=Math.max(0,Math.round(incoming*(1-reduction)));
+ // Piercing attacks bypass 40% of the shield, but still respect pitch/timbre reduction.
+ const bypass=Math.round(mitigated*intent.pierce),blockable=mitigated-bypass;
+ const absorbed=Math.min(Math.max(0,shield),blockable);
+ const finalDamage=Math.min(hp,bypass+blockable-absorbed);
+ const received={incoming:mitigated,absorbed,damage:finalDamage,shield:Math.max(0,shield-absorbed),hp:Math.max(0,hp-finalDamage)};
  shield=received.shield;renderBattlePlan();
  $('impact').style.color='#8edcdd';$('impact').textContent=received.absorbed?'SHIELD −'+received.absorbed:'';
  if(received.absorbed){$('arena').classList.add('guard-flash');await wait(260);}
  hp=received.hp;update();$('impact').style.color='#ffa26d';$('impact').textContent=received.damage?'−'+received.damage+' HP':'BLOCK';
  const pitchReduction=PerformanceCombat.reduction(cycleLead,cycleBass,cycleEnsemble,a).pitch;
- const text=(a.timbreWeaken?`湿潤：敵攻撃 −${((Math.min(.55,beforeTimbre+a.timbreWeaken)-beforeTimbre)*100).toFixed(1)}% / `:'')+(pitchReduction?`音程耐性：敵攻撃 −${(pitchReduction*100).toFixed(1)}% / `:'')+`敵の攻撃 ${received.incoming} → 盾で${received.absorbed}吸収 / HP −${received.damage}`;
+ const text=(specialCounter?'下降旋律で溜め攻撃を25%弱体 / ':'')+(intent.pierce?'盾貫通40% / ':'')+(a.timbreWeaken?`湿潤：敵攻撃 −${((Math.min(.55,beforeTimbre+a.timbreWeaken)-beforeTimbre)*100).toFixed(1)}% / `:'')+(pitchReduction?`音程耐性：敵攻撃 −${(pitchReduction*100).toFixed(1)}% / `:'')+`敵の攻撃 ${received.incoming} → 盾で${received.absorbed}吸収 / HP −${received.damage}`;
  $('summaryHint').textContent=text;$('detailHint').textContent+=' / '+text;
  await wait(400);$('arena').classList.remove('enemy-impact','guard-flash');$('impact').textContent='';
- if(hp>0)castGridSkill();$('replay').disabled=!lastMix?.length;
+ if(hp>0&&intent.poison)castGridSkill();$('replay').disabled=!lastMix?.length;
 }
 let enemyReactionTimer;
 function reactEnemy(kind,element='earth'){
