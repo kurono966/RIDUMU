@@ -103,3 +103,10 @@ main>.console .filter-head select{font-size:10px;padding:3px}
  .synth-parameters label:nth-child(2){grid-column:1/-1}
  .synth-parameters select{width:100%;min-width:0}
 }
+
+
+.synth-preset-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+.synth-preset-row input{flex:2 1 180px;min-width:0;padding:8px;border:1px solid #647657;border-radius:6px;background:#182018;color:#eef7e8}
+.synth-preset-row select{flex:2 1 130px;min-width:0;padding:8px;background:#182018;color:#eef7e8;border:1px solid #647657;border-radius:6px}
+.synth-preset-row button{padding:8px 10px;border:1px solid #647657;border-radius:6px;cursor:pointer}
+.synth-preset-row button:disabled{opacity:.45;cursor:default}
