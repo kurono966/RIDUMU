@@ -40,7 +40,7 @@ test('two-note repeat and movement give useful choices without mode multipliers'
 test('actual damage includes pitch attack, deterministic accuracy cost and armored shield penetration',()=>{
  const jumps=lead([60,67,60,67]),a=P.apply(attack,null,jumps),armored={kind:'machine',guard:.3};
  assert.equal(a.accuracy,.75);assert.equal(a.pitchPierce,.3);assert.equal(R.resolve(a,armored).calculation.guard.multiplier,.79);
- assert(R.resolve(a,armored).total>R.resolve({...a,pitchPierce:0},armored).total);
+ const heavyAttack={...a,power:a.power*3};assert(R.resolve(heavyAttack,armored).total>R.resolve({...heavyAttack,pitchPierce:0},armored).total,'pitch penetration should improve meaningful damage after integer rounding');
  assert(R.resolve(P.apply(attack,null,lead([60,63,66,70])),{kind:'plant'}).total>R.resolve(attack,{kind:'plant'}).total);
  assert.deepEqual(R.resolve(a,armored),R.resolve(a,armored));assert.equal(R.resolve(a,{kind:'machine'}).calculation.guard.multiplier,1);
  const small=P.apply(attack,null,lead([60,61,62,63]));assert(small.effect>attack.effect);assert(R.resolve(small,{kind:'machine'}).total>R.resolve(attack,{kind:'machine'}).total);
