@@ -644,7 +644,7 @@ function renderBattlePlan(){
  const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
- $('scope').title=names.join('\\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
+ $('scope').title=names.join('\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
 }
 function rememberSequence(kind,mix=lastMix){
  globalThis.captureEvaluationDebug?.({parts:Array.from(tracks),hats:hatNotes,bpm:lastBpm,duration:lastDuration,zones:currentZones(),enemy:enemies[stage]});
@@ -660,7 +660,8 @@ function enemyAttackSound(kind){
 }
 async function enemyCounter(a,report,result){
  attackMusicWindow=null;enemyMusic?.stop();
- state='enemyAttack';releaseAllInputs();$('replay').disabled=true;\n const intent=enemyIntent();
+ state='enemyAttack';releaseAllInputs();$('replay').disabled=true;
+ const intent=enemyIntent();
  $('status').textContent='ENEMY / '+intent.name;$('hint').textContent=intent.hint;
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
  reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
