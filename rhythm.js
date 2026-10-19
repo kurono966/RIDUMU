@@ -60,7 +60,7 @@ function analyze(input,duration=4,bpm=120){
  // offbeat eighths and the absence of the following downbeat.
  const offbeatEighths=grid.filter(n=>n.q%4===2).length/Math.max(1,count);
  const syncopatedEighths=grid.filter(n=>n.q%4===2&&!masks[Math.min(slots-1,n.q+2)]).length/Math.max(1,count);
- const lightningAccent=clamp(.55*offbeat+.8*syncopation+.65*offbeatEighths+.55*syncopatedEighths);
+ const lightningAccent=clamp(.55*offbeat+.8*syncopation+.65*offbeatEighths+.55*syncopatedEighths)*clamp((count-3)/5)*(1-.85*rise);
  const competingPenalty=.85*lightningAccent;
  const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged-competingPenalty,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation-competingPenalty,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:.85*syncopation+.65*irregularity+.6*offbeat+1.25*lightningAccent};
  const element=Object.keys(scores).reduce((a,b)=>scores[a]>=scores[b]?a:b);
