@@ -57,7 +57,7 @@ function analyze(input,duration=4,bpm=120){
  const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:.85*syncopation+.65*irregularity+.6*offbeat};
  const element=Object.keys(scores).reduce((a,b)=>scores[a]>=scores[b]?a:b);
  const weight=clamp(.5*kRatio+.3*low+.45*charged-.2*snareBurst),hits=Math.max(1,Math.min(8,Math.round(1+high*4+bursts*2+snareBurst*2-weight*2)));
- const power=count?24+18*weight+12*charged+7*alternation+8*clamp(count/8):0;
+ const power=count?24+18*weight+12*charged+3*alternation+8*clamp(count/8):0;
  const accuracy=clamp(.79+.12*regularity+.08*repetition,.6,.98);
  return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,performanceQuality:performanceQuality(notes,bpm,duration),firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
 }
@@ -70,7 +70,28 @@ function resolve(a,enemy){
  if(enemy.kind==='plant')affinity=a.element==='fire'?1.5:a.element==='wind'?.85:1;
  if(enemy.kind==='ghost'){affinity=a.element==='lightning'?1.3:a.element==='earth'?.85:1;aim-=.14*(1-Math.max(a.groove?.laidBack??0,a.groove?.drunk??0,a.groove?.swing??0));}
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
+ // Defensive intent creates a reason to change the beat instead of repeating
+ // the same alternating kick/snare loop every battle.
+ const intent=enemy.intentId;
+ let tactical=1,tacticalLabel='';
+ if(intent==='guard'){
+  tactical=1+.65*a.syncopation+.3*a.offbeat;
+  tacticalLabel='防御態勢への裏拍・シンコペーション';
+ }else if(intent==='heavy'){
+  tactical=1+.35*a.weight+.25*a.charged;
+  tacticalLabel='強打への重いキック';
+ }else if(intent==='pierce'){
+  tactical=1+.55*a.snareBurst+.2*a.bursts;
+  tacticalLabel='貫通へのスネア連打';
+ }else if(intent==='heal'){
+  tactical=1+.4*a.densityRise+.15*a.bursts;
+  tacticalLabel='回復への後半加速';
+ }else if(intent==='buff'){
+  tactical=1+.45*a.syncopation+.2*a.bursts;
+  tacticalLabel='強化への変則リズム';
+ }
  const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
+ if(tactical!==1){affinity*=tactical;affinitySteps.push({label:tacticalLabel,multiplier:tactical});}
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
   for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
@@ -105,7 +126,7 @@ function resolve(a,enemy){
   return damage;
  });
  const total=damages.reduce((x,y)=>x+y,0);
- const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:7*a.alternation,grooveBonus:a.groovePower??0}};
+ const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:3*a.alternation,grooveBonus:a.groovePower??0}};
  calculation.guard={rate:guard,pierce,multiplier:guardMultiplier};
  return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
