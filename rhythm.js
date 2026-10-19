@@ -74,15 +74,15 @@ function resolve(a,enemy){
  // answer. Contrast rhythm motifs across enemies; do not punish all repetition.
  const straight=clamp((a.alternation-.65)/.35)*clamp((a.regularity-.65)/.35)*clamp((a.repetition-.35)/.65);
  const motifs={
-  stone:{label:'岩への重いキック・間',fit:clamp(.65*a.weight+.35*a.charged),straightPenalty:.42},
+  stone:{label:'岩への重いキック・間',fit:clamp(.65*a.weight+.35*a.charged),straightPenalty:.65},
   fly:{label:'翼獣への交互の刻み',fit:clamp(.7*a.alternation+.3*a.regularity),straightPenalty:0},
-  machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*a.syncopation+.35*a.offbeat),straightPenalty:.45},
-  plant:{label:'植物への後半加速・連打',fit:clamp(.7*a.densityRise+.3*a.bursts),straightPenalty:.4},
-  ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-a.regularity)),straightPenalty:.45},
+  machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*a.syncopation+.35*a.offbeat),straightPenalty:.65},
+  plant:{label:'植物への後半加速・連打',fit:clamp(.7*a.densityRise+.3*a.bursts),straightPenalty:.65},
+  ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-a.regularity)),straightPenalty:.65},
   crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*a.alternation+.35*a.regularity),straightPenalty:0}
  };
  const motif=motifs[enemy.kind];
- const motifMultiplier=motif?clamp(1+.55*motif.fit-motif.straightPenalty*straight,.48,1.6):1;
+ const motifMultiplier=motif?clamp(1+.4*motif.fit-motif.straightPenalty*straight,.3,1.5):1;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -104,7 +104,6 @@ function resolve(a,enemy){
   tacticalLabel='強化への変則リズム';
  }
  const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
- if(motif){affinity*=motifMultiplier;affinitySteps.push({label:motif.label+(motif.straightPenalty?' / 単純交互への耐性':''),multiplier:motifMultiplier});}
  if(tactical!==1){affinity*=tactical;affinitySteps.push({label:tacticalLabel,multiplier:tactical});}
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
@@ -124,8 +123,9 @@ function resolve(a,enemy){
  // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality
  // provides the performance multiplier without a second stability penalty.
  const accuracyMultiplier=clamp(aim),rawRhythmMultiplier=a.performanceQuality?.multiplier??1;
- // Consistency remains useful, but no longer overwhelms tactical rhythm choice.
- const rhythmMultiplier=1+(rawRhythmMultiplier-1)*.55,efficiency=accuracyMultiplier*rhythmMultiplier;
+ // Keep timing-skill rewards, but make the enemy-specific rhythmic fit a
+ // separate multiplier so elemental and pitch affinities remain consistent.
+ const rhythmMultiplier=rawRhythmMultiplier*motifMultiplier,efficiency=accuracyMultiplier*rhythmMultiplier;
  const hitDetails=[];
  const rounded=value=>efficiency===0?0:Math.max(1,Math.round(value));
  const damages=Array.from({length:a.count?a.hits:0},(_,index)=>{
@@ -144,6 +144,7 @@ function resolve(a,enemy){
  const total=damages.reduce((x,y)=>x+y,0);
  const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:3*a.alternation,grooveBonus:a.groovePower??0}};
  calculation.guard={rate:guard,pierce,multiplier:guardMultiplier};
+ calculation.rhythmStyle={label:motif?.label??'基本リズム',multiplier:motifMultiplier,straightAlternation:straight};
  return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){
