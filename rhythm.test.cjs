@@ -177,3 +177,14 @@ test('layered replay aligns every part to the same clock and damages only the ne
  assert.equal(mix.events.at(-1).voice,'lead');assert.deepEqual(mix.events.at(-1).damages,[30]);
  assert.ok(R.mixTimeline(tracks,null).events.every(n=>n.damages.length===0));
 });
+
+test('straight alternating drums are an enemy-specific choice, not a universal damage answer',()=>{
+ const straight=R.analyze(Array.from({length:16},(_,i)=>({t:i*.25,type:i%2?'snare':'kick'})));
+ const offbeat=R.analyze([0,.375,.75,1.25,1.375,1.875,2.25,2.375,2.875,3.375,3.5,3.875].map((t,i)=>({t,type:i%3?'snare':'kick'})));
+ // Fix the attack budget and base quality to isolate the enemy's rhythmic preference.
+ const comparable=a=>({...a,power:65,hits:3,accuracy:.9,element:'lightning',performanceQuality:{multiplier:1}});
+ const againstMachine=[R.resolve(comparable(straight),{kind:'machine'}),R.resolve(comparable(offbeat),{kind:'machine'})];
+ assert.ok(againstMachine[1].total>againstMachine[0].total,'machine should reward syncopation over basic alternation');
+ const flyStraight=R.resolve(comparable(straight),{kind:'fly'}),flyOther=R.resolve(comparable(offbeat),{kind:'fly'});
+ assert.ok(flyStraight.total>flyOther.total,'flying enemy should still reward alternating regular rhythm');
+});
