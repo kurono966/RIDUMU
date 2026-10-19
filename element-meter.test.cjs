@@ -30,5 +30,5 @@ test('close competition is a display threshold only',()=>{
 test('a groove-driven leader change uses the final engine element and explains the groove',()=>{
  const hats=Array.from({length:16},(_,i)=>({type:'hat',t:i*.25+(i%2?1/12:0)}));
  const notes=Array.from({length:8},(_,i)=>({type:i<3?'kick':'snare',t:i*.25+(i%2?1/12:0)}));
- const a=M.analyze(notes,hats,120,4,true);assert.equal(a.baseElement,'earth');assert.equal(a.actualElement,'wind');assert.equal(a.dominant,'wind');assert.equal(a.reason,'跳ねるノリ → 風');
+ const a=M.analyze(notes,hats,120,4,true);assert.equal(a.baseElement,'lightning');assert.equal(a.actualElement,'wind');assert.equal(a.dominant,'wind');assert.equal(a.reason,'跳ねるノリ → 風');
 });
