@@ -5,7 +5,7 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},replaceChildren(){},dataset:{},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const sandbox=vm.createContext({URLSearchParams,document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  sandbox.window=sandbox;sandbox.addEventListener=()=>{};
  vm.runInContext(fs.readFileSync('synth.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('synth-audio.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('performance-filter.js','utf8'),sandbox);
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
@@ -13,6 +13,16 @@ function game(){
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
+test('automatic damage input is restricted to debug mode and Drums ready state',()=>{
+ const g=game();
+ assert.equal(g.run("autoInputDamageChart('max')"),false);
+ g.run("location={search:'?debug=1'};state='ready';turn=2");
+ assert.equal(g.run("autoInputDamageChart('max')"),false);
+ g.run("turn=1;EvaluationDebug={damageChart:()=>({parts:new Map([['drums',[]],['bass',[]],['lead',[]]]),hats:[]})};audio=()=>{};countIn=()=>{};");
+ assert.equal(g.run("autoInputDamageChart('min')"),true);
+ assert.equal(g.run('continuousRunning&&hatReady&&debugDamagePlan!==null'),true);
+ g.run("stopContinuousInput()");assert.equal(g.run('debugDamagePlan'),null);
+});
 test('chord accompaniment is restricted to the live input window and never starts in idle or combat',()=>{
  const g=game();g.run("let musicStarts=[],musicStops=0;enemyMusic={start:at=>musicStarts.push(at),stop:()=>musicStops++,setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
  for(const state of ['ready','countin','attack','enemyAttack','cleared','over'])g.run(`state='${state}';syncEnemyMusic()`);
@@ -132,6 +142,19 @@ test('continuous handoff retains backing downbeats and accepts a new part input 
  assert.equal(g.run("tracks.get('drums').length"),1);
 });
 
+test('automatic damage chart fills three parts and stops after one combat',async()=>{
+ const g=game();
+ g.run("debugDamagePlan={parts:new Map(['drums','bass','lead'].map(v=>[v,[{type:'kick',t:0,rawT:0,quantize:'off'}]]))};hatReady=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickAuto,autoAttacks=0;setInterval=fn=>{tickAuto=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{autoAttacks++};enemyCounter=async()=>{};");
+ await g.run("countIn('parts')");
+ for(let part=0;part<3;part++){
+  assert.equal(g.run('notes.length'),1);
+  g.run("ctx.currentTime=recordAudioAt+.01;tickAuto();input('snare');ctx.currentTime=recordAudioAt+timing().duration+.001;tickAuto()");
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ }
+ assert.equal(g.run('autoAttacks'),1);assert.equal(g.run('continuousRunning'),false);
+ assert.equal(g.run('debugDamagePlan'),null);assert.equal(g.run('state'),'ready');
+ assert.equal(g.run('tracks.size'),3);
+});
 test('continuous cycle records each part once, resolves combat once and starts the next Hat automatically',async()=>{
  const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
  await g.run("countIn('hat')");

@@ -1,5 +1,31 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const D=require('./evaluation-debug.js'),R=require('./rhythm.js'),G=require('./groove.js'),Q=require('./quantize.js'),C=require('./performance-combat.js'),E=require('./ensemble.js');
+test('optimized elemental charts favor enemy weaknesses across normal, guard and buff intents',()=>{
+ const roster=[['stone',82,.2,'earth'],['fly',150,0,'wind'],['machine',120,.25,'lightning'],['plant',100,0,'fire'],['ghost',72,0,'lightning'],['crystal',138,.3,'earth']];
+ for(const intentId of [undefined,'guard','buff'])for(const [kind,bpm,guard,weakness] of roster){
+  const enemy={kind,guard,intentId},charts=['earth','wind','fire','lightning'].map(element=>D.damageChart('max',bpm,480/bpm,[],enemy,{element}));
+  const best=charts.reduce((a,b)=>a.total>=b.total?a:b);
+  assert.equal(best.element,weakness,kind+' / '+(intentId??'normal'));
+  if(!intentId){const auto=D.damageChart('max',bpm,480/bpm,[],enemy);assert.equal(auto.total,best.total,'auto input must compare fully supported elemental finalists');}
+ }
+});
+test('automatic charts are deterministic, playable and reproduce their evaluated damage',()=>{
+ for(const kind of ['stone','fly','machine','plant','ghost','crystal']){
+  const enemy={kind,guard:.2,intentId:'guard'},bpm=120,duration=4;
+  const max=D.damageChart('max',bpm,duration,[],enemy),min=D.damageChart('min',bpm,duration,[],enemy);
+  assert.ok(max.total>0);assert.ok(max.candidates>100);
+  assert.equal(D.compare(max.parts,max.hats,bpm,duration,[],enemy).normal.result.total,max.total);
+  assert.equal(D.compare(min.parts,min.hats,bpm,duration,[],enemy).normal.result.total,0);
+  for(const [voice,notes] of max.parts){
+   const gaps=notes.slice(1).map((n,i)=>Math.round((n.t-notes[i].t)*1000));
+   assert.ok(new Set(gaps).size>=2,voice+' must have rhythmic variation');
+   if(voice==='drums')assert.equal(new Set(notes.map(n=>n.type)).size,2);
+   else {assert.ok(new Set(notes.map(n=>n.pitch)).size>=3);assert.ok(new Set(notes.map(n=>n.duration)).size>=2);}
+   for(const n of notes){assert.ok(n.t>=0&&n.t<duration);assert.equal(n.rawT,n.t);assert.equal(n.quantize,'off');if(voice!=='drums')assert.ok(n.t+n.duration<=duration+1e-8);}
+  }
+  assert.deepEqual(D.damageChart('max',bpm,duration,[],enemy),max);
+ }
+});
 test('development selector provides all seven well-formed preset options',()=>{
  const select=fs.readFileSync('index.html','utf8').match(/<select id="debugPreset">(.*?)<\/select>/s)[1];
  const values=[...select.matchAll(/<option value="([^"]+)">[^<]+<\/option>/g)].map(m=>m[1]);

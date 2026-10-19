@@ -3,6 +3,10 @@
  const enabled=new URLSearchParams(location.search).get('debug')==='1'||location.hash==='#debug';
  const button=document.getElementById('openDebug');button.hidden=!enabled;
  if(!enabled)return;
+ for(const [id,mode] of [['debugMaxDamage','max'],['debugMinDamage','min']])$(id).onclick=()=>{
+  if(globalThis.autoInputDamageChart?.(mode)){$('debugDialog').close();$('debugAutoStatus').textContent='';}
+  else $('debugAutoStatus').textContent='Drumsの演奏開始前（READY）に実行してください。';
+ };
  let snapshot=null;
  globalThis.captureEvaluationDebug=value=>{snapshot=JSON.parse(JSON.stringify(value));};
  function refresh(){

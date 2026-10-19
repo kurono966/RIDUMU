@@ -339,7 +339,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
  pendingTrackInput=null;
  phase=nextPhase;phaseQuantizeMode=quantizeMode;updatePhaseUI();
  phaseHatPlayback=phase==='parts'?Quantize.render(hatNotes,timing().bpm,timing().duration):[];
- state='countin';recordAudioAt=null;notes=anticipated?.notes??[];filterAutomation=[];renderGridHazards();
+ state='countin';recordAudioAt=null;notes=debugDamagePlan?(debugDamagePlan.parts.get(instrumentForTurn(turn).id)??[]).map(n=>({...n})):anticipated?.notes??[];filterAutomation=[];renderGridHazards();
  syncQuantizeControl();
  $('start').disabled=true;$('replay').disabled=true;
  $('start').textContent='カウントイン…';$('timer').textContent=timing().duration.toFixed(2);
@@ -360,6 +360,8 @@ async function countIn(nextPhase='hat',continuationAt=null){
  if(token!==run)return;
  syncEnemyMusic();
  const backing=phase==='parts'?backingTimeline().events:[];
+ if(debugDamagePlan)backing.push(...notes.map(n=>({...n,time:n.t,voice:instrumentForTurn(turn).id})));
+ backing.sort((a,b)=>a.time-b.time);
  const endAt=recordAt+(continuousRunning?duration:Math.max(duration,...backing.map(event=>event.time+(event.duration??0)+.14)));
  let backingIndex=0,countBeat=0;
  clearInterval(clockTimer);
@@ -402,6 +404,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
  recordingAdvance=()=>{if(continuousRunning&&state==='recording'&&ctx.currentTime>=recordAt+duration)tick();};tick();
 }
 function stopContinuousInput(){
+ debugDamagePlan=null;
  if(['attack','enemyAttack'].includes(state)){
   continuousRunning=false;recordingAdvance=null;$('start').disabled=true;$('start').textContent='戦闘後に停止';return;
  }
@@ -478,6 +481,7 @@ function sound(type,when,voice=instrumentForTurn(turn).id,volume=1,duration,pitc
 function flash(type){$(type).classList.add('active');setTimeout(()=>$(type).classList.remove('active'),90);}
 function stopReplay(){stopSavedMusic('result');clearFilterPlayback();globalThis.stopHistoryPlayback?.();if(replaying)for(const voice of pitchedVoices)voice.release();replayTimers.forEach(clearTimeout);replayTimers=[];replaying=false;$('replay').textContent='▶ リズムを再生';}
 function input(type,source,pitch){
+ if(debugDamagePlan)return;
  recordingAdvance?.();
  if(source!==undefined&&heldInputs.has(source))return;
  audio();
@@ -596,6 +600,16 @@ function ready(label='演奏開始 ↗'){
  $('hint').textContent+=' · '+({drums:'攻撃を構築',bass:'低音で盾を作る',lead:'旋律で支援 → 戦闘'}[instrumentForTurn(turn).id]);
  if(gridHazards.active().length)$('hint').textContent='SPACEで開始 · 紫の帯は毒。入力は可能。';
 }
+let debugDamagePlan=null;
+globalThis.autoInputDamageChart=mode=>{
+ if(!(new URLSearchParams(globalThis.location?.search??'').get('debug')==='1'||globalThis.location?.hash==='#debug'))return false;
+ if(state!=='ready'||instrumentForTurn(turn).id!=='drums')return false;
+ const {bpm,duration}=timing();
+ const plan=EvaluationDebug.damageChart(mode,bpm,duration,currentZones(),{...enemies[stage],intentId:enemyIntent().id});
+ audio();stopReplay();advanceGridHazards();prepareTracksForTurn();
+ debugDamagePlan=plan;hatNotes=plan.hats.map(n=>({...n}));hatReady=true;continuousRunning=true;continuousResume=false;
+ countIn('parts');return true;
+};
 function startTurn(){advanceGridHazards();if(!continuousResume)prepareTracksForTurn();continuousResume=false;return countIn(nextRecordingPhase());}
 let rogueRewardConfirmed=false;
 $('start').addEventListener('click',async event=>{
@@ -797,6 +811,7 @@ function showRoleResult(title,factors,amount,label,a){
  renderReport(report);sequence(a);$('causeTracks').replaceChildren();$('breakdown').replaceChildren();
 }
 async function finish(continuationAt=null){
+ if(debugDamagePlan&&instrumentForTurn(turn).id==='lead'){debugDamagePlan=null;continuousRunning=false;continuationAt=null;}
  globalThis.PitchUI?.clear();
  enemyMusic?.stop();
  releaseAllInputs(undefined,pendingTrackInput);if(Synth.voices.includes(instrumentForTurn(turn).id))notes=Synth.monoNotes(notes);state='attack';document.querySelector('.console').classList.remove('recording');

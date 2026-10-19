@@ -469,7 +469,11 @@
           閉じる
         </button>
       </div>
-      <p>開発用の比較計算です。戦闘・録音・発見メモには反映しません。通常評価は元の入力を保持し、補正後評価は発音時刻を各解析の基準にします。</p>
+      <p>Drumsの演奏開始前に、3パートをまとめて自動入力できます。最大は休符・裏拍・フィルと旋律の変化を含む候補から、現在の敵に対する最高値を探索します（理論上限ではありません）。最小は無音で0ダメージです。音色・エフェクトによって実際のダメージは変化します。</p>
+      <button id="debugMaxDamage" type="button">最大ダメージ譜面を自動入力</button>
+      <button id="debugMinDamage" type="button">最小ダメージ譜面を自動入力（無音）</button>
+      <p id="debugAutoStatus" role="status"></p>
+      <p>以下の比較計算は戦闘・録音・発見メモには反映しません。通常評価は元の入力を保持し、補正後評価は発音時刻を各解析の基準にします。</p>
       <label>比較する補正 <select id="debugPreset">
   <option value="recorded">録音時の補正</option>
   <option value="off">生演奏</option>
@@ -554,7 +558,7 @@
       <details id="element-help-fire"><summary>▲ 火</summary><p>後半に向かって音を増やす。短い連打や密度の集中も火につながります。</p></details>
       <details id="element-help-lightning"><summary>ϟ 雷</summary><p>裏拍やシンコペーションを使う。間隔の変化や再現された揺れも雷につながります。</p></details>
     </dialog>
-    <script src="rhythm.js?v=5"></script>
+    <script src="rhythm.js?v=6"></script>
     <script src="quantize.js"></script>
     <script src="groove.js"></script>
     <script src="feedback.js?v=3"></script>
@@ -571,7 +575,7 @@
     <script src="synth-audio.js?v=4"></script>
     <script src="sequence-history.js?v=5"></script>
     <script src="grid-hazards.js"></script>
-    <script src="evaluation-debug.js?v=2"></script>
+    <script src="evaluation-debug.js?v=4"></script>
     <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
     <script src="enemy-music.js?v=6"></script>

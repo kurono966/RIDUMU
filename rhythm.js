@@ -78,6 +78,8 @@ function resolve(a,enemy){
  if(enemy.kind==='plant')affinity=a.element==='fire'?1.5:a.element==='wind'?.85:1;
  if(enemy.kind==='ghost'){affinity=a.element==='lightning'?1.3:a.element==='earth'?.85:1;aim-=.14*(1-Math.max(a.groove?.laidBack??0,a.groove?.drunk??0,a.groove?.swing??0));}
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
+ // Lightning trades neutral coverage for its machine/ghost specialization.
+ if(a.element==='lightning'&&['stone','fly','plant'].includes(enemy.kind))affinity*=.85;
  // A perfectly even Kick/Snare alternation is one viable style, not a universal
  // answer. Contrast rhythm motifs across enemies; do not punish all repetition.
  const straight=clamp(((a.alternation??0)-.65)/.35)*clamp(((a.regularity??0)-.65)/.35)*clamp(((a.repetition??0)-.35)/.65);
@@ -96,7 +98,7 @@ function resolve(a,enemy){
  const intent=enemy.intentId;
  let tactical=1,tacticalLabel='';
  if(intent==='guard'){
-  tactical=1+.65*a.syncopation+.3*a.offbeat;
+  tactical=1+.35*a.syncopation+.15*a.offbeat;
   tacticalLabel='防御態勢への裏拍・シンコペーション';
  }else if(intent==='heavy'){
   tactical=1+.35*a.weight+.25*a.charged;
@@ -108,11 +110,10 @@ function resolve(a,enemy){
   tactical=1+.4*a.densityRise+.15*a.bursts;
   tacticalLabel='回復への後半加速';
  }else if(intent==='buff'){
-  tactical=1+.45*a.syncopation+.2*a.bursts;
+  tactical=1+.3*a.syncopation+.15*a.bursts;
   tacticalLabel='強化への変則リズム';
  }
  const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
- if(tactical!==1){affinity*=tactical;affinitySteps.push({label:tacticalLabel,multiplier:tactical});}
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
   for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
@@ -122,6 +123,9 @@ function resolve(a,enemy){
  const originalAffinity=affinity;
  affinity=clamp(Math.pow(originalAffinity,1.65),.4,3);
  affinitySteps.push({label:'相性メリハリ補正（有効↑・苦手↓）',multiplier:affinity/originalAffinity});
+ // Intent rewards are linear: do not exponentiate the same syncopation that
+ // already determines lightning's identity. Preserve the combined 3x ceiling.
+ if(tactical!==1){const before=affinity;affinity=Math.min(3,affinity*tactical);affinitySteps.push({label:tacticalLabel,multiplier:affinity/before});}
  const pitchElementMultiplier=1+.25*clamp(a.pitchElementBoost??0,0,.18);
  if(pitchElementMultiplier!==1){affinity*=pitchElementMultiplier;affinitySteps.push({label:'音程：属性効果（効果増分の25%を相性へ）',multiplier:pitchElementMultiplier});}
  const guard=clamp(enemy.guard??0,0,.6),pierce=clamp(a.pitchPierce??0,0,.3),guardMultiplier=1-guard*(1-pierce);

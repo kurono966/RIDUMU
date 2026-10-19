@@ -1,6 +1,25 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
 
+test('intent bonuses stay linear after elemental contrast and respect the shared cap',()=>{
+ const a={...R.analyze(notes([0,.375,.75,1.375,2,2.375,2.75,3.375],'kick')),element:'lightning',groove:null};
+ for(const kind of ['fly','machine','plant','crystal']){
+  const neutral=R.resolve(a,{kind}),guard=R.resolve(a,{kind,intentId:'guard'});
+  const tactical=1+.35*a.syncopation+.15*a.offbeat;
+  assert.ok(Math.abs(guard.affinity-Math.min(3,neutral.affinity*tactical))<1e-9);
+  assert.ok(guard.affinity>neutral.affinity,'syncopation still counters guard');
+ }
+});
+
+test('lightning keeps specialization without neutral elemental coverage',()=>{
+ const a={...R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick')),weight:0,element:'lightning'};
+ for(const kind of ['stone','fly','plant','crystal']){
+  const lightning=R.resolve(a,{kind}),neutral=R.resolve({...a,element:kind==='stone'?'wind':'earth'},{kind});
+  assert.ok(lightning.affinity<neutral.affinity,kind+' resists lightning');
+ }
+ for(const kind of ['machine','ghost'])assert.ok(R.resolve(a,{kind}).affinity>R.resolve({...a,element:'wind'},{kind}).affinity);
+});
+
 test('raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity',()=>{
  const regular=R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick'));
  const chaotic=R.analyze(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick'));
