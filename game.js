@@ -627,20 +627,25 @@ const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電
 // Each enemy cycles through three clearly telegraphed tactics. The choice is
 // stable throughout HAT / DRUMS / BASS / LEAD of the same battle round.
 function enemyIntent(){
- const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%3;
+ const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%5;
  if(pattern===0)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
- if(pattern===1)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
+ if(pattern===1)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'攻撃せず装甲を強化。今こそ攻撃を集中し、Leadの跳躍で装甲を貫こう。'};
+ if(pattern===2)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
+ if(pattern===3){
+  if(['plant','ghost','stone'].includes(enemy.kind))return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'敵がHPを回復する。攻撃を集中して回復量を上回ろう。'};
+  return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'次回以降の攻撃を強化する。無傷のターンで攻めよう。'};
+ }
  return {id:'special',name:attackNames[enemy.kind]+'・溜め',power:1.06,pierce:0,poison:!!enemy.gridSkill,hint:enemy.gridSkill?'攻撃後に毒汚染。HPを守り、次の演奏で危険マスを避けよう。':'Leadの下降旋律を4音以上で作ると追加で威力を下げられる。'};
 }
 function enemyIntentDamage(intent=enemyIntent()){
- return Math.max(1,Math.round(enemies[stage].attack*intent.power));
+ return intent.power?Math.max(1,Math.round(enemies[stage].attack*intent.power)):0;
 }
 function renderBattlePlan(){
  $('shieldValue').textContent='盾 '+shield;
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
  $('enemyIntent').hidden=ended;
  const intent=enemyIntent();
- $('enemyIntent').textContent=ended?'':`予告：${intent.name} / 威力 ${enemyIntentDamage(intent)}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
+ $('enemyIntent').textContent=ended?'':`予告：${intent.name} / ${intent.power?'威力 '+enemyIntentDamage(intent):'非攻撃'}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
  const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
@@ -666,6 +671,30 @@ async function enemyCounter(a,report,result){
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
  reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
  await wait(180);
+ // Non-attacking actions resolve after the player's full performance and do not damage HP.
+ if(!intent.power){
+  const enemy=enemies[stage];
+  let message='';
+  if(intent.id==='guard'){
+   const before=enemy.guard??0;enemy.guard=Math.min(.65,before+.15);
+   message='敵の装甲 '+Math.round(before*100)+'% → '+Math.round(enemy.guard*100)+'%';
+  }else if(intent.id==='heal'){
+   const healed=Math.min(enemy.hp-enemyHp,Math.round(enemy.hp*.12));
+   enemyHp+=healed;message='敵がHPを '+healed+' 回復';
+  }else if(intent.id==='buff'){
+   const old=enemy.attack;enemy.attack=Math.min(Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6),Math.round(old*1.15));
+   message='敵の攻撃力 '+old+' → '+enemy.attack;
+  }
+  $('arena').classList.remove('enemy-impact','guard-flash');
+  $('impact').textContent=message;
+  $('summaryHint').textContent=message;
+  $('detailHint').textContent+=' / '+message;
+  update();
+  await wait(550);
+  $('impact').textContent='';
+  $('replay').disabled=!lastMix?.length;
+  return;
+ }
  const beforeTimbre=Math.min(.55,(cycleLead?.weaken??0)+(cycleEnsemble?.bonus.resistance??0)+(a.count&&a.element==='earth'?.2*a.effect:0));
  const reduction=PerformanceCombat.reduction(cycleLead,cycleBass,cycleEnsemble,a).total;
  // The telegraphed attack is resolved against the same performance that the player prepared.
