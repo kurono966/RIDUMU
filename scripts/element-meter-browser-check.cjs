@@ -3,6 +3,7 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
 (async()=>{const browser=await chromium.launch({headless:true,args:['--disable-logging'],executablePath:process.env.RIDUMU_CHROME});try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(process.env.RIDUMU_GAME_URL||require('node:url').pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+ await page.click('[data-choose-mode="normal"]');
  await page.evaluate(()=>{audio();phase='parts';state='recording';turn=1;notes=[];recordAudioAt=ctx.currentTime;updateInstrument();RidumuUI.refresh();});
  await page.keyboard.press('a');await page.waitForFunction(()=>ElementMeterUI.model?.count===1);
  assert.equal(await page.locator('#elementStatus').textContent(),'予測?');

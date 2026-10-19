@@ -643,11 +643,11 @@ const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電
 function enemyIntent(){
  const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%6;
  if(pattern===1)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
- if(pattern===0||pattern===4)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'攻撃せず装甲を強化。今こそ攻撃を集中し、Leadの跳躍で装甲を貫こう。'};
- if(pattern===3)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'盾の40%を無視。Leadの下降旋律やBassの方向転換で反撃を弱めよう。'};
+ if(pattern===0||pattern===4)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'裏拍とモチーフの変化で装甲を崩す。Leadの跳躍・裏拍も有効。'};
+ if(pattern===3)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'細かいSnareや掛け合いで貫通を妨害。下降Leadでも反撃を弱める。'};
  if(pattern===2){
-  if(['plant','ghost','stone'].includes(enemy.kind))return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'敵がHPを回復する。攻撃を集中して回復量を上回ろう。'};
-  return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'次回以降の攻撃を強化する。無傷のターンで攻めよう。'};
+  if(['plant','ghost','stone'].includes(enemy.kind))return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'後半の加速や連打で回復を阻止。溜めてから攻めよう。'};
+  return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'変則アクセントやモチーフの変化で強化を抑えよう。'};
  }
  return {id:'special',name:attackNames[enemy.kind]+'・溜め',power:1.06,pierce:0,poison:!!enemy.gridSkill,hint:enemy.gridSkill?'攻撃後に毒汚染。HPを守り、次の演奏で危険マスを避けよう。':'Leadの下降旋律を4音以上で作ると追加で威力を下げられる。'};
 }
@@ -659,14 +659,15 @@ function renderBattlePlan(){
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
  $('enemyIntent').hidden=ended;
  const intent=enemyIntent();
- $('enemyIntent').textContent=ended?'':`予告：${intent.name} / ${intent.power?'威力 '+enemyIntentDamage(intent):'非攻撃'}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
+ $('enemyIntent').textContent=ended?'':`予告：${intent.name} / ${intent.power?'威力 '+enemyIntentDamage(intent)+' · Bass '+PerformanceCombat.attackBeat(intent)+'拍目で防御準備':'非攻撃'}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
  const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
+ if(instrumentForTurn(turn).id==='bass'&&intent.power)names.unshift(`防御準備：${PerformanceCombat.attackBeat(intent)}拍目の水色線にBassの発音か長音を合わせる`);
  $('scope').title=names.join('\n');$('scope').setAttribute('aria-label','演奏シーケンサー。紫の帯は毒。'+names.join('。'));
 }
 function rememberSequence(kind,mix=lastMix){
- globalThis.captureEvaluationDebug?.({parts:Array.from(tracks),hats:hatNotes,bpm:lastBpm,duration:lastDuration,zones:currentZones(),enemy:enemies[stage]});
+ globalThis.captureEvaluationDebug?.({parts:Array.from(tracks),hats:hatNotes,bpm:lastBpm,duration:lastDuration,zones:currentZones(),enemy:{...enemies[stage],intentId:enemyIntent().id}});
  const rawTracks=Array.from(tracks,([voice,notes])=>({voice,notes}));if(hatNotes.length)rawTracks.push({voice:'hat',notes:hatNotes});
  globalThis.captureHistory?.({tracks:mix??[],rawTracks,...(lastAccompaniment?{accompaniment:lastAccompaniment}:{}),bpm:lastBpm,duration:lastDuration,enemy:enemies[stage].name,turn:battleRound(),kind:'attack',title:instruments.find(i=>i.id===lastInstrument).name+' / '+$('moveName').textContent});
 }
@@ -681,6 +682,8 @@ async function enemyCounter(a,report,result){
  attackMusicWindow=null;enemyMusic?.stop();
  state='enemyAttack';releaseAllInputs();$('replay').disabled=true;
  const intent=enemyIntent();
+ const tactic=a.tactics??PerformanceCombat.tactics(a,cycleBass,cycleLead,intent);
+ const tacticalText=tactic.value>.05?`${tactic.label} ${Math.round(tactic.value*100)}% / `:'';
  $('status').textContent='ENEMY / '+intent.name;$('hint').textContent=intent.hint;
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
  reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
@@ -690,16 +693,17 @@ async function enemyCounter(a,report,result){
   const enemy=enemies[stage];
   let message='';
   if(intent.id==='guard'){
-   const before=enemy.guard??0;enemy.guard=Math.min(.65,before+.15);
+   const before=enemy.guard??0;enemy.guard=PerformanceCombat.enemyAction(enemy,enemyHp,intent,tactic).guard;
    message='敵の装甲 '+Math.round(before*100)+'% → '+Math.round(enemy.guard*100)+'%';
   }else if(intent.id==='heal'){
-   const healed=Math.min(enemy.hp-enemyHp,Math.round(enemy.hp*.12));
+   const healed=PerformanceCombat.enemyAction(enemy,enemyHp,intent,tactic).healed;
    enemyHp+=healed;message='敵がHPを '+healed+' 回復';
   }else if(intent.id==='buff'){
-   const old=enemy.attack;enemy.attack=Math.min(Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6),Math.round(old*1.15));
+   const old=enemy.attack;enemy.attack=PerformanceCombat.enemyAction({...enemy,attackCap:Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6)},enemyHp,intent,tactic).attack;
    message='敵の攻撃力 '+old+' → '+enemy.attack;
   }
   $('arena').classList.remove('enemy-impact','guard-flash');
+  message=tacticalText+message;
   $('impact').textContent=message;
   $('summaryHint').textContent=message;
   $('detailHint').textContent+=' / '+message;
@@ -714,19 +718,13 @@ async function enemyCounter(a,report,result){
  // The telegraphed attack is resolved against the same performance that the player prepared.
  const leadDown=cycleLead?.pitch?.effects?.weaken??0;
  const specialCounter=intent.id==='special'&&!intent.poison&&leadDown>=.05?.25:0;
- const incoming=enemyIntentDamage(intent)*(1-specialCounter);
- const mitigated=Math.max(0,Math.round(incoming*(1-reduction)));
- // Piercing attacks bypass 40% of the shield, but still respect pitch/timbre reduction.
- const bypass=Math.round(mitigated*intent.pierce),blockable=mitigated-bypass;
- const absorbed=Math.min(Math.max(0,shield),blockable);
- const finalDamage=Math.min(hp,bypass+blockable-absorbed);
- const received={incoming:mitigated,absorbed,damage:finalDamage,shield:Math.max(0,shield-absorbed),hp:Math.max(0,hp-finalDamage)};
+ const received=PerformanceCombat.counterAttack(hp,shield,enemyIntentDamage(intent)*(1-specialCounter),intent,reduction,tactic),piercing=received.pierce;
  shield=received.shield;renderBattlePlan();
  $('impact').style.color='#8edcdd';$('impact').textContent=received.absorbed?'SHIELD −'+received.absorbed:'';
  if(received.absorbed){$('arena').classList.add('guard-flash');await wait(260);}
  hp=received.hp;update();$('impact').style.color='#ffa26d';$('impact').textContent=received.damage?'−'+received.damage+' HP':'BLOCK';
  const pitchReduction=PerformanceCombat.reduction(cycleLead,cycleBass,cycleEnsemble,a).pitch;
- const text=(specialCounter?'下降旋律で溜め攻撃を25%弱体 / ':'')+(intent.pierce?'盾貫通40% / ':'')+(a.timbreWeaken?`湿潤：敵攻撃 −${((Math.min(.55,beforeTimbre+a.timbreWeaken)-beforeTimbre)*100).toFixed(1)}% / `:'')+(pitchReduction?`音程耐性：敵攻撃 −${(pitchReduction*100).toFixed(1)}% / `:'')+`敵の攻撃 ${received.incoming} → 盾で${received.absorbed}吸収 / HP −${received.damage}`;
+ const text=tacticalText+(specialCounter?'下降旋律で溜め攻撃を25%弱体 / ':'')+(intent.pierce?'盾貫通'+Math.round(piercing*100)+'% / ':'')+(a.timbreWeaken?`湿潤：敵攻撃 −${((Math.min(.55,beforeTimbre+a.timbreWeaken)-beforeTimbre)*100).toFixed(1)}% / `:'')+(pitchReduction?`音程耐性：敵攻撃 −${(pitchReduction*100).toFixed(1)}% / `:'')+`敵の攻撃 ${received.incoming} → 盾で${received.absorbed}吸収 / HP −${received.damage}`;
  $('summaryHint').textContent=text;$('detailHint').textContent+=' / '+text;
  await wait(400);$('arena').classList.remove('enemy-impact','guard-flash');$('impact').textContent='';
  if(hp>0&&intent.poison)castGridSkill();$('replay').disabled=!lastMix?.length;
@@ -824,16 +822,18 @@ async function finish(continuationAt=null){
  const zones=currentZones(),preview=Rhythm.analyze(last,lastDuration,lastBpm);
  if(lastInstrument==='bass'){
   feedbackCarryShield=shield;
-  cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones);
+  cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent());
   cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(90,shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(90,before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
+  if(cycleBass.prepared>.4)causes.push(`${cycleBass.strikeBeat}拍目をBassで支えた → 防御準備`);
   if(cycleBass.repetition>.3)causes.push('同じBassの反復 → シールド効率上昇');
   showRoleResult('低音の防壁',causes,shield,'SHIELD',preview);showToneResult(['bass']);globalThis.PitchUI?.result(cycleBass,null,null,null);globalThis.ExperienceUI?.shield(shield-before);rememberSequence('attack');
  }else if(lastInstrument==='drums'){
   globalThis.ElementMeterUI?.finalize(tracks.get('drums')??[],hatNotes,lastBpm,lastDuration);
   feedbackCarryShield=shield;
-  showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,'自由なリズムを記録。次はBassで盾を作ろう。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
+  const form=preview.structure,development=form.tensionRelease>.3?'緊張から解放する展開':form.variation>.3?'モチーフを繰り返して変化':form.dialogue>.3?'KickとSnareの掛け合い':form.rest>.3?'休符を活かすフレーズ':'安定したビート';
+  showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,development+'。次はBassで防御準備。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
  }else{
   cycleEnsemble=Ensemble.analyze(tracks,lastBpm,lastDuration);
   cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones),cycleEnsemble);
@@ -848,11 +848,13 @@ async function finish(continuationAt=null){
   a.powerSteps=[...(a.powerSteps??[]),{label:'Bass / Lead音色と演奏の相性（各1/2）',value:a.power,multiplier:tone.attack}];
   if(globalThis.PitchCombat)Object.assign(a,PitchCombat.apply(a,cycleBass?.pitch,cycleLead?.pitch));
    const combatEnemy={...enemies[stage],intentId:enemyIntent().id};
+   a.tactics=PerformanceCombat.tactics(a,cycleBass,cycleLead,enemyIntent());
    const result=Rhythm.resolve(a,combatEnemy),report=CombatFeedback.explain(a,result,combatEnemy,'drums');activeReport=report;
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
   const extras=[];
+  if(a.tactics.value>.05)extras.push({id:'tactics',source:'rhythm',tag:'妨害',text:a.tactics.label+' '+Math.round(a.tactics.value*100)+'%',priority:2});
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description,priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
   report.hasSupport=notes.length>0;renderReport(report);showToneResult(['bass','lead']);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 ${bonus>=0?'+':''}${bonus}、音色分 ${toneShield>=0?'+':''}${toneShield}）`;
@@ -872,7 +874,7 @@ async function finish(continuationAt=null){
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';
   globalThis.PitchUI?.result(cycleBass,cycleLead,a,result);
-  globalThis.ExperienceUI?.begin({enemy:enemies[stage],bpm:lastBpm,duration:lastDuration,tracks:Array.from(tracks,([voice,notes])=>({voice,notes,synth:synthTracks.get(voice)})),hats:hatNotes,conditions:{hp,shield:feedbackCarryShield,enemyHp}},{analysis:a,result,shield});
+  globalThis.ExperienceUI?.begin({enemy:{...enemies[stage],intent:enemyIntent(),intentId:enemyIntent().id},bpm:lastBpm,duration:lastDuration,tracks:Array.from(tracks,([voice,notes])=>({voice,notes,synth:synthTracks.get(voice)})),hats:hatNotes,conditions:{hp,shield:feedbackCarryShield,enemyHp}},{analysis:a,result,shield});
   if(globalThis.ExperienceUI)ExperienceUI.waveform=battleWaveform;
   rememberSequence('attack');$('replay').disabled=true;await playbackAttack(result,color,'drums');
   if(hp<=0||enemyHp<=0){globalThis.ExperienceUI?.complete(hp,enemyHp,false);if(completeBattle())return;}
@@ -929,6 +931,11 @@ function draw(){
   paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();
  }
  paint.lineWidth=1;
+ if(instrumentForTurn(turn).id==='bass'&&enemyIntent().power&&['ready','countin','recording'].includes(state)){
+  const x=22+(w-24)*(PerformanceCombat.attackBeat(enemyIntent())-1)/8;
+  paint.strokeStyle='#8edcdd';paint.setLineDash([4,3]);paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();paint.setLineDash([]);
+  paint.fillStyle='#8edcdd';paint.font='10px sans-serif';paint.fillText('防御',Math.min(w-24,x+3),11);
+ }
  const displayNotes=['countin','recording'].includes(state)?(phase==='hat'?hatNotes:[...phaseHatPlayback,...notes]):attackPlayhead!==null?(lastMix??[]).flatMap(track=>track.notes):[...lastHat,...last];
  for(const n of displayNotes){const x=22+(w-24)*n.t/duration;paint.fillStyle=n.type==='hat'?'#e5cb82':n.type==='kick'?'#d4f77d':'#efa568';const held=[...heldInputs.values()].find(v=>v.note===n);const gate=n.duration??(held?Math.min(ctx.currentTime,recordAudioAt+duration)-held.at:0);if(gate>0){paint.fillRect(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8)-2,Math.min(w-x,(w-24)*gate/duration),4);}paint.beginPath();paint.arc(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8),3,0,Math.PI*2);paint.fill();}
  globalThis.PitchUI?.draw(paint,w,h);

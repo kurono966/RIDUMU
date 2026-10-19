@@ -47,7 +47,7 @@
   const b=bass?.effects??{},l=lead?.effects??{},attack=clamp((b.attack??0)+(l.attack??0),0,.32),effect=clamp(a.effect*(1+(l.element??0))),power=a.power*(1+attack),causes=[];
   let accuracy=a.accuracy;
   for(const row of [bass,lead])for(const c of row?.causes??[]){let value=c.value;if(c.field==='accuracy'){const next=clamp(accuracy+c.value,0,.99);value=next-accuracy;accuracy=next;}if(c.field==='element')value=a.effect?effect/a.effect-1:0;causes.push({...c,voice:row.voice,value});}
-  return {...a,power,accuracy,effect,pitchElementBoost:a.effect?effect/a.effect-1:0,pitchPierce:clamp(l.pierce??0,0,.3),pitchApplied:{attack,accuracy:accuracy-a.accuracy,element:a.effect?effect/a.effect-1:0,pierce:clamp(l.pierce??0,0,.3),causes},powerSteps:[...(a.powerSteps??[]),{label:'音程：上昇・中音程・高音Bass',value:power,multiplier:1+attack}]};
+  return {...a,power,accuracy,effect,pitchElementBoost:a.effect?effect/a.effect-1:0,pitchPierce:clamp((l.pierce??0)+(a.rhythmPierce??0),0,.3),pitchApplied:{attack,accuracy:accuracy-a.accuracy,element:a.effect?effect/a.effect-1:0,pierce:clamp(l.pierce??0,0,.3),causes},powerSteps:[...(a.powerSteps??[]),{label:'音程：上昇・中音程・高音Bass',value:power,multiplier:1+attack}]};
  }
  const api={analyze,apply,register,midi};root.PitchCombat=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

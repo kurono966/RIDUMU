@@ -27,6 +27,9 @@
   row('属性',elements[normal.analysis.element][0],elements[quantized.analysis.element][0]);
   row('敵相性倍率',normal.result.affinity.toFixed(3),quantized.result.affinity.toFixed(3));
   row('新規生成する盾',normal.shield,quantized.shield);
+  row('予告への対応',normal.tactics.label||'なし',quantized.tactics.label||'なし');
+  row('行動への干渉',Math.round(normal.tactics.value*100)+'%',Math.round(quantized.tactics.value*100)+'%');
+  row('Bassの防御準備',Math.round((normal.bass.prepared??0)*100)+'%',Math.round((quantized.bass.prepared??0)*100)+'%');
   row('シナジー',normal.ensemble.selected.map(s=>s.name).join(' / ')||'なし',quantized.ensemble.selected.map(s=>s.name).join(' / ')||'なし');
   for(const id of ['tight','laidBack','pushed','snarePushed','pocket','swing','drunk','unstable'])row(id,normal.groove[id].toFixed(3),quantized.groove[id].toFixed(3));
   container.append(table);

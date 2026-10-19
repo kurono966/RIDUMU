@@ -9,7 +9,7 @@
   el('elementStatus').textContent=next.final?(next.count?'確定':'無音'):next.count?(next.sufficient?'予測':'予測?'):'待機';
   meter.setAttribute('aria-label','ドラム属性：'+el('elementStatus').textContent+(next.dominant?'・'+M.names[next.dominant]+'が優勢':'')+(next.close&&next.dominant?'・僅差':''));
   el('elementStatus').title=next.count?(next.final?'確定属性：':'予測属性：')+M.names[next.actualElement]+(next.close?'・'+M.names[next.rank[1]]+'と僅差':'')+(next.sufficient?'':'・入力が少ないため情報は限定的です'):'ドラム入力待ち';
-  for(const key of keys){const button=el('element-'+key);button.style.setProperty('--share',(next.shares[key]*100).toFixed(3)+'%');button.classList.toggle('dominant',next.dominant===key);button.classList.toggle('contending',next.close&&!!next.dominant&&next.rank.slice(0,2).includes(key));button.setAttribute('aria-label',M.names[key]+'：'+(next.count?next.scores[key].toFixed(3):'未入力')+'。'+M.tips[key]);button.title=M.names[key]+'：'+M.tips[key];}
+  for(const key of keys){const button=el('element-'+key);button.style.setProperty('--share',(next.shares[key]*100).toFixed(3)+'%');button.classList.toggle('dominant',next.dominant===key);button.classList.toggle('contending',next.close&&!!next.dominant&&next.rank.slice(0,2).includes(key));button.setAttribute('aria-label',M.names[key]+'：'+(next.count?next.scores[key].toFixed(3):'未入力')+'。'+M.tips[key]);button.title=M.names[key]+'：'+(next.count?next.reasons[key]:M.tips[key]);}
   if(previous?.dominant&&next.dominant&&previous.dominant!==next.dominant&&!motion.matches&&root.ExperienceUI?.enabled!==false)el('element-'+next.dominant).animate([{transform:'translateY(-2px)'},{transform:'translateY(0)'}],{duration:240,easing:'ease-out'});
   if(el('elementDialog').open)renderDetails();root.RidumuUI?.refresh();
  }
@@ -30,6 +30,6 @@
  }
  for(const key of keys)el('element-'+key).onclick=()=>select(key);
  el('elementMore').onclick=()=>select(model?.actualElement??selected,true);el('closeElementDialog').onclick=()=>el('elementDialog').close();
- root.ElementMeterUI={observe,finalize,reset,get model(){return model;},get instruction(){return state==='recording'&&phase==='parts'&&instrumentForTurn(turn).id==='drums'&&model?.count?model.reason+' · '+(model.sufficient?'予測':'まだ少数・予測'):null;}};
+ root.ElementMeterUI={observe,finalize,reset,get model(){return model;},get instruction(){return state==='recording'&&phase==='parts'&&instrumentForTurn(turn).id==='drums'&&model?.count?model.reason+' · '+(model.close?M.names[model.rank[1]]+'と僅差':model.sufficient?'予測':'まだ少数・予測'):null;}};
  observe();
 })(globalThis);

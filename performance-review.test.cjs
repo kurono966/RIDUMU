@@ -1,6 +1,21 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),Review=require('./performance-review.js'),S=require('./synth.js');
 const ns=(midi=36)=>[0,.5,1,1.5,2,2.5,3,3.5].map((t,i)=>({type:i%2?'snare':'kick',t,rawT:t,midi,duration:.2,register:0}));
 function packet(){return {enemy:{kind:'stone',hp:1000,attack:88,guard:.2},bpm:120,duration:4,conditions:{hp:100,shield:0,enemyHp:1000},tracks:[{voice:'drums',notes:ns().map(({midi,register,...n})=>n)},{voice:'bass',notes:ns().filter(n=>n.type==='kick')},{voice:'lead',notes:ns(60).map((n,i)=>({...n,midi:60+i%4*3}))}],hats:ns().map(n=>({...n,type:'hat'}))};}
+
+test('review reconstructs tactical intent, shields and real counter damage without changing the packet',()=>{
+ const D=require('./evaluation-debug'),C=require('./performance-combat');
+ for(const id of ['guard','heavy','pierce','heal','buff','special']){
+  const p=packet();p.enemy.intentId=id;p.enemy.intent={id,power:['guard','heal','buff'].includes(id)?0:id==='heavy'?1.2:id==='pierce'?.86:1.06,pierce:id==='pierce'?.4:0};
+  const snapshot=JSON.stringify(p),value=Review.evaluate(p),expected=D.compare(new Map(p.tracks.map(t=>[t.voice,t.notes])),p.hats,p.bpm,p.duration,[],p.enemy).normal;
+  assert.equal(value.result.total,expected.result.total);assert.equal(value.shield,expected.shield);assert.deepEqual(value.analysis.tactics,expected.tactics);
+  if(!p.enemy.intent.power)assert.equal(value.received.damage,0);
+  else {
+   const special=id==='special'&&(value.lead.pitch?.effects.weaken??0)>=.05?.25:0;
+   assert.deepEqual(value.received,C.counterAttack(100,value.shield,Math.round(88*p.enemy.intent.power)*(1-special),p.enemy.intent,value.reduction.total,value.analysis.tactics));
+  }
+  assert.equal(JSON.stringify(p),snapshot);
+ }
+});
 test('counterfactual evaluation is deterministic, read-only and responds to every existing source',()=>{
  const p=packet(),original=JSON.stringify(p),a=Review.evaluate(p);assert(a.result.total>0);assert(a.shieldGenerated>0);assert.deepEqual(Review.evaluate(p),a);assert.equal(JSON.stringify(p),original);
  for(const id of ['drums','bass','lead','pitch','ensemble','rhythm','groove'])assert.notDeepEqual(Review.evaluate(p,{omit:id}),a);

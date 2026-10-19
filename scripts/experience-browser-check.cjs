@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),path=require('node:path');
 const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
 (async()=>{const browser=await chromium.launch({headless:true,args:['--disable-logging'],executablePath:process.env.RIDUMU_CHROME});try{
  const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(process.env.RIDUMU_GAME_URL||require('node:url').pathToFileURL(path.resolve(__dirname,'../index.html')).href);await page.click('#sound');
+ await page.goto(process.env.RIDUMU_GAME_URL||require('node:url').pathToFileURL(path.resolve(__dirname,'../index.html')).href);await page.click('[data-choose-mode="normal"]');await page.click('#sound');
  await page.evaluate(()=>{audio();muted=false;enemies[0].bpm=240;enemies[0].attack=40;enemies[0].hp=10000;enemyHp=10000;hatReady=true;hatNotes=[0,.5,1,1.5].map(t=>({type:'hat',t,rawT:t}));globalThis.reviewRuns=[];const originalComplete=ExperienceUI.complete;ExperienceUI.complete=(...args)=>{const result=originalComplete(...args);reviewRuns.push(result);return result;};});
  async function cycle(style){
   await page.evaluate(style=>{state='ready';notes=[0,.25,.5,.75,1,1.25,1.5,1.75].map((t,i)=>({type:i%2?'snare':'kick',t,rawT:t}));if(style==='changed')notes=notes.filter((n,i)=>i%2===0);},style);await page.evaluate(()=>finish());

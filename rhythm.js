@@ -1,6 +1,21 @@
 /* Analysis uses a 16th-note grid. Playback and sound retain raw timestamps. */
 (function(root){
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+function structure(input,duration=4,bpm=120){
+ const step=60/bpm/4,slots=Math.max(1,Math.round(duration/step)),masks=Array(slots).fill(0);
+ for(const n of input)for(const t of n.inputTimes??[n.inputT??n.rawT??n.t]){if(Number.isFinite(t)&&t>=0&&t<duration&&['kick','snare'].includes(n.type))masks[Math.min(slots-1,Math.floor(t/step+1e-7))]|=n.type==='kick'?1:2;}
+ const half=Math.floor(slots/2),occupied=masks.filter(Boolean).length,confidence=clamp((occupied-2)/4);
+ let common=0,changed=0,union=0;
+ for(let q=0;q<half;q++){if(masks[q]||masks[q+half]){union++;if(masks[q]&&masks[q]===masks[q+half])common++;else changed++;}}
+ const repetition=common/Math.max(1,union),variation=clamp(4*repetition*changed/Math.max(1,union))*confidence;
+ const positions=masks.flatMap((m,q)=>m?[q]:[]),gaps=positions.slice(1).map((q,i)=>q-positions[i]);
+ const rest=clamp(gaps.filter(g=>g>=3&&g<=8).length/Math.max(1,gaps.length))*confidence;
+ const windows=Array.from({length:4},(_,i)=>masks.slice(i*slots/4,(i+1)*slots/4).filter(Boolean).length);
+ const tensionRelease=clamp((Math.max(windows[1],windows[2])-windows[0])/4)*clamp((windows[2]-windows[3])/3)*confidence;
+ const lane=part=>{const k=part.filter(m=>m&1).length,s=part.filter(m=>m&2).length;return (k-s)/Math.max(1,k+s);};
+ const dialogue=clamp(-lane(masks.slice(0,half))*lane(masks.slice(half)))*confidence;
+ return {repetition,variation,rest,tensionRelease,dialogue,confidence,development:Math.max(variation,tensionRelease,dialogue)};
+}
 function performanceQuality(input,bpm,duration){
  const beat=60/bpm,step=beat/4;
  const events=input.flatMap(n=>(n.inputTimes??[n.inputT??n.rawT??n.t]).map(t=>({t,type:n.type}))).filter(n=>Number.isFinite(n.t)&&n.t>=-beat&&n.t<duration).sort((a,b)=>a.t-b.t);
@@ -67,7 +82,7 @@ function analyze(input,duration=4,bpm=120){
  const weight=clamp(.5*kRatio+.3*low+.45*charged-.2*snareBurst),hits=Math.max(1,Math.min(8,Math.round(1+high*4+bursts*2+snareBurst*2-weight*2)));
  const power=count?24+18*weight+12*charged+3*alternation+8*clamp(count/8):0;
  const accuracy=clamp(.79+.12*regularity+.08*repetition,.6,.98);
- return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,performanceQuality:performanceQuality(notes,bpm,duration),firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
+ return {duration,bpm,step,count,kick,snare,density,meanInterval:mean,regularity,alternation,repetition,performanceQuality:performanceQuality(notes,bpm,duration),structure:structure(notes,duration,bpm),firstDensity:first/(duration/2),secondDensity:second/(duration/2),densityRise:rise,longestGap,hasLongGap:longestGap>=beat*1.5,bursts,snareBurst,offbeat,syncopation,charged,concentration,scores,element,weight,hits,power,accuracy,effect:clamp(.3+.45*irregularity+.25*scores[element]/2.5),grid,masks,slots};
 }
 function resolve(a,enemy){
  let affinity=1,aim=a.accuracy;
@@ -92,7 +107,8 @@ function resolve(a,enemy){
   crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*(a.alternation??0)+.35*(a.regularity??0)),straightPenalty:0}
  };
  const motif=motifs[enemy.kind];
- const motifMultiplier=motif?clamp(1+.4*motif.fit-motif.straightPenalty*straight,.3,1.5):1;
+ const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:form.repetition;
+ const motifMultiplier=motif?clamp(1+.4*motif.fit+.12*(development??0)-motif.straightPenalty*straight,.3,1.5):1;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -128,8 +144,8 @@ function resolve(a,enemy){
  if(tactical!==1){const before=affinity;affinity=Math.min(3,affinity*tactical);affinitySteps.push({label:tacticalLabel,multiplier:affinity/before});}
  const pitchElementMultiplier=1+.25*clamp(a.pitchElementBoost??0,0,.18);
  if(pitchElementMultiplier!==1){affinity*=pitchElementMultiplier;affinitySteps.push({label:'音程：属性効果（効果増分の25%を相性へ）',multiplier:pitchElementMultiplier});}
- const guard=clamp(enemy.guard??0,0,.6),pierce=clamp(a.pitchPierce??0,0,.3),guardMultiplier=1-guard*(1-pierce);
- if(guard)affinitySteps.push({label:'装甲軽減（音程の貫通適用後）',multiplier:guardMultiplier});
+ const guard=clamp(enemy.guard??0,0,.65),guardBreak=enemy.intentId==='guard'?clamp(a.tactics?.guardBreak??0):0,pierce=clamp(a.pitchPierce??0,0,.3),guardMultiplier=1-guard*(1-.7*guardBreak)*(1-pierce);
+ if(guard)affinitySteps.push({label:'装甲軽減（ガード崩し・Lead貫通適用後）',multiplier:guardMultiplier});
  affinity*=guardMultiplier;
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
  // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality
@@ -155,7 +171,7 @@ function resolve(a,enemy){
  });
  const total=damages.reduce((x,y)=>x+y,0);
  const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:3*a.alternation,grooveBonus:a.groovePower??0}};
- calculation.guard={rate:guard,pierce,multiplier:guardMultiplier};
+ calculation.guard={rate:guard,pierce,guardBreak,multiplier:guardMultiplier};
  calculation.rhythmStyle={label:motif?.label??'基本リズム',multiplier:motifMultiplier,straightAlternation:straight};
  return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
@@ -176,5 +192,5 @@ function mixTimeline(tracks,currentVoice,damages=[],duration=4){
  const offset=Math.min(0,...all.map(event=>event.time));
  return {events:all.map(event=>({...event,at:event.time-offset})).sort((a,b)=>a.at-b.at),duration:Math.max(duration,...all.map(event=>event.time+(event.duration!==undefined?event.duration+.14:.06)))-offset,offset};
 }
-root.Rhythm={analyze,resolve,attackTimeline,mixTimeline};if(typeof module!=='undefined')module.exports=root.Rhythm;
+root.Rhythm={analyze,structure,resolve,attackTimeline,mixTimeline};if(typeof module!=='undefined')module.exports=root.Rhythm;
 })(typeof window!=='undefined'?window:globalThis);

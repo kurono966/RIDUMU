@@ -11,14 +11,15 @@
   function evaluate(after){
    const parts=after?Object.fromEntries(Object.entries(source).map(([voice,notes])=>[voice,performed(notes)])):source;
    const hat=after?performed(hats):hats,drums=parts.drums;
-   const ensemble=E.analyze(parts,bpm,duration),bass=C.bass(parts.bass,drums,bpm,duration,zones);
+   const ensemble=E.analyze(parts,bpm,duration),bass=C.bass(parts.bass,drums,bpm,duration,zones,enemy);
    const lead=E.support(C.lead(parts.lead,bpm,duration,zones),ensemble);
    const groove=G.analyzeRelations(drums,hat,bpm,duration);
    let analysis=E.attack(C.enhance(G.enrich(R.analyze(after?drums:Q.render(drums,bpm,duration),duration,bpm),groove),drums,bpm,zones,lead),ensemble);
    const P=typeof module!=='undefined'?require('./pitch-combat.js'):root.PitchCombat;if(P)analysis=P.apply(analysis,bass.pitch,lead.pitch);
+   analysis.tactics=C.tactics(analysis,bass,lead,enemy);
    const result=R.resolve(analysis,enemy);
    const shield=Math.min(90,bass.shield+Math.round(bass.shield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield);
-   return {analysis,result,groove,ensemble,shield,parts,hat};
+   return {analysis,result,groove,ensemble,shield,parts,hat,bass,lead,tactics:analysis.tactics};
   }
   return {normal:evaluate(false),quantized:evaluate(true)};
  }

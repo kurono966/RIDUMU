@@ -7,6 +7,7 @@ function game(){
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},replaceChildren(){},dataset:{},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
  const sandbox=vm.createContext({URLSearchParams,document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  sandbox.window=sandbox;sandbox.addEventListener=()=>{};
+ sandbox.PitchCombat=require('./pitch-combat.js');
  vm.runInContext(fs.readFileSync('synth.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('synth-audio.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('performance-filter.js','utf8'),sandbox);
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
@@ -552,6 +553,26 @@ test('a complete three-part cycle applies Bass shield and Lead support then coun
  g.run("notes=[{type:'kick',t:0,rawT:0,duration:.3,midi:60},{type:'snare',t:1,rawT:1,duration:.3,midi:67}]");
  await g.run('finish()');assert.equal(g.run('turn'),4);assert.equal(g.run('counters'),1);assert.equal(g.run('attacks.length'),1);assert.equal(g.run('attacks[0].voice'),'drums');assert.ok(g.run('cycleLead.attack')>0);assert.equal(g.run('state'),'ready');
 });
+test('all note modes resolve the real three-part battle pipeline with pitch and tactical effects',async()=>{
+ for(const mode of ['two','four','seven','nine']){
+  const g=game();g.run(`noteMode='${mode}';state='ready';enemyHp=10000;let modeResults=[];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async r=>modeResults.push(r);enemyCounter=async()=>{};notes=[0,3,6,10,16,19,22,27].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125}));`);
+  await g.run('finish()');
+  g.run("notes=[0,8,16,28].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125,duration:.4,midi:i%2?43:36}))");await g.run('finish()');
+  g.run("notes=[2,10,18,26].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125,duration:.3,midi:i%2?63:60}))");await g.run('finish()');
+  assert.equal(g.run('turn'),4);assert.equal(g.run('modeResults.length'),1);assert.ok(g.run('modeResults[0].total')>0);assert.ok(g.run('shield')>0);assert.ok(g.run('modeResults[0].calculation.guard.guardBreak')>0);assert.equal(g.run('tracks.size'),3);
+ }
+});
+test('actual enemy actions apply rhythm interference to armor, healing and attack growth',async()=>{
+ for(const [part,stageIndex,id] of [[3,0,'guard'],[9,0,'heal'],[9,1,'buff']]){
+  const g=game();
+  g.run(`turn=${part};stage=${stageIndex};enemyHp=100;muted=true;setTimeout=fn=>{fn();return 1};let rhythmAction=Rhythm.analyze([0,16,20,24,26,28,29,30,31].map(q=>({t:q*.125,type:'kick'})));rhythmAction.tactics={guardBreak:.8,healBlock:1,buffSuppress:1,value:1,label:'テスト'};const beforeGuard=enemies[stage].guard??0,beforeAttack=enemies[stage].attack;`);
+  await g.run('enemyCounter(rhythmAction,{},{total:20})');
+  if(id==='guard')assert.ok(g.run('enemies[stage].guard')<=g.run('beforeGuard'));
+  if(id==='heal')assert.equal(g.run('enemyHp'),100);
+  if(id==='buff')assert.equal(g.run('enemies[stage].attack'),g.run('beforeAttack'));
+  assert.match(g.run("$('summaryHint').textContent"),/テスト/);
+ }
+});
 test('automatic enemy attack consumes shields without recording or requesting inputs',async()=>{
  const g=game();g.run("state='attack';muted=true;shield=12;cycleLead={weaken:0};setTimeout=fn=>{fn();return 1};turn=6;castGridSkill=()=>{};");
  await g.run("enemyCounter({count:4,element:'wind',effect:.5},{},{total:20})");
@@ -565,7 +586,7 @@ test('raw Drums and Hat remain the source of groove classification after all thr
 
 test('final battle resolution applies ensemble attack and shield bonuses once',async()=>{
  const g=game();g.run("turn=3;shield=20;cycleBass={shield:20};notes=[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:60,duration:.2}));tracks.set('drums',[0,1,2].map(t=>({type:'kick',t,rawT:t})));tracks.set('bass',[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:36,duration:.2})));renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};let resolved;playbackAttack=async result=>{resolved=result};enemyCounter=async()=>{};");
- await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.ok(g.run('shield')>24);assert.ok(g.run('resolved.total')>=0);
+ await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.equal(g.run('shield'),g.run('20+Math.round(20*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield'));assert.ok(g.run('resolved.total')>=0);
 });
 
 test('articulation style applies once after groove/ensemble without replacing the drum element',async()=>{

@@ -13,7 +13,8 @@
   if(a.count){const cause=F.elementCause(a);reason=({kick:'キック中心 → 土',heavy:'間を空ける → 土',repeat:'規則的に刻む → 土',snare:a.alternation>.5&&a.kick?'交互＋スネア → 風':'スネア中心 → 風',acceleration:'後半に音を増やす → 火',offbeat:'裏拍のアクセント → 雷',irregular:'音の間隔の変化 → 雷',burst:a.element==='wind'?'細かい刻み → 風':'短い連打 → 火'})[cause.source]??cause.text.replace('属性','');
    if(base.element!==a.element)reason=a.element==='wind'?'跳ねるノリ → 風':a.element==='lightning'?'同じ揺れの再現 → 雷':reason;
   }
-  return {scores,shares,rank,close,dominant,actualElement:a.count?a.element:null,count:a.count,final,sufficient,reason,analysis:a,baseElement:base.element,groove};
+  const reasons={earth:a.weight>.65?'重いKickと休符':'Kick中心・規則的な刻み',wind:a.alternation>.5?'KickとSnareの掛け合い':'Snare中心・細かい刻み',fire:a.densityRise>.25?'後半に音を増やした':'連打・アクセントの集中',lightning:groove.drunk>.4?'同じ揺れを再現':'裏拍・次の表拍を空けたアクセント'};
+  return {scores,shares,rank,close,dominant,actualElement:a.count?a.element:null,count:a.count,final,sufficient,reason,reasons,analysis:a,baseElement:base.element,groove};
  }
  const api={analyze,names,icons,tips};root.ElementMeter=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

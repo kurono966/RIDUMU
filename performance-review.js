@@ -10,15 +10,18 @@
   const omit=options.omit,bpm=packet.bpm,duration=packet.duration,enemy=options.enemy??packet.enemy,parts=new Map(packet.tracks.map(t=>[t.voice,t.notes])),hats=packet.hats??[];
   const drums=omit==='drums'?[]:parts.get('drums')??[],bassNotes=parts.get('bass')??[],leadNotes=parts.get('lead')??[];
   let ensemble=E.analyze(parts,bpm,duration,options.omitSynergy);if(omit==='ensemble')ensemble={...ensemble,selected:[],bonus:Object.fromEntries(Object.keys(ensemble.bonus).map(k=>[k,0]))};
-  let bass=C.bass(bassNotes,drums,bpm,duration,[]),lead=E.support(C.lead(leadNotes,bpm,duration,[]),ensemble);
-  if(omit==='bass')bass={...bass,shield:0,rhythmShield:0,pitchShield:0};
+  const intent=enemy.intent??(enemy.intentId?{id:enemy.intentId,power:['guard','heal','buff'].includes(enemy.intentId)?0:enemy.intentId==='heavy'?1.2:enemy.intentId==='pierce'?.86:1.06,pierce:enemy.intentId==='pierce'?.4:0}:null);
+  let bass=C.bass(bassNotes,drums,bpm,duration,[],intent??{}),lead=E.support(C.lead(leadNotes,bpm,duration,[]),ensemble);
+  if(omit==='bass')bass={...bass,shield:0,rhythmShield:0,pitchShield:0,prepared:0};
   if(omit==='pitch'){bass={...bass,shield:bass.rhythmShield??bass.shield,pitch:null};lead={...lead,pitch:null};}
   if(omit==='lead')lead={...lead,...C.lead([],bpm,duration,[]),pitch:lead.pitch};
   const profile=voice=>{const track=packet.tracks.find(t=>t.voice===voice);return omit!=='timbre'&&track?.synth?S.profile(track.synth,Q.render(track.notes,bpm,duration),duration):{fire:0,water:0,wind:0,earth:0};};
-  const bassProfile=profile('bass'),leadProfile=profile('lead'),tone=S.combine(bassProfile,leadProfile);
+  const bassProfile=profile('bass'),leadProfile=profile('lead');
+  const style=voice=>{const track=packet.tracks.find(t=>t.voice===voice);return omit==='timbre'?{attack:1,shield:1}:S.style(track?.synth,track?.notes??[],duration);};
+  const bassStyle=style('bass'),leadStyle=style('lead'),tone={attack:1+((bassStyle.attack-1)+(leadStyle.attack-1))*.5,accuracy:0,weaken:0};
   const carry=options.neutral?{hp:100,shield:0,enemyHp:enemy.hp}:packet.conditions??{hp:100,shield:0,enemyHp:enemy.hp};
-  const initialShield=carry.shield??0,bassRaw=bass.shield,bassShield=Math.round(bassRaw*S.modifiers(bassProfile).shield),afterBass=Math.min(90,initialShield+bassShield);
-  const toneShield=Math.round(bassRaw*(S.modifiers(leadProfile).shield-1)*.5),bonus=toneShield+Math.round(bassShield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield;
+  const initialShield=carry.shield??0,bassRaw=bass.shield,bassShield=Math.round(bassRaw*bassStyle.shield),afterBass=Math.min(90,initialShield+bassShield);
+  const toneShield=Math.round(bassRaw*(leadStyle.shield-1)*.5),bonus=toneShield+Math.round(bassShield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield;
   const shield=Math.max(0,Math.min(90,afterBass+bonus));
   const groove=G.analyzeRelations(drums,hats,bpm,duration);
   let a=R.analyze(Q.render(drums,bpm,duration),duration,bpm);if(omit==='rhythm')a={...a,performanceQuality:{...a.performanceQuality,multiplier:1}};
@@ -26,8 +29,10 @@
   a=E.attack(C.enhance(a,drums,bpm,[],lead),ensemble);
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a=P.apply(a,bass.pitch,lead.pitch);
+  a.tactics=C.tactics(a,bass,lead,intent??{});
   const result=R.resolve(a,omit==='affinity'?{...enemy,kind:'neutral'}:enemy),reduction=C.reduction(lead,bass,ensemble,a),counter=!!options.neutral||(carry.enemyHp??enemy.hp)>result.total;
-  const received=counter?C.receive(carry.hp??100,shield,enemy.attack,reduction.total):{incoming:0,damage:0,absorbed:0,shield,hp:carry.hp??100};
+  const special=intent?.id==='special'&&!intent.poison&&(lead.pitch?.effects.weaken??0)>=.05?.25:0;
+  const received=!counter||intent?.power===0?{incoming:0,damage:0,absorbed:0,shield,hp:carry.hp??100}:intent?C.counterAttack(carry.hp??100,shield,Math.max(1,Math.round(enemy.attack*intent.power))*(1-special),intent,reduction.total,a.tactics):C.receive(carry.hp??100,shield,enemy.attack,reduction.total);
   return {analysis:a,result,bass,lead,ensemble,groove,profiles:{bass:bassProfile,lead:leadProfile},shield,shieldGenerated:shield-initialShield,damage:options.neutral?result.total:Math.min(carry.enemyHp??enemy.hp,result.total),received,counter,reduction,conditions:{...carry}};
  }
  function description(id,value){const a=value.analysis,b=value.bass,l=value.lead;
@@ -39,7 +44,7 @@
   if(id==='groove'){const id=Object.keys(grooveNames).sort((x,y)=>(value.groove[y]??0)-(value.groove[x]??0))[0];return grooveNames[id]+'が敵に作用';}
   if(id==='rhythm')return '狙ったタイミングを繰り返せた';
   if(id==='affinity')return ({earth:'土',wind:'風',fire:'炎',lightning:'雷'})[a.element]+'属性・攻撃の形が敵に合った';
-  const tones=Object.entries(value.profiles.bass).map(([k,v])=>[k,(v+value.profiles.lead[k])/2]).sort((x,y)=>y[1]-x[1]);return ({fire:'炎の音色で攻撃',water:'水の音色で反撃を弱めた',earth:'土の音色で盾',wind:'風の音色で命中を支援'})[tones[0][0]];
+  return '短音・長音に合う音色の輪郭';
  }
  function factors(packet,options={}){
   const actual=evaluate(packet,options),list=[],ensembleBenefits=actual.ensemble.selected.filter(s=>{const off=evaluate(packet,{...options,omitSynergy:s.id});return actual.damage>off.damage||(actual.counter&&actual.shieldGenerated>off.shieldGenerated)||actual.received.damage<off.received.damage;}).map(s=>s.id);
