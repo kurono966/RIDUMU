@@ -54,7 +54,15 @@ function analyze(input,duration=4,bpm=120){
  const charged=notes.reduce((best,n,i)=>n.type==='kick'?Math.max(best,clamp((n.t-(i?notes[i-1].t:0)-beat*.8)/(beat*2.2))):best,0);
  const density=count/duration,high=clamp(count/24),low=1-high,kRatio=kick/Math.max(1,count),sRatio=snare/Math.max(1,count),irregularity=count>2?1-regularity:0;
  const concentration=clamp(Math.max(...Array.from({length:8},(_,i)=>notes.filter(n=>n.t>=i*duration/8&&n.t<(i+1)*duration/8).length))/Math.max(1,count));
- const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:.85*syncopation+.65*irregularity+.6*offbeat};
+ // Intentional offbeat accents must compete with kick/snare identity rather
+ // than being drowned out by the count of kicks (earth) or snares (wind).
+ // Weak 16th subdivisions alone are not proof of syncopation: emphasize
+ // offbeat eighths and the absence of the following downbeat.
+ const offbeatEighths=grid.filter(n=>n.q%4===2).length/Math.max(1,count);
+ const syncopatedEighths=grid.filter(n=>n.q%4===2&&!masks[Math.min(slots-1,n.q+2)]).length/Math.max(1,count);
+ const lightningAccent=clamp(.55*offbeat+.8*syncopation+.65*offbeatEighths+.55*syncopatedEighths);
+ const competingPenalty=.85*lightningAccent;
+ const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged-competingPenalty,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation-competingPenalty,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:.85*syncopation+.65*irregularity+.6*offbeat+1.25*lightningAccent};
  const element=Object.keys(scores).reduce((a,b)=>scores[a]>=scores[b]?a:b);
  const weight=clamp(.5*kRatio+.3*low+.45*charged-.2*snareBurst),hits=Math.max(1,Math.min(8,Math.round(1+high*4+bursts*2+snareBurst*2-weight*2)));
  const power=count?24+18*weight+12*charged+3*alternation+8*clamp(count/8):0;
