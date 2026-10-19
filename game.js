@@ -9,11 +9,12 @@ const enemies=[
 ];
 
 // Game mode and encounter progression; normal mode keeps the original lineup.
-const standardEnemies=enemies.map(enemy=>structuredClone(enemy));
+const copyEnemy=enemy=>({...enemy,...(enemy.gridSkill?{gridSkill:{...enemy.gridSkill}}:{})});
+const standardEnemies=enemies.map(copyEnemy);
 let gameMode='normal',rewardChoice='heal',rogueFloor=0;
 function prepareMode(mode){
  gameMode=mode==='roguelite'?'roguelite':'normal';
- const ordered=standardEnemies.map(e=>structuredClone(e));
+ const ordered=standardEnemies.map(copyEnemy);
  if(gameMode==='roguelite'){
   for(let i=ordered.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ordered[i],ordered[j]]=[ordered[j],ordered[i]];}
  }
