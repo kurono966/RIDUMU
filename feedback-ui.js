@@ -3,7 +3,7 @@ let knownWeaknesses={},discoveryStorageAvailable=true,activeReport=null,discover
 try{
  const stored=JSON.parse(localStorage.getItem(discoveryKey)||'{}');
  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
-  for(const kind of ['stone','fly','machine','plant','ghost','crystal'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
+  for(const kind of ['stone','fly','machine','plant','ghost','crystal','furnace','conductor'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
  }
 }catch{discoveryStorageAvailable=false;}
 function renderDiscoveries(){

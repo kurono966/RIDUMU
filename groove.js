@@ -95,7 +95,7 @@ function enrich(analysis,groove){
 }
 function affinity(g,kind){
  if(!g)return [];
- const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:kind==='plant'?[['swing',.18],['laidBack',.12]]:kind==='ghost'?[['laidBack',.25],['drunk',.25]]:kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
+ const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:kind==='plant'?[['swing',.18],['laidBack',.12]]:kind==='ghost'?[['laidBack',.25],['drunk',.25]]:kind==='crystal'?[['pocket',.2],['tight',.15]]:kind==='furnace'?[['swing',.18],['pocket',.15]]:kind==='conductor'?[['tight',.15],['laidBack',.12]]:[];
  return choices.map(([id,strength])=>({id,multiplier:1+strength*(g[id]??0)}));
 }
 function describe(g){

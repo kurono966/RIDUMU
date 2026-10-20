@@ -5,14 +5,17 @@ const enemies=[
  {name:'忘却の自律機',kind:'machine',bpm:120,hp:300,guard:.25,description:'古びた装甲の奥で、回路が明滅する。',attack:104},
  {name:'棘冠の喰らい花',kind:'plant',bpm:100,hp:280,description:'開いた花冠の陰で、棘の蔓が脈打つ。',attack:96,gridSkill:{type:'poison',cells:5,turns:5,power:4}},
  {name:'薄明の残響',kind:'ghost',bpm:72,hp:270,description:'輪郭がほどけ、影だけが遅れて揺れる。',attack:100},
- {name:'晶殻の甲虫',kind:'crystal',bpm:138,hp:340,guard:.30,description:'透明な装甲が、二つの響きを返す。',attack:116}
+ {name:'晶殻の甲虫',kind:'crystal',bpm:138,hp:340,guard:.30,description:'透明な装甲が、二つの響きを返す。',attack:116},
+ {name:'炉心の舞踏獣',kind:'furnace',bpm:108,hp:380,guard:.15,description:'熱を帯びた足取り。風の刻みと休符、低音と高音の掛け合いでいなそう。',attack:110,intentOrder:['heavy','guard','pierce','heal','guard','special']},
+ {name:'終奏の指揮者',kind:'conductor',bpm:126,hp:440,guard:.18,description:'終幕を指揮する影。火の展開とモチーフの変化を、予告に合わせて奏でよう。',attack:118,intentOrder:['buff','pierce','guard','heavy','heal','special']}
 ];
 
 // Game mode and encounter progression; normal mode keeps the original lineup.
-const copyEnemy=enemy=>({...enemy,...(enemy.gridSkill?{gridSkill:{...enemy.gridSkill}}:{})});
+const copyEnemy=enemy=>({...enemy,...(enemy.intentOrder?{intentOrder:[...enemy.intentOrder]}:{}),...(enemy.gridSkill?{gridSkill:{...enemy.gridSkill}}:{})});
 const standardEnemies=enemies.map(copyEnemy);
 let gameMode='normal',rewardChoice='heal',rogueFloor=0;
 function prepareMode(mode){
+ globalThis.ExperienceUI?.clearAdvice?.();
  gameMode=mode==='roguelite'?'roguelite':'normal';
  const ordered=standardEnemies.map(copyEnemy);
  if(gameMode==='roguelite'){
@@ -637,18 +640,18 @@ let shield=0,cycleBass=null,cycleLead=null,cycleEnsemble=null;
 let feedbackCarryShield=0;
 const battleRound=()=>Math.floor((turn-1)/3)+1;
 const currentZones=()=>GridEffects.create(battleRound(),stage);
-const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電撃放射',plant:'毒棘の噴射',ghost:'残響の衝撃波',crystal:'晶殻の衝撃波'};
+const attackNames={stone:'岩腕の叩きつけ',fly:'翼の突進',machine:'電撃放射',plant:'毒棘の噴射',ghost:'残響の衝撃波',crystal:'晶殻の衝撃波',furnace:'炉心の踏み鳴らし',conductor:'終奏の指揮棒'};
 // Each enemy cycles through three clearly telegraphed tactics. The choice is
 // stable throughout HAT / DRUMS / BASS / LEAD of the same battle round.
 function enemyIntent(){
  const enemy=enemies[stage],round=battleRound(),pattern=(round-1)%6;
- if(pattern===1)return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
- if(pattern===0||pattern===4)return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'裏拍とモチーフの変化で装甲を崩す。Leadの跳躍・裏拍も有効。'};
- if(pattern===3)return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'細かいSnareや掛け合いで貫通を妨害。下降Leadでも反撃を弱める。'};
- if(pattern===2){
-  if(['plant','ghost','stone'].includes(enemy.kind))return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'後半の加速や連打で回復を阻止。溜めてから攻めよう。'};
-  return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'変則アクセントやモチーフの変化で強化を抑えよう。'};
- }
+ const legacy=['guard','heavy',['plant','ghost','stone'].includes(enemy.kind)?'heal':'buff','pierce','guard','special'];
+ const action=(enemy.intentOrder??legacy)[pattern];
+ if(action==='heavy')return {id:'heavy',name:attackNames[enemy.kind]+'・強打',power:1.2,pierce:0,poison:false,hint:'高威力。Bassの長音と低音で盾を厚くしよう。'};
+ if(action==='guard')return {id:'guard',name:'防御態勢',power:0,pierce:0,poison:false,hint:'裏拍とモチーフの変化で装甲を崩す。Leadの跳躍・裏拍も有効。'};
+ if(action==='pierce')return {id:'pierce',name:attackNames[enemy.kind]+'・貫通',power:.86,pierce:.4,poison:false,hint:'細かいSnareや掛け合いで貫通を妨害。下降Leadでも反撃を弱める。'};
+ if(action==='heal')return {id:'heal',name:'生命の再生',power:0,pierce:0,poison:false,hint:'後半の加速や連打で回復を阻止。溜めてから攻めよう。'};
+ if(action==='buff')return {id:'buff',name:'攻撃態勢を整える',power:0,pierce:0,poison:false,hint:'変則アクセントやモチーフの変化で強化を抑えよう。'};
  return {id:'special',name:attackNames[enemy.kind]+'・溜め',power:1.06,pierce:0,poison:!!enemy.gridSkill,hint:enemy.gridSkill?'攻撃後に毒汚染。HPを守り、次の演奏で危険マスを避けよう。':'Leadの下降旋律を4音以上で作ると追加で威力を下げられる。'};
 }
 function enemyIntentDamage(intent=enemyIntent()){

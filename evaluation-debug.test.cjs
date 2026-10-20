@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const D=require('./evaluation-debug.js'),R=require('./rhythm.js'),G=require('./groove.js'),Q=require('./quantize.js'),C=require('./performance-combat.js'),E=require('./ensemble.js');
 test('weaknesses remain valuable while guard admits tactical elemental alternatives',()=>{
- const roster=[['stone',82,.2,'earth'],['fly',150,0,'wind'],['machine',120,.25,'lightning'],['plant',100,0,'fire'],['ghost',72,0,'lightning'],['crystal',138,.3,'earth']];
+ const roster=[['stone',82,.2,'earth'],['fly',150,0,'wind'],['machine',120,.25,'lightning'],['plant',100,0,'fire'],['ghost',72,0,'lightning'],['crystal',138,.3,'earth'],['furnace',108,.15,'wind'],['conductor',126,.18,'fire']];
  for(const intentId of [undefined,'guard','buff'])for(const [kind,bpm,guard,weakness] of roster){
   const enemy={kind,guard,intentId},charts=['earth','wind','fire','lightning'].map(element=>D.damageChart('max',bpm,480/bpm,[],enemy,{element}));
   const best=charts.reduce((a,b)=>a.total>=b.total?a:b);

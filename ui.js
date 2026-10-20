@@ -27,7 +27,9 @@
   document.querySelectorAll('#partSteps li').forEach(node=>{if(node.dataset.part===model.step)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');});
   analysis.dataset.panel=el('result').dataset.panel||'summary';
   const label=el('damageLabel').textContent,prepared=label.includes('READY');el('damage').hidden=prepared;el('preparedLabel').hidden=!prepared;el('resultMetricLabel').textContent=prepared?'次のパートへ':label.includes('SHIELD')?'シールド':'ダメージ';
-  el('resultCause').textContent=el('factors').querySelector('li')?.textContent||'';el('resultFeedback').textContent=el('reaction').textContent.split(/(?<=[。！])/)[0]||'';
+  const advice=root.ExperienceUI?.advice;
+  el('resultCause').textContent=el('factors').querySelector('li')?.textContent||'';el('resultFeedback').textContent=advice||el('reaction').textContent||'';el('resultFeedback').title=el('resultFeedback').textContent;
+  el('openResultDetails').textContent=advice?'アドバイス・内訳':'解析・内訳を見る';
   el('openPlaySettings').disabled=['recording','countin','attack','enemyAttack'].includes(state);
  }
  api.refresh=refresh;

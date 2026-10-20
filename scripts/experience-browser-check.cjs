@@ -11,6 +11,13 @@ const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
  }
  await cycle('first');assert.equal(await page.evaluate(()=>reviewRuns[0].matches),true,'reconstruction must equal the actual attack and shield pipeline');
  const first=await page.evaluate(()=>reviewRuns[0]);assert.equal(first.actual.damage,first.review.actual.damage);assert.equal(first.actual.received,first.review.actual.received.damage);
+ // Completed advice survives the next part's presentation and has a persistent full-text view.
+ await page.evaluate(()=>{ExperienceUI.reset();document.getElementById('reaction').textContent='次のパートの説明';RidumuUI.refresh();});
+ assert.equal(await page.locator('#resultFeedback').textContent(),first.tip.text);
+ assert.match(await page.locator('#openResultDetails').textContent(),/アドバイス/);
+ await page.click('#openResultDetails');await page.waitForTimeout(800);
+ assert.equal(await page.locator('#nextPerformanceTip').textContent(),'次はひとつ：'+first.tip.text);
+ assert(await page.locator('#nextPerformanceTip').isVisible());await page.click('#closeResultDetails');
  await page.evaluate(()=>{hp=90;shield=60;});await cycle('changed');
  const second=await page.evaluate(()=>reviewRuns[1]);assert.equal(second.matches,true);assert.equal(second.actual.damage,second.review.actual.damage);assert.equal(second.actual.received,second.review.actual.received.damage);assert.notEqual(first.tip.id,second.tip.id);
  if(process.env.RIDUMU_SCREENSHOT_DIR){await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'experience-main-mobile.png')});}

@@ -126,6 +126,30 @@
 .crystal .enemy-aura{background:radial-gradient(ellipse,#9cc9e4,transparent 68%)}
 @keyframes vine-sway{50%{rotate:3deg;translate:0 -3px}}
 @keyframes vine-curl{50%{translate:0 -8px}}
+.furnace{width:126px;height:122px;animation:crystal-breathe 2.8s ease-in-out infinite;filter:drop-shadow(0 0 10px #f6873c66)}
+.furnace i{border:0;background:linear-gradient(140deg,#b56139,#392a32)}
+.furnace i:nth-child(1){left:13px;top:30px;width:100px;height:85px;clip-path:polygon(25% 0,75% 0,100% 50%,80% 95%,50% 100%,20% 95%,0 50%);background:repeating-linear-gradient(65deg,#392a32 0 17px,#f5a14b 18px 21px,#6e3f37 22px 38px)}
+.furnace i:nth-child(2){left:34px;top:2px;width:58px;height:50px;clip-path:polygon(0 0,30% 15%,50% 0,70% 15%,100% 0,85% 85%,50% 100%,15% 85%)}
+.furnace i:nth-child(3),.furnace i:nth-child(4){top:46px;width:38px;height:64px;clip-path:polygon(20% 0,90% 10%,100% 85%,30% 100%,0 60%)}
+.furnace i:nth-child(3){left:-12px;rotate:20deg}.furnace i:nth-child(4){right:-12px;rotate:-20deg}
+.furnace i:nth-child(5),.furnace i:nth-child(6){bottom:-14px;width:40px;height:34px;clip-path:polygon(15% 0,85% 0,100% 100%,0 100%)}
+.furnace i:nth-child(5){left:8px}.furnace i:nth-child(6){right:8px}
+.furnace .eyes{left:48px;top:17px;color:#fff0b7}.furnace .enemy-core{left:48px;top:56px;width:30px;height:38px;border-radius:50%;background:radial-gradient(#fff8c4,#ff9d36,#bb4932);animation:eye-glow 2s infinite}
+.furnace .enemy-crest{left:38px;top:-23px;width:50px;height:38px;background:#ffa251;clip-path:polygon(10% 100%,0 20%,35% 65%,50% 0,65% 65%,100% 20%,90% 100%)}
+.furnace .enemy-aura{background:radial-gradient(ellipse,#f9883e,transparent 68%)}
+.conductor{width:116px;height:134px;animation:ghost-drift 5s ease-in-out infinite;filter:drop-shadow(0 0 12px #b8a4df55)}
+.conductor i{border:0;background:linear-gradient(110deg,#c1b4dc,#53466c 65%,#292b40)}
+.conductor i:nth-child(1){left:13px;top:42px;width:90px;height:99px;clip-path:polygon(23% 0,77% 0,100% 100%,55% 83%,50% 100%,45% 83%,0 100%)}
+.conductor i:nth-child(2){left:35px;top:5px;width:47px;height:49px;border-radius:45%;background:linear-gradient(100deg,#e7d9c7,#a59bb5)}
+.conductor i:nth-child(3),.conductor i:nth-child(4){top:48px;width:57px;height:26px;border-radius:40%}
+.conductor i:nth-child(3){left:-33px;rotate:-28deg}.conductor i:nth-child(4){right:-33px;rotate:-50deg}
+.conductor i:nth-child(5),.conductor i:nth-child(6){top:106px;width:17px;height:39px;background:#36384b}
+.conductor i:nth-child(5){left:31px}.conductor i:nth-child(6){right:31px}
+.conductor .eyes{left:43px;top:22px;color:#372e52}.conductor .enemy-core{left:48px;top:60px;width:21px;height:25px;background:#f2dfab;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.conductor .enemy-crest{left:24px;top:-22px;width:70px;height:37px;border:3px solid #e7d7a4;border-radius:50%;rotate:-12deg}
+.conductor .enemy-tail{left:110px;top:0;width:4px;height:74px;background:#f3dfb3;rotate:35deg}.conductor .enemy-aura{background:radial-gradient(ellipse,#b4a2e2,transparent 68%)}
+@media(max-width:759px){#game .conductor i:nth-child(3){left:-13px;width:42px}#game .conductor i:nth-child(4){right:-13px;width:42px}}
+@media(max-width:740px) and (max-height:660px) and (orientation:portrait){.creature.furnace,.creature.conductor{scale:.35}}
 @keyframes ghost-drift{25%{translate:-6px -8px}75%{translate:6px -13px}}
 @keyframes wisp-flow{50%{translate:0 9px;opacity:.4}}
 @keyframes crystal-breathe{50%{translate:0 -4px;rotate:-1deg}}

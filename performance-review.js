@@ -87,7 +87,7 @@
   add('fall',value.received.damage>0&&(p.weaken??0)<.06&&value.reduction.total<.55,'Leadを下降させ、次の反撃を弱めてみよう。',2);
   add('repeat',(p.accuracy??0)<0,'Leadに同じ音の反復を混ぜ、跳躍の命中低下を補ってみよう。',2);
   add('quality',value.analysis.performanceQuality?.multiplier<1.05,'同じタイミングの形をもう一度繰り返し、演奏の再現性を試そう。');
-  const target={stone:'laidBack',fly:'snarePushed',machine:'tight',plant:'swing',ghost:'drunk',crystal:'pocket'}[enemy.kind];
+  const target={stone:'laidBack',fly:'snarePushed',machine:'tight',plant:'swing',ghost:'drunk',crystal:'pocket',furnace:'swing',conductor:'tight'}[enemy.kind];
   add('groove-'+target,(value.groove[target]??0)<.35,({laidBack:'少し後ろに置くリズム',snarePushed:'スネアの前ノリ',tight:'Hatとそろえたタイトな刻み',swing:'跳ねるリズム',drunk:'同じ揺れ方の繰り返し',pocket:'KickとSnareの間を生かすノリ'})[target]+'を、この敵に試してみよう。',2);
   return candidates.sort((a,b)=>(recent.includes(a.id)?1:0)-(recent.includes(b.id)?1:0)||b.priority-a.priority||a.id.localeCompare(b.id))[0]??{id:'space',text:'音を少し減らし、音の間を生かす演奏も試してみよう。'};
  }

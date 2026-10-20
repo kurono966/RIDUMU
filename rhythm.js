@@ -93,6 +93,8 @@ function resolve(a,enemy){
  if(enemy.kind==='plant')affinity=a.element==='fire'?1.5:a.element==='wind'?.85:1;
  if(enemy.kind==='ghost'){affinity=a.element==='lightning'?1.3:a.element==='earth'?.85:1;aim-=.14*(1-Math.max(a.groove?.laidBack??0,a.groove?.drunk??0,a.groove?.swing??0));}
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
+ if(enemy.kind==='furnace'){affinity=a.element==='wind'?1.55:a.element==='fire'?.8:a.element==='lightning'?.85:1;affinity*=.9+.3*(a.structure?.rest??0);}
+ if(enemy.kind==='conductor'){affinity=a.element==='fire'?1.6:a.element==='lightning'?.65:1;affinity*=.9+.25*(a.structure?.variation??0)+.15*(a.structure?.tensionRelease??0);}
  // Lightning trades neutral coverage for its machine/ghost specialization.
  if(a.element==='lightning'&&['stone','fly','plant'].includes(enemy.kind))affinity*=.85;
  // A perfectly even Kick/Snare alternation is one viable style, not a universal
@@ -104,7 +106,9 @@ function resolve(a,enemy){
   machine:{label:'機械への裏拍・シンコペーション',fit:clamp(.65*(a.syncopation??0)+.35*(a.offbeat??0)),straightPenalty:.65},
   plant:{label:'植物への後半加速・連打',fit:clamp(.7*(a.densityRise??0)+.3*(a.bursts??0)),straightPenalty:.65},
   ghost:{label:'残響への揺れ・不規則な間',fit:clamp(.55*(a.groove?.drunk??0)+.25*(a.groove?.laidBack??0)+.2*(1-(a.regularity??1))),straightPenalty:.65},
-  crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*(a.alternation??0)+.35*(a.regularity??0)),straightPenalty:0}
+  crystal:{label:'晶殻への交互の刻み',fit:clamp(.65*(a.alternation??0)+.35*(a.regularity??0)),straightPenalty:0},
+  furnace:{label:'炉心への休符・掛け合い',fit:clamp(.55*(a.structure?.rest??0)+.45*(a.structure?.dialogue??0)),straightPenalty:0},
+  conductor:{label:'終奏へのモチーフ変化・解放',fit:clamp(.6*(a.structure?.variation??0)+.4*(a.structure?.tensionRelease??0)),straightPenalty:0}
  };
  const motif=motifs[enemy.kind];
  const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:form.repetition;
@@ -131,7 +135,7 @@ function resolve(a,enemy){
  }
  const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
  if(a.groove){
-  const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
+  const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:enemy.kind==='furnace'?[['swing',.18],['pocket',.15]]:enemy.kind==='conductor'?[['tight',.15],['laidBack',.12]]:[];
   for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
  }
  // Increase contrast around neutral (1x): rewarding a match and resisting a bad

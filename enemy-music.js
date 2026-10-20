@@ -15,7 +15,9 @@
   machine:{chords:['Cmadd9','Gm7','Abmaj7','Bbsus2'],wave:'sawtooth',cutoff:1400,resonance:1.8,detune:0,attack:.008,decay:.055,sustain:.7,release:.09,level:1.3},
   plant:{chords:['Fm7','Cm7','Abmaj7','Gm7'],wave:'square',cutoff:950,resonance:1.2,detune:2,attack:.02,decay:.11,sustain:.73,release:.13,level:.72},
   ghost:{chords:['Cm9','Abmaj7','Ebmaj7','Gm7'],wave:'sine',harmonic:.3,cutoff:2000,resonance:.4,detune:7,attack:.09,decay:.18,sustain:.9,release:.32,level:1.05},
-  crystal:{chords:['Abmaj7','Bbsus2','Gm7','Cm9'],wave:'triangle',harmonic:.32,cutoff:3800,resonance:.6,detune:3,attack:.006,decay:.16,sustain:.62,release:.24,level:1.15}
+  crystal:{chords:['Abmaj7','Bbsus2','Gm7','Cm9'],wave:'triangle',harmonic:.32,cutoff:3800,resonance:.6,detune:3,attack:.006,decay:.16,sustain:.62,release:.24,level:1.15},
+  furnace:{chords:['Fm7','Abmaj7','Cmadd9','Gm7'],wave:'triangle',harmonic:.2,cutoff:1700,resonance:1,detune:2,attack:.02,decay:.12,sustain:.7,release:.18,level:1.05},
+  conductor:{chords:['Cm9','Fm7','Bbsus2','Gm7'],wave:'sine',harmonic:.35,cutoff:2800,resonance:.5,detune:4,attack:.035,decay:.15,sustain:.8,release:.25,level:1.1}
  };
  function progression(kind){return progressions[kind]??progressions.stone;}
  function cleanSnapshot(value){

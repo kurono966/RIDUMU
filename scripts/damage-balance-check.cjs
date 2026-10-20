@@ -2,7 +2,7 @@
 const fs=require('node:fs');
 const D=require('../evaluation-debug.js');
 const C=require('../performance-combat.js');
-const enemies=[['stone',82,.2],['fly',150,0],['machine',120,.25],['plant',100,0],['ghost',72,0],['crystal',138,.3]];
+const enemies=[['stone',82,.2],['fly',150,0],['machine',120,.25],['plant',100,0],['ghost',72,0],['crystal',138,.3],['furnace',108,.15],['conductor',126,.18]];
 const rows=[];
 for(const intent of ['normal','guard','heavy','pierce','heal','buff'])for(const [kind,bpm,guard] of enemies){
  const enemy={kind,guard,...(intent==='normal'?{}:{intentId:intent})},charts={};

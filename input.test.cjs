@@ -492,15 +492,37 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
  assert.equal(g.run('reactions.length'),0);g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('reactions[0].kind'),'weak');assert.equal(g.run('reactions[0].element'),'earth');
  g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('reactions[1].kind'),'dodge');g.run('ctx.currentTime=4.07;playbackTick()');await playback;
 });
-test('roster contains six distinct enemies with stronger counterattacks',()=>{
- const g=game();assert.equal(g.run('enemies.length'),6);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),6);
+test('roster contains eight distinct enemies with stronger counterattacks',()=>{
+ const g=game();assert.equal(g.run('enemies.length'),8);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),8);
  assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'88,96,104');
- g.run('stage=5;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 06 / 06');
+ g.run('stage=7;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 08 / 08');
 });
-test('third enemy no longer ends the game and only the sixth enemy completes the run',async()=>{
- for(const [stage,expected] of [[2,'cleared'],[5,'over']]){
+test('sixth and seventh enemies lead onward and only the eighth completes the run',async()=>{
+ for(const [stage,expected] of [[2,'cleared'],[5,'cleared'],[6,'cleared'],[7,'over']]){
   const g=game();g.run(`stage=${stage};enemyHp=0;notes=[];hatNotes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};`);
   await g.run('finish()');assert.equal(g.run('state'),expected);
+ }
+});
+
+test('late enemies have stable distinct forecasts across all three recording parts and restore cleanly',()=>{
+ const g=game();
+ for(const [stage,order] of [[6,['heavy','guard','pierce','heal','guard','special']],[7,['buff','pierce','guard','heavy','heal','special']]]){
+  for(let round=0;round<6;round++)for(let part=0;part<3;part++){
+   g.run(`stage=${stage};turn=${round*3+part+1}`);
+   assert.equal(g.run('enemyIntent().id'),order[round]);assert.doesNotMatch(g.run('enemyIntent().name'),/undefined/);
+  }
+ }
+ g.run("enemies[6].intentOrder[0]='buff'");assert.equal(g.run('standardEnemies[6].intentOrder[0]'),'heavy');
+ g.run("document.body={dataset:{}};prepareMode('normal')");assert.equal(g.run('enemies[6].intentOrder[0]'),'heavy');assert.equal(g.run('enemies.length'),8);
+});
+
+test('both late enemies resolve complete two-note battles with their own counters and music',async()=>{
+ for(const nextStage of [6,7]){
+  const g=game();g.run(`stage=${nextStage};enemyHp=enemies[stage].hp;muted=true;setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async r=>{enemyHp=Math.max(0,enemyHp-r.total)};notes=[0,4,8,12,16,20,24,28].map((q,i)=>({t:q*timing().step,rawT:q*timing().step,type:i%2?'snare':'kick'}));`);
+  await g.run('finish()');
+  g.run("notes=[0,8,16,28].map(q=>({t:q*timing().step,rawT:q*timing().step,type:'kick',midi:36,duration:timing().beat}))");await g.run('finish()');
+  g.run("notes=[2,10,18,26].map((q,i)=>({t:q*timing().step,rawT:q*timing().step,type:i%2?'snare':'kick',midi:i%2?63:60,duration:.25}))");await g.run('finish()');
+  assert.equal(g.run('turn'),4);assert.equal(g.run('state'),'ready');assert.ok(g.run('enemyHp')<g.run('enemies[stage].hp'));assert.ok(g.run('hp')>0);
  }
 });
 
