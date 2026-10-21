@@ -1215,3 +1215,28 @@ body.game-ui code {
   }
   #game>.console .controls { margin-top:0; }
 }
+
+
+/* The real attack-name / attack-preparation result now occupies the safety gap. */
+@media(max-width:759px) {
+ #game>.console>.result {
+   position:relative; inset:auto; grid-area:auto;
+   display:block; flex:0 0 auto; width:100%; height:auto;
+   max-height:120px; min-height:0; margin:3px 0;
+   padding:8px 10px; overflow-y:auto; overscroll-behavior:contain;
+   background:#20291d; border:1px solid #536747; border-radius:8px;
+   box-shadow:none;
+ }
+ #game>.console>.result[hidden] { display:none!important; }
+ #game>.console>.result .result-heading { display:flex; }
+ #game>.console>.result .result-content {
+   display:flex; grid-column:auto; grid-row:auto;
+   align-items:center; justify-content:space-between; padding:3px 0;
+ }
+ #game>.console>.result #openResultDetails {
+   display:block; min-height:38px; max-width:none; margin-top:4px;
+ }
+ #game>.console>.result .result-cause,
+ #game>.console>.result .result-feedback { display:none; }
+ #game>.console .performance-safety-divider { flex-basis:24px; min-height:24px; }
+}
