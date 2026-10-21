@@ -1174,3 +1174,14 @@ body.game-ui code {
   #game .console .pad { height:auto; min-height:44px; }
   #game .console .melody-pads { height:auto; min-height:88px; }
 }
+
+
+/* Keep the primary action directly after the performance pads on mobile.
+   A flex auto margin previously created a large empty spacer. */
+@media(max-width:759px) {
+  #game>.console { justify-content:flex-start; }
+  #game>.console .controls {
+    position:relative; bottom:auto; margin-top:4px;
+    padding:5px 0 0; flex:0 0 auto;
+  }
+}
