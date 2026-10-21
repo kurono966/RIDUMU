@@ -3,7 +3,7 @@ let knownWeaknesses={},discoveryStorageAvailable=true,activeReport=null,discover
 try{
  const stored=JSON.parse(localStorage.getItem(discoveryKey)||'{}');
  if(stored&&typeof stored==='object'&&!Array.isArray(stored)){
-  for(const kind of ['stone','fly','machine','plant','ghost','crystal'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
+  for(const kind of ['stone','fly','machine','plant','ghost','crystal','furnace','conductor'])if(Array.isArray(stored[kind]))knownWeaknesses[kind]=stored[kind].filter(id=>Object.hasOwn(CombatFeedback.discoveryNames,id));
  }
 }catch{discoveryStorageAvailable=false;}
 function renderDiscoveries(){
@@ -136,6 +136,7 @@ function renderDamageCalculation(c){
  row('最終的な敵相性倍率','×'+number(c.affinity));
  row('多段攻撃の1発あたり配分','÷'+number(c.divisor)+`（${c.hits}段）`);
  row('命中効率（固定倍率）','×'+number(c.accuracyMultiplier));
+ if(c.guard?.rate)row('装甲軽減 / 音程の貫通率',number(c.guard.rate*100)+'% / '+number(c.guard.pierce*100)+'%');
  row('リズム精度（規則性・反復）','×'+number(c.rhythmMultiplier??1));
  row('総合攻撃効率','×'+number(c.efficiency));
  add('p',`1発のダメージ＝${number(c.power)} ÷ ${number(c.divisor)} × 相性${number(c.affinity)} × 命中効率${number(c.accuracyMultiplier)} × リズム精度${number(c.rhythmMultiplier??1)}。四捨五入し、効率が0なら0、それ以外は最低1。`);

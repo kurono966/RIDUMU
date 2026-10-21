@@ -7,6 +7,12 @@ test('GROOVE LOCK accepts consistent natural microtiming between Kick and Bass',
  const result=E.analyze(tracks);assert.ok(result.scores.grooveLock>.9);assert.ok(result.bonus.attack>0);assert.ok(result.bonus.shield>0);
  assert.equal(result.selected[0].cells.length,6);
 });
+
+test('counterfactual omission preserves the other selected synergy weight instead of promoting it',()=>{
+ const notes=[0,16].map(q=>n(q)),tracks={drums:notes,bass:notes,lead:notes},base=E.analyze(tracks,120,4);
+ assert.equal(base.selected.length,2);const first=base.selected[0],second=base.selected[1];assert.equal(first.id,'unison');assert.equal(second.id,'grooveLock');
+ const off=E.analyze(tracks,120,4,first.id);assert.equal(off.selected.length,1);assert(Math.abs(off.bonus.attack-second.score*.6*.1)<1e-9);assert.equal(off.bonus.shield,Math.round(second.score*.6*4));assert.deepEqual(E.analyze(tracks,120,4),base);
+});
 test('RESPONSE rewards Lead answering Snare rather than simultaneous notes',()=>{
  const drums=[4,12,20].map(q=>n(q,'snare'));
  assert.ok(score({drums,lead:[5,13,21].map(q=>n(q))},'response')>.9);

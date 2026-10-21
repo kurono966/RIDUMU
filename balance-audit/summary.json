@@ -1,0 +1,2593 @@
+{
+  "aliases": [
+    [
+      "offbeat_0",
+      "kick_2"
+    ],
+    [
+      "offbeat_1",
+      "snare_2"
+    ]
+  ],
+  "uniqueTemplates": 51,
+  "uniquePlayableTemplates": 47,
+  "families": [
+    {
+      "family": "交互",
+      "n": 48,
+      "wins": 35,
+      "capped": 3,
+      "winRate": 0.7291666666666666,
+      "winningRounds": 4.685714285714286
+    },
+    {
+      "family": "毎拍Kick",
+      "n": 48,
+      "wins": 44,
+      "capped": 0,
+      "winRate": 0.9166666666666666,
+      "winningRounds": 3
+    },
+    {
+      "family": "毎拍Snare",
+      "n": 48,
+      "wins": 40,
+      "capped": 0,
+      "winRate": 0.8333333333333334,
+      "winningRounds": 3.6
+    },
+    {
+      "family": "裏拍・シンコペーション",
+      "n": 64,
+      "wins": 56,
+      "capped": 0,
+      "winRate": 0.875,
+      "winningRounds": 4.089285714285714
+    },
+    {
+      "family": "後半集中",
+      "n": 48,
+      "wins": 39,
+      "capped": 0,
+      "winRate": 0.8125,
+      "winningRounds": 5.410256410256411
+    },
+    {
+      "family": "低密度・休符",
+      "n": 48,
+      "wins": 46,
+      "capped": 0,
+      "winRate": 0.9583333333333334,
+      "winningRounds": 4.913043478260869
+    },
+    {
+      "family": "高密度",
+      "n": 48,
+      "wins": 42,
+      "capped": 0,
+      "winRate": 0.875,
+      "winningRounds": 3.380952380952381
+    },
+    {
+      "family": "レイドバック",
+      "n": 48,
+      "wins": 42,
+      "capped": 0,
+      "winRate": 0.875,
+      "winningRounds": 3.2857142857142856
+    },
+    {
+      "family": "スウィング",
+      "n": 48,
+      "wins": 47,
+      "capped": 0,
+      "winRate": 0.9791666666666666,
+      "winningRounds": 2.4468085106382977
+    },
+    {
+      "family": "ドランク",
+      "n": 48,
+      "wins": 42,
+      "capped": 0,
+      "winRate": 0.875,
+      "winningRounds": 3.4285714285714284
+    },
+    {
+      "family": "タイミングミス",
+      "n": 48,
+      "wins": 32,
+      "capped": 0,
+      "winRate": 0.6666666666666666,
+      "winningRounds": 5.0625
+    },
+    {
+      "family": "構造的な変化",
+      "n": 48,
+      "wins": 39,
+      "capped": 0,
+      "winRate": 0.8125,
+      "winningRounds": 4.17948717948718
+    },
+    {
+      "family": "掛け合い",
+      "n": 16,
+      "wins": 12,
+      "capped": 0,
+      "winRate": 0.75,
+      "winningRounds": 3.8333333333333335
+    },
+    {
+      "family": "ランダム",
+      "n": 144,
+      "wins": 96,
+      "capped": 0,
+      "winRate": 0.6666666666666666,
+      "winningRounds": 5.666666666666667
+    }
+  ],
+  "patternStats": [
+    {
+      "pattern": "alternate_4",
+      "family": "交互",
+      "count": 8,
+      "damage": 111.27083333333333,
+      "quality": 1.5999999999999996,
+      "maxDamage": 332,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 3,
+        "rounds": 24,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "alternate_2",
+      "family": "交互",
+      "count": 16,
+      "damage": 75.875,
+      "quality": 1.5999999999999996,
+      "maxDamage": 168,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 0,
+        "rounds": 12,
+        "hp": 20,
+        "capped": true
+      }
+    },
+    {
+      "pattern": "alternate_1",
+      "family": "交互",
+      "count": 32,
+      "damage": 103.10416666666667,
+      "quality": 1.5999999999999996,
+      "maxDamage": 217,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 3,
+        "rounds": 26,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "kick_0",
+      "family": "毎拍Kick",
+      "count": 8,
+      "damage": 129.83333333333334,
+      "quality": 1.5999999999999996,
+      "maxDamage": 282,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 27,
+        "hp": 61,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "snare_0",
+      "family": "毎拍Snare",
+      "count": 8,
+      "damage": 112.125,
+      "quality": 1.5999999999999996,
+      "maxDamage": 286,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 33,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "kick_1",
+      "family": "毎拍Kick",
+      "count": 8,
+      "damage": 116.41666666666667,
+      "quality": 1.5999999999999996,
+      "maxDamage": 340,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "snare_1",
+      "family": "毎拍Snare",
+      "count": 8,
+      "damage": 107.16666666666667,
+      "quality": 1.5999999999999996,
+      "maxDamage": 362,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 25,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "kick_2",
+      "family": "毎拍Kick",
+      "count": 8,
+      "damage": 127.125,
+      "quality": 1.5999999999999996,
+      "maxDamage": 365,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 27,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "snare_2",
+      "family": "毎拍Snare",
+      "count": 8,
+      "damage": 101.75,
+      "quality": 1.5999999999999996,
+      "maxDamage": 310,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "sync_0",
+      "family": "裏拍・シンコペーション",
+      "count": 10,
+      "damage": 125.79166666666667,
+      "quality": 1.3240816326530618,
+      "maxDamage": 315,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 29,
+        "hp": 27,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "sync_1",
+      "family": "裏拍・シンコペーション",
+      "count": 10,
+      "damage": 96.5,
+      "quality": 1.3240816326530618,
+      "maxDamage": 256,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 30,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "sync_2",
+      "family": "裏拍・シンコペーション",
+      "count": 10,
+      "damage": 91.5,
+      "quality": 1.0400758181452736,
+      "maxDamage": 234,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "offbeat_0",
+      "family": "裏拍・シンコペーション",
+      "count": 8,
+      "damage": 127.125,
+      "quality": 1.5999999999999996,
+      "maxDamage": 365,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 27,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "offbeat_1",
+      "family": "裏拍・シンコペーション",
+      "count": 8,
+      "damage": 101.75,
+      "quality": 1.5999999999999996,
+      "maxDamage": 310,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "offbeat_2",
+      "family": "裏拍・シンコペーション",
+      "count": 8,
+      "damage": 91.35416666666667,
+      "quality": 1.5999999999999996,
+      "maxDamage": 241,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 39,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "late_0",
+      "family": "後半集中",
+      "count": 8,
+      "damage": 80.8125,
+      "quality": 0.7999999999999998,
+      "maxDamage": 209,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 46,
+        "hp": 6,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "late_1",
+      "family": "後半集中",
+      "count": 8,
+      "damage": 54.166666666666664,
+      "quality": 0.7999999999999998,
+      "maxDamage": 156,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 40,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "late_2",
+      "family": "後半集中",
+      "count": 8,
+      "damage": 94.3125,
+      "quality": 0.735050779355661,
+      "maxDamage": 226,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "rest_0",
+      "family": "低密度・休符",
+      "count": 3,
+      "damage": 91.14583333333333,
+      "quality": 1,
+      "maxDamage": 262,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 43,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "rest_1",
+      "family": "低密度・休符",
+      "count": 4,
+      "damage": 111.60416666666667,
+      "quality": 1.021973874684242,
+      "maxDamage": 279,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 35,
+        "hp": 30,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "rest_2",
+      "family": "低密度・休符",
+      "count": 3,
+      "damage": 90.64583333333333,
+      "quality": 1,
+      "maxDamage": 253,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 41,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "dense_K",
+      "family": "高密度",
+      "count": 32,
+      "damage": 122,
+      "quality": 1.5999999999999996,
+      "maxDamage": 294,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "dense_S",
+      "family": "高密度",
+      "count": 32,
+      "damage": 132.33333333333334,
+      "quality": 1.5999999999999996,
+      "maxDamage": 336,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "dense_KSS",
+      "family": "高密度",
+      "count": 32,
+      "damage": 139.66666666666666,
+      "quality": 1.5999999999999959,
+      "maxDamage": 392,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 27,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "laid_25",
+      "family": "レイドバック",
+      "count": 16,
+      "damage": 104.6875,
+      "quality": 1.5999999999999959,
+      "maxDamage": 195,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 34,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "laid_40",
+      "family": "レイドバック",
+      "count": 16,
+      "damage": 127.5625,
+      "quality": 1.5999999999999996,
+      "maxDamage": 234,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 26,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "laid_55",
+      "family": "レイドバック",
+      "count": 16,
+      "damage": 183.75,
+      "quality": 1.5999999999999936,
+      "maxDamage": 552,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 21,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "swing_0.125",
+      "family": "スウィング",
+      "count": 16,
+      "damage": 188.5625,
+      "quality": 1.4713010204081571,
+      "maxDamage": 438,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 21,
+        "hp": 19,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "swing_0.16666666666666666",
+      "family": "スウィング",
+      "count": 16,
+      "damage": 238.58333333333334,
+      "quality": 1.5999999999999923,
+      "maxDamage": 572,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 18,
+        "hp": 59,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "swing_0.25",
+      "family": "スウィング",
+      "count": 16,
+      "damage": 177,
+      "quality": 1.5999999999999943,
+      "maxDamage": 336,
+      "wins": 8,
+      "trials": 8,
+      "campaign": {
+        "won": true,
+        "cleared": 8,
+        "rounds": 21,
+        "hp": 62,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "drunk_0.6",
+      "family": "ドランク",
+      "count": 16,
+      "damage": 126.875,
+      "quality": 1.5999999999999936,
+      "maxDamage": 264,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 29,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "drunk_1",
+      "family": "ドランク",
+      "count": 16,
+      "damage": 133.5,
+      "quality": 1.599999999999994,
+      "maxDamage": 321,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 28,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "drunk_1.4",
+      "family": "ドランク",
+      "count": 16,
+      "damage": 135.22916666666666,
+      "quality": 1.5999999999999936,
+      "maxDamage": 318,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 27,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "jitter_1",
+      "family": "タイミングミス",
+      "count": 16,
+      "damage": 64.125,
+      "quality": 1.2453179672463188,
+      "maxDamage": 111,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 3,
+        "rounds": 27,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "jitter_2",
+      "family": "タイミングミス",
+      "count": 16,
+      "damage": 72.9375,
+      "quality": 1.2484182347857438,
+      "maxDamage": 138,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 39,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "jitter_3",
+      "family": "タイミングミス",
+      "count": 16,
+      "damage": 72.125,
+      "quality": 1.2584217843789671,
+      "maxDamage": 135,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 39,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "complex_0",
+      "family": "構造的な変化",
+      "count": 10,
+      "damage": 99.58333333333333,
+      "quality": 1.1134693877551027,
+      "maxDamage": 232,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 35,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "complex_1",
+      "family": "構造的な変化",
+      "count": 11,
+      "damage": 86.75,
+      "quality": 1.0697190426638914,
+      "maxDamage": 212,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "complex_2",
+      "family": "構造的な変化",
+      "count": 13,
+      "damage": 88,
+      "quality": 0.9596908585919571,
+      "maxDamage": 246,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 29,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "dialogue",
+      "family": "掛け合い",
+      "count": 16,
+      "damage": 95.25,
+      "quality": 1.5999999999999996,
+      "maxDamage": 225,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 29,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_1",
+      "family": "ランダム",
+      "count": 8,
+      "damage": 47.125,
+      "quality": 0.6450910844674533,
+      "maxDamage": 106,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_2",
+      "family": "ランダム",
+      "count": 16,
+      "damage": 49.416666666666664,
+      "quality": 0.7450371777539276,
+      "maxDamage": 120,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 37,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_3",
+      "family": "ランダム",
+      "count": 24,
+      "damage": 47.6875,
+      "quality": 0.7481943368770444,
+      "maxDamage": 105,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 40,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_4",
+      "family": "ランダム",
+      "count": 8,
+      "damage": 78.04166666666667,
+      "quality": 0.7592844533413757,
+      "maxDamage": 180,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 7,
+        "rounds": 39,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_5",
+      "family": "ランダム",
+      "count": 16,
+      "damage": 62.416666666666664,
+      "quality": 0.8559012013846613,
+      "maxDamage": 156,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_6",
+      "family": "ランダム",
+      "count": 24,
+      "damage": 54.6875,
+      "quality": 0.8644813537795047,
+      "maxDamage": 133,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 37,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_7",
+      "family": "ランダム",
+      "count": 8,
+      "damage": 56.3125,
+      "quality": 0.8047022906993898,
+      "maxDamage": 162,
+      "wins": 7,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 6,
+        "rounds": 41,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_8",
+      "family": "ランダム",
+      "count": 16,
+      "damage": 51.3125,
+      "quality": 0.7019993370966461,
+      "maxDamage": 128,
+      "wins": 6,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 36,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "random_9",
+      "family": "ランダム",
+      "count": 24,
+      "damage": 50.083333333333336,
+      "quality": 0.7950014396325477,
+      "maxDamage": 112,
+      "wins": 5,
+      "trials": 8,
+      "campaign": {
+        "won": false,
+        "cleared": 5,
+        "rounds": 39,
+        "hp": 0,
+        "capped": false
+      }
+    },
+    {
+      "pattern": "cluster",
+      "family": "無秩序な連打",
+      "count": 128,
+      "damage": 36.166666666666664,
+      "quality": 0.4639999999999998,
+      "maxDamage": 84,
+      "wins": 0,
+      "trials": 0,
+      "campaign": null
+    },
+    {
+      "pattern": "spam_128",
+      "family": "過密ストレス",
+      "count": 128,
+      "damage": 80.0625,
+      "quality": 1.5999999999999845,
+      "maxDamage": 175,
+      "wins": 0,
+      "trials": 0,
+      "campaign": null
+    },
+    {
+      "pattern": "duplicates",
+      "family": "重複ストレス",
+      "count": 256,
+      "damage": 56.125,
+      "quality": 0.44999999999999957,
+      "maxDamage": 114,
+      "wins": 0,
+      "trials": 0,
+      "campaign": null
+    },
+    {
+      "pattern": "silence",
+      "family": "無音",
+      "count": 0,
+      "damage": 0,
+      "quality": 1,
+      "maxDamage": 0,
+      "wins": 0,
+      "trials": 0,
+      "campaign": null
+    }
+  ],
+  "enemies": [
+    {
+      "name": "苔岩の番人",
+      "kind": "stone",
+      "hp": 260,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 46,
+      "fixedLosses": 0,
+      "fixedCapped": 1,
+      "best": {
+        "enemy": "stone",
+        "startHp": 100,
+        "pattern": "kick_0",
+        "family": "毎拍Kick",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 2,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 460,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "kick_0",
+          "damage": 221,
+          "element": "earth"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "kick_0",
+          "damage": 282,
+          "element": "earth"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "kick_0",
+          "damage": 220,
+          "element": "earth"
+        },
+        {
+          "intent": "heal",
+          "pattern": "rest_2",
+          "damage": 226,
+          "element": "earth"
+        },
+        {
+          "intent": "buff",
+          "pattern": "kick_0",
+          "damage": 220,
+          "element": "earth"
+        },
+        {
+          "intent": "special",
+          "pattern": "kick_0",
+          "damage": 220,
+          "element": "earth"
+        }
+      ]
+    },
+    {
+      "name": "宙を舞う翼獣",
+      "kind": "fly",
+      "hp": 240,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 47,
+      "fixedLosses": 0,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "fly",
+        "startHp": 100,
+        "pattern": "dense_S",
+        "family": "高密度",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 1,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 272,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 556,
+          "element": "wind"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 572,
+          "element": "wind"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 568,
+          "element": "wind"
+        },
+        {
+          "intent": "heal",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 556,
+          "element": "wind"
+        },
+        {
+          "intent": "buff",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 556,
+          "element": "wind"
+        },
+        {
+          "intent": "special",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 520,
+          "element": "wind"
+        }
+      ]
+    },
+    {
+      "name": "忘却の自律機",
+      "kind": "machine",
+      "hp": 300,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 47,
+      "fixedLosses": 0,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "machine",
+        "startHp": 100,
+        "pattern": "kick_1",
+        "family": "毎拍Kick",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 1,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 340,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "kick_2",
+          "damage": 365,
+          "element": "lightning"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "kick_2",
+          "damage": 311,
+          "element": "lightning"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "dense_K",
+          "damage": 282,
+          "element": "lightning"
+        },
+        {
+          "intent": "heal",
+          "pattern": "dense_K",
+          "damage": 282,
+          "element": "lightning"
+        },
+        {
+          "intent": "buff",
+          "pattern": "kick_2",
+          "damage": 311,
+          "element": "lightning"
+        },
+        {
+          "intent": "special",
+          "pattern": "dense_K",
+          "damage": 264,
+          "element": "lightning"
+        }
+      ]
+    },
+    {
+      "name": "棘冠の喰らい花",
+      "kind": "plant",
+      "hp": 280,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 44,
+      "fixedLosses": 3,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "plant",
+        "startHp": 100,
+        "pattern": "late_2",
+        "family": "後半集中",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 2,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 363,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "swing_0.25",
+          "damage": 176,
+          "element": "wind"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "late_2",
+          "damage": 226,
+          "element": "fire"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "swing_0.25",
+          "damage": 180,
+          "element": "wind"
+        },
+        {
+          "intent": "heal",
+          "pattern": "late_2",
+          "damage": 217,
+          "element": "fire"
+        },
+        {
+          "intent": "buff",
+          "pattern": "swing_0.25",
+          "damage": 176,
+          "element": "wind"
+        },
+        {
+          "intent": "special",
+          "pattern": "swing_0.25",
+          "damage": 164,
+          "element": "wind"
+        }
+      ]
+    },
+    {
+      "name": "薄明の残響",
+      "kind": "ghost",
+      "hp": 270,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 46,
+      "fixedLosses": 0,
+      "fixedCapped": 1,
+      "best": {
+        "enemy": "ghost",
+        "startHp": 100,
+        "pattern": "sync_0",
+        "family": "裏拍・シンコペーション",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 1,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 306,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "drunk_1",
+          "damage": 312,
+          "element": "lightning"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "drunk_1",
+          "damage": 321,
+          "element": "lightning"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "drunk_1",
+          "damage": 285,
+          "element": "lightning"
+        },
+        {
+          "intent": "heal",
+          "pattern": "drunk_1",
+          "damage": 285,
+          "element": "lightning"
+        },
+        {
+          "intent": "buff",
+          "pattern": "drunk_1",
+          "damage": 291,
+          "element": "lightning"
+        },
+        {
+          "intent": "special",
+          "pattern": "drunk_1",
+          "damage": 285,
+          "element": "lightning"
+        }
+      ]
+    },
+    {
+      "name": "晶殻の甲虫",
+      "kind": "crystal",
+      "hp": 340,
+      "firstIntent": "guard",
+      "fixedTrials": 47,
+      "fixedWins": 43,
+      "fixedLosses": 4,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "crystal",
+        "startHp": 100,
+        "pattern": "alternate_4",
+        "family": "交互",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 2,
+        "remainingHp": 100,
+        "remainingEnemyHp": 0,
+        "totalReceived": 0,
+        "totalPoison": 0,
+        "totalDamage": 554,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "alternate_4",
+          "damage": 279,
+          "element": "earth"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "alternate_4",
+          "damage": 332,
+          "element": "earth"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "alternate_4",
+          "damage": 278,
+          "element": "earth"
+        },
+        {
+          "intent": "heal",
+          "pattern": "alternate_4",
+          "damage": 278,
+          "element": "earth"
+        },
+        {
+          "intent": "buff",
+          "pattern": "alternate_4",
+          "damage": 278,
+          "element": "earth"
+        },
+        {
+          "intent": "special",
+          "pattern": "alternate_4",
+          "damage": 278,
+          "element": "earth"
+        }
+      ]
+    },
+    {
+      "name": "炉心の舞踏獣",
+      "kind": "furnace",
+      "hp": 380,
+      "firstIntent": "heavy",
+      "fixedTrials": 47,
+      "fixedWins": 35,
+      "fixedLosses": 12,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "furnace",
+        "startHp": 100,
+        "pattern": "swing_0.25",
+        "family": "スウィング",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 2,
+        "remainingHp": 72,
+        "remainingEnemyHp": 0,
+        "totalReceived": 28,
+        "totalPoison": 0,
+        "totalDamage": 584,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 312,
+          "element": "wind"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 332,
+          "element": "wind"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 312,
+          "element": "wind"
+        },
+        {
+          "intent": "heal",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 304,
+          "element": "wind"
+        },
+        {
+          "intent": "buff",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 304,
+          "element": "wind"
+        },
+        {
+          "intent": "special",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 284,
+          "element": "wind"
+        }
+      ]
+    },
+    {
+      "name": "終奏の指揮者",
+      "kind": "conductor",
+      "hp": 440,
+      "firstIntent": "buff",
+      "fixedTrials": 47,
+      "fixedWins": 12,
+      "fixedLosses": 35,
+      "fixedCapped": 0,
+      "best": {
+        "enemy": "conductor",
+        "startHp": 100,
+        "pattern": "alternate_1",
+        "family": "交互",
+        "bundle": "balanced",
+        "policy": "fixed",
+        "poison": true,
+        "won": true,
+        "rounds": 3,
+        "remainingHp": 69,
+        "remainingEnemyHp": 0,
+        "totalReceived": 31,
+        "totalPoison": 0,
+        "totalDamage": 448,
+        "capped": false
+      },
+      "actionWinners": [
+        {
+          "intent": "guard",
+          "pattern": "alternate_1",
+          "damage": 147,
+          "element": "wind"
+        },
+        {
+          "intent": "heavy",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 152,
+          "element": "wind"
+        },
+        {
+          "intent": "pierce",
+          "pattern": "alternate_1",
+          "damage": 154,
+          "element": "wind"
+        },
+        {
+          "intent": "heal",
+          "pattern": "alternate_1",
+          "damage": 147,
+          "element": "wind"
+        },
+        {
+          "intent": "buff",
+          "pattern": "alternate_1",
+          "damage": 147,
+          "element": "wind"
+        },
+        {
+          "intent": "special",
+          "pattern": "swing_0.16666666666666666",
+          "damage": 128,
+          "element": "wind"
+        }
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "variant": "all",
+      "n": 192,
+      "damage": 92.58333333333333,
+      "shield": 62.390625,
+      "received": 21.833333333333332
+    },
+    {
+      "variant": "no_drums",
+      "n": 192,
+      "damage": 0,
+      "shield": 52.166666666666664,
+      "received": 42.625
+    },
+    {
+      "variant": "no_bass",
+      "n": 192,
+      "damage": 91.05208333333333,
+      "shield": 0,
+      "received": 83.85416666666667
+    },
+    {
+      "variant": "no_lead",
+      "n": 192,
+      "damage": 66.52604166666667,
+      "shield": 57.848958333333336,
+      "received": 29.166666666666668
+    },
+    {
+      "variant": "no_both",
+      "n": 192,
+      "damage": 65.38541666666667,
+      "shield": 0,
+      "received": 88.0625
+    },
+    {
+      "variant": "bass_dense",
+      "n": 192,
+      "damage": 92.01041666666667,
+      "shield": 57.609375,
+      "received": 25.21875
+    },
+    {
+      "variant": "bass_duplicate",
+      "n": 192,
+      "damage": 92.58333333333333,
+      "shield": 62.390625,
+      "received": 21.833333333333332
+    },
+    {
+      "variant": "lead_dense",
+      "n": 192,
+      "damage": 86.72395833333333,
+      "shield": 67.265625,
+      "received": 20.197916666666668
+    },
+    {
+      "variant": "lead_duplicate",
+      "n": 192,
+      "damage": 92.58333333333333,
+      "shield": 62.390625,
+      "received": 21.833333333333332
+    },
+    {
+      "variant": "bass_single_hold",
+      "n": 192,
+      "damage": 89.484375,
+      "shield": 48.25,
+      "received": 32.59375
+    },
+    {
+      "variant": "bass_high",
+      "n": 192,
+      "damage": 100.671875,
+      "shield": 48.229166666666664,
+      "received": 31.21875
+    },
+    {
+      "variant": "bass_timed",
+      "n": 192,
+      "damage": 92.25,
+      "shield": 60.776041666666664,
+      "received": 21
+    }
+  ],
+  "modes": [
+    {
+      "mode": "two",
+      "damage": 90.66666666666667,
+      "shield": 63.416666666666664,
+      "received": 20.916666666666668
+    },
+    {
+      "mode": "four",
+      "damage": 89.625,
+      "shield": 63.416666666666664,
+      "received": 22.25
+    },
+    {
+      "mode": "seven",
+      "damage": 87.70833333333333,
+      "shield": 63.416666666666664,
+      "received": 23.208333333333332
+    },
+    {
+      "mode": "nine",
+      "damage": 94.20833333333333,
+      "shield": 63.416666666666664,
+      "received": 24.041666666666668
+    }
+  ],
+  "synergy": {
+    "n": 192,
+    "damage": 5,
+    "shield": 2.96875,
+    "maxDamage": 34,
+    "kinds": {
+      "grooveLock": 96,
+      "response": 192,
+      "interlock": 96
+    }
+  },
+  "swingTopCases": 18,
+  "campaigns": [
+    {
+      "pattern": "alternate_4",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 3,
+      "remainingHp": 0,
+      "totalRounds": 24
+    },
+    {
+      "pattern": "alternate_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 0,
+      "remainingHp": 20,
+      "totalRounds": 12
+    },
+    {
+      "pattern": "alternate_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 3,
+      "remainingHp": 0,
+      "totalRounds": 26
+    },
+    {
+      "pattern": "kick_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 61,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "snare_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 33
+    },
+    {
+      "pattern": "kick_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "snare_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 25
+    },
+    {
+      "pattern": "kick_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "snare_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "sync_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 27,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "sync_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 30
+    },
+    {
+      "pattern": "sync_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "offbeat_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "offbeat_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "offbeat_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "late_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 6,
+      "totalRounds": 46
+    },
+    {
+      "pattern": "late_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 40
+    },
+    {
+      "pattern": "late_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "rest_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 43
+    },
+    {
+      "pattern": "rest_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 30,
+      "totalRounds": 35
+    },
+    {
+      "pattern": "rest_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 41
+    },
+    {
+      "pattern": "dense_K",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "dense_S",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "dense_KSS",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "laid_25",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 34
+    },
+    {
+      "pattern": "laid_40",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 26
+    },
+    {
+      "pattern": "laid_55",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "swing_0.125",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 19,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "swing_0.16666666666666666",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 59,
+      "totalRounds": 18
+    },
+    {
+      "pattern": "swing_0.25",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 62,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "drunk_0.6",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "drunk_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "drunk_1.4",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "jitter_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 3,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "jitter_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "jitter_3",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "complex_0",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 35
+    },
+    {
+      "pattern": "complex_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "complex_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "dialogue",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "random_1",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "random_2",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 37
+    },
+    {
+      "pattern": "random_3",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 40
+    },
+    {
+      "pattern": "random_4",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "random_5",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "random_6",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 37
+    },
+    {
+      "pattern": "random_7",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 41
+    },
+    {
+      "pattern": "random_8",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "random_9",
+      "policy": "fixed",
+      "startHp": 100,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "damage_greedy",
+      "policy": "damage_greedy",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 67,
+      "totalRounds": 14
+    },
+    {
+      "pattern": "tactical_greedy",
+      "policy": "tactical_greedy",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 70,
+      "totalRounds": 14
+    },
+    {
+      "pattern": "enemy_specific",
+      "policy": "enemy_specific",
+      "startHp": 100,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 70,
+      "totalRounds": 14
+    },
+    {
+      "pattern": "alternate_4",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 3,
+      "remainingHp": 0,
+      "totalRounds": 24
+    },
+    {
+      "pattern": "alternate_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 0,
+      "remainingHp": 0,
+      "totalRounds": 10
+    },
+    {
+      "pattern": "alternate_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 3,
+      "remainingHp": 0,
+      "totalRounds": 26
+    },
+    {
+      "pattern": "kick_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 61,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "snare_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 33
+    },
+    {
+      "pattern": "kick_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "snare_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 25
+    },
+    {
+      "pattern": "kick_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "snare_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "sync_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 27,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "sync_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 30
+    },
+    {
+      "pattern": "sync_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "offbeat_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "offbeat_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "offbeat_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "late_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 6,
+      "totalRounds": 46
+    },
+    {
+      "pattern": "late_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 2,
+      "remainingHp": 0,
+      "totalRounds": 23
+    },
+    {
+      "pattern": "late_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "rest_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 43
+    },
+    {
+      "pattern": "rest_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 30,
+      "totalRounds": 35
+    },
+    {
+      "pattern": "rest_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 41
+    },
+    {
+      "pattern": "dense_K",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "dense_S",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "dense_KSS",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "laid_25",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 34
+    },
+    {
+      "pattern": "laid_40",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 26
+    },
+    {
+      "pattern": "laid_55",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "swing_0.125",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 19,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "swing_0.16666666666666666",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 59,
+      "totalRounds": 18
+    },
+    {
+      "pattern": "swing_0.25",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 62,
+      "totalRounds": 21
+    },
+    {
+      "pattern": "drunk_0.6",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "drunk_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 28
+    },
+    {
+      "pattern": "drunk_1.4",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 27
+    },
+    {
+      "pattern": "jitter_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 0,
+      "remainingHp": 0,
+      "totalRounds": 10
+    },
+    {
+      "pattern": "jitter_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "jitter_3",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "complex_0",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 35
+    },
+    {
+      "pattern": "complex_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "complex_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "dialogue",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 29
+    },
+    {
+      "pattern": "random_1",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "random_2",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 34
+    },
+    {
+      "pattern": "random_3",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 40
+    },
+    {
+      "pattern": "random_4",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 7,
+      "remainingHp": 0,
+      "totalRounds": 39
+    },
+    {
+      "pattern": "random_5",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 36
+    },
+    {
+      "pattern": "random_6",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 35
+    },
+    {
+      "pattern": "random_7",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 6,
+      "remainingHp": 0,
+      "totalRounds": 41
+    },
+    {
+      "pattern": "random_8",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 34
+    },
+    {
+      "pattern": "random_9",
+      "policy": "fixed",
+      "startHp": 70,
+      "won": false,
+      "cleared": 5,
+      "remainingHp": 0,
+      "totalRounds": 37
+    },
+    {
+      "pattern": "damage_greedy",
+      "policy": "damage_greedy",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 67,
+      "totalRounds": 14
+    },
+    {
+      "pattern": "tactical_greedy",
+      "policy": "tactical_greedy",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 70,
+      "totalRounds": 14
+    },
+    {
+      "pattern": "enemy_specific",
+      "policy": "enemy_specific",
+      "startHp": 70,
+      "won": true,
+      "cleared": 8,
+      "remainingHp": 70,
+      "totalRounds": 14
+    }
+  ],
+  "capped": 42,
+  "poisonCases": 136
+}

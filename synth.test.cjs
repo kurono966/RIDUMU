@@ -11,13 +11,17 @@ test('traits are deterministic, normalized and require combinations of timbre fe
  const round=S.traits({...p,wave:'sine',release:2});assert(round.water>S.traits(p).water);
  assert(S.traits(S.patch({cutoff:100,sustain:1,wave:'triangle'})).earth>dark.wind);
 });
-test('every elemental specialization has a tradeoff and silence grants no bonus',()=>{
- const cases={fire:{fire:1,water:0,wind:0,earth:0},water:{fire:0,water:1,wind:0,earth:0},wind:{fire:0,water:0,wind:1,earth:0},earth:{fire:0,water:0,wind:0,earth:1}};
- assert(S.modifiers(cases.fire).attack>1&&S.modifiers(cases.fire).shield<1);
- assert(S.modifiers(cases.water).weaken>0&&S.modifiers(cases.water).attack<1);
- assert(S.modifiers(cases.wind).accuracy>0&&S.modifiers(cases.wind).shield<1);
- assert(S.modifiers(cases.earth).shield>1&&S.modifiers(cases.earth).attack<1&&S.modifiers(cases.earth).accuracy<0);
- assert.deepEqual(S.modifiers(S.profile(snapshot(),[],4)),{attack:1,shield:1,accuracy:0,weaken:0});
+test('timbre is element-neutral and articulation changes play style',()=>{
+ const fire={fire:1,water:0,wind:0,earth:0};
+ assert.deepEqual(S.modifiers(fire),{attack:1,shield:1,accuracy:0,weaken:0});
+ const fast=S.patch({attack:.003,release:.02}),slow=S.patch({attack:.3,release:1});
+ const short=[{t:0,duration:.08},{t:.5,duration:.08},{t:1,duration:.08}];
+ const long=[{t:0,duration:.9},{t:1,duration:.9},{t:2,duration:.9}];
+ const quick=S.style(snapshot(fast),short,4),sustained=S.style(snapshot(slow),long,4);
+ assert(quick.attack>1&&quick.shield<1);
+ assert(sustained.shield>1&&sustained.attack<1);
+ assert.deepEqual(S.style(snapshot(fast),[],4),{attack:1,shield:1,accuracy:0,weaken:0});
+ assert.equal(S.style(snapshot(fast),short,4).attack,S.style(snapshot(fast),short,4).attack);
 });
 test('profile integrates recorded changes over audible gates without duplicate-note bonuses',()=>{
  const a=S.patch({wave:'sine',cutoff:200,release:2,attack:.01,decay:.1,sustain:1,harmonic:0,toneDecay:0,curve:'linear'}),b=S.patch({...a,wave:'sawtooth',cutoff:14000,release:.02});

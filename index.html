@@ -7,16 +7,41 @@
     <link rel="stylesheet" href="style.css?v=11">
     <link rel="stylesheet" href="feedback.css?v=2">
     <link rel="stylesheet" href="groove.css?v=2">
-    <link rel="stylesheet" href="enemies.css?v=1">
+    <link rel="stylesheet" href="enemies.css?v=2">
     <link rel="stylesheet" href="history.css?v=1">
     <link rel="stylesheet" href="grid-hazards.css?v=1">
     <link rel="stylesheet" href="combat.css?v=3">
-    <link rel="stylesheet" href="synth.css?v=2">
-    <link rel="stylesheet" href="ui.css?v=3">
+    <link rel="stylesheet" href="synth.css?v=3">
+    <link rel="stylesheet" href="ui.css?v=5">
+    <link rel="stylesheet" href="pitch.css?v=1">
+    <link rel="stylesheet" href="experience.css?v=1">
+    <link rel="stylesheet" href="element-meter.css?v=1">
   </head>
   <body class="game-ui">
+    <section id="titleScreen" class="title-screen" aria-labelledby="titleHeading">
+      <div class="title-panel">
+        <p class="title-kicker">RHYTHM × ROGUELITE</p>
+        <h1 id="titleHeading">RIDUMU<span class="dot">.</span></h1>
+        <p>あなたのリズムで、道を切り拓け。</p>
+        <div class="title-choices">
+          <button type="button" data-choose-mode="normal"><strong>通常モード</strong><span>8体に順番に挑戦。演奏を磨いて終奏の指揮者へ。</span></button>
+          <button type="button" data-choose-mode="roguelite"><strong>ローグライトモード</strong><span>敵の順番が変化。勝利ごとに報酬を選び、敗北したら最初から。</span></button>
+        </div>
+      </div>
+    </section>
+    <dialog id="rogueRewardDialog" class="rogue-rewards" aria-labelledby="rewardTitle">
+      <h2 id="rewardTitle">勝利報酬を選ぶ</h2>
+      <p>次の敵に持ち込む強化を1つ選択。</p>
+      <div class="reward-choices">
+        <button type="button" data-rogue-reward="heal">休息 <small>HPを45回復</small></button>
+        <button type="button" data-rogue-reward="weaken">弱体化 <small>次の敵の攻撃 −20%</small></button>
+        <button type="button" data-rogue-reward="break">奇襲 <small>次の敵のHP −18%</small></button>
+      </div>
+    </dialog>
     <main id="game">
       <header>
+        <button type="button" id="returnTitle" class="small" title="タイトルへ戻る">タイトル</button>
+        <span id="modeBadge" class="mode-badge">STANDARD</span>
         <a class="brand" href="./index.html">RI<span>DU</span>MU<span class="dot">.</span></a>
         <button id="openMenu" type="button" class="utility-button" aria-haspopup="dialog" aria-controls="playSettingsDialog">
           メニュー
@@ -28,7 +53,7 @@
       <section class="arena" id="arena">
         <div class="enemy-info">
           <div>
-            <p class="eyebrow" id="stage">ENCOUNTER 01 / 06</p>
+            <p class="eyebrow" id="stage">ENCOUNTER 01 / 08</p>
             <div class="enemy-title">
               <h2 id="enemyName"></h2>
               <span id="enemyBpm" class="enemy-bpm">BPM 82</span>
@@ -66,6 +91,7 @@
             <span class="enemy-sparks"></span>
           </div>
           <div id="impact" aria-live="polite"></div>
+          <span id="hitReason" class="hit-reason" hidden></span>
           <div id="hitLabels" class="hit-labels" aria-hidden="true"></div>
           <div id="discoveryToast" class="discovery-toast" role="status"></div>
           <div id="hazardToast" class="hazard-toast" role="status"></div>
@@ -102,7 +128,7 @@
             </div>
             <div id="filterPad" class="filter-pad" role="slider" tabindex="0" aria-label="エフェクトパッド。上下で音量、左右でフィルター。矢印キーでも操作可能" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="filter-grid"></div>
-              <div id="liveToneGauges" class="live-tone-gauges" aria-label="現在の音色属性"></div>
+              
               <div id="filterCursor" class="filter-cursor"></div>
               <span class="filter-top">↑ VOL 100%</span>
               <span class="filter-bottom">↓ VOL 0%</span>
@@ -142,6 +168,15 @@
             4 LEAD
           </li>
         </ol>
+        <div id="elementMeter" class="element-meter" aria-label="ドラムの予測属性">
+          <span id="elementStatus">待機</span>
+          <button id="element-earth" type="button">▰ 土</button>
+          <button id="element-wind" type="button">≋ 風</button>
+          <button id="element-fire" type="button">▲ 火</button>
+          <button id="element-lightning" type="button">ϟ 雷</button>
+          <button id="elementMore" type="button" aria-label="属性のスコアとヒント">?</button>
+          <output id="elementHint" class="element-hint" hidden></output>
+        </div>
         <div class="console-top">
           <div>
             <span class="live-dot" id="liveDot"></span>
@@ -156,7 +191,9 @@
           <span id="hazardStatus" role="status"></span>
         </div>
         <div class="timeline">
-          <canvas id="scope" aria-label="入力したKickとSnareのタイムライン"></canvas>
+          <canvas id="scope" aria-label="入力したKickとSnareのタイムライン" aria-describedby="melodyTrend"></canvas>
+          <span id="melodyTrend" class="melody-trend"></span>
+          <span id="performanceCue" class="performance-cue" hidden></span>
           <span class="lane hat-label">H</span>
           <span class="lane kick-label">K</span>
           <span class="lane snare-label">S</span>
@@ -208,6 +245,8 @@
             <span>J</span>
             <b>B♭</b>
           </button>
+          <button id="note7" class="melody-pad" type="button" hidden><span>K</span><b>C↑</b></button>
+          <button id="note8" class="melody-pad" type="button" hidden><span>L</span><b>D↑</b></button>
         </div>
         <button id="restorePads" type="button" class="restore-pads">
           演奏パッドを表示
@@ -237,6 +276,7 @@
           <div>
             <span id="element" class="element"></span>
             <h2 id="moveName"></h2>
+            <p id="pitchOutcome" class="pitch-outcome" hidden></p>
           </div>
           <div class="damage">
             <b id="damage">0</b>
@@ -280,6 +320,7 @@
   <option value="two">2音</option>
   <option value="four">4音</option>
   <option value="seven">7音</option>
+  <option value="nine">9音</option>
 </select></label>
         <div class="settings-actions">
           <button id="pitchSetup" type="button" class="pitch-setup" aria-haspopup="dialog">
@@ -289,9 +330,14 @@
             シンセ
           </button>
         </div>
+        <p class="setting-help">2音：反復と安定 / 4音：動きと安定 / 7音：跳躍も狙える / 9音：上のC・Dまで広がる。音数そのものに倍率はありません。</p>
+        <label class="feedback-switch"><input id="feedbackEffects" type="checkbox" checked> 演奏フィードバックの音響・視覚エフェクト</label>
+        <p class="setting-help">元の音符・音色・戦闘計算は変えません。演奏中の表示は途中評価です。</p>
       </fieldset>
       <fieldset>
         <legend>演奏の表示</legend>
+        <button id="toggleFullscreen" class="toggle-pads" type="button" aria-pressed="false">フルスクリーンにする</button>
+        <p id="fullscreenHelp" class="setting-help" role="status">画面全体にゲームを表示します。終了はこのボタンまたはEscキーから。</p>
         <button id="togglePads" class="toggle-pads" type="button" aria-pressed="true" aria-controls="hat kick snare melodyPads">
           演奏パッド ON
         </button>
@@ -349,6 +395,8 @@
         </button>
       </div>
       <p id="timbreResult" class="timbre-result" aria-live="polite"></p>
+      <section id="performanceReview" hidden><p id="nextPerformanceTip" class="next-performance-tip"></p><p id="performanceReviewStatus"></p><details><summary>同じ敵への前回演奏との比較</summary><div id="performanceComparison"></div><details><summary>今回効いた要因の計算差分</summary><p>補正を1つずつ外した再計算で、実際に利益があった要因を選びます。相互作用があるため差分は加算できません。</p><div id="reviewFactors"></div></details></details></section>
+      <details id="pitchAnalysis" hidden><summary>音程の効果と旋律を見る</summary><p>↑ 上昇 · ↓ 下降 · ＝ 反復 · ↯ 跳躍。項目を選ぶと評価した音符を強調します。命中は確率ではなくダメージ効率です。評価は16分枠ごとの最後の音（最大32音）を使い、間隔の比率で判断します。</p><div id="pitchDetails"></div></details>
       <div class="result-tabs" role="group" aria-label="結果表示の切り替え">
         <button id="summaryTab" type="button" aria-pressed="true">
           今回効いたもの
@@ -402,15 +450,14 @@
       <div class="synth-body">
         <div id="synthParameters" class="synth-parameters"></div>
         <div class="synth-character">
-          <p class="eyebrow">TIMBRE / 音色の属性配分</p>
-          <div id="synthGauges" class="synth-gauges"></div>
+          <p class="eyebrow">TIMBRE / 音色の個性</p>
+          
           <p id="synthEffects"></p>
           <svg id="synthEnvelope" viewbox="0 0 300 90" role="img" aria-label="音量エンベロープ">
             <path id="synthEnvelopePath" fill="none" stroke="currentColor" stroke-width="3"></path>
           </svg>
           <p class="synth-guide">A：立ち上がり → D：減衰 → S：保持音量 → R：余韻</p>
-          <p class="synth-guide">炎：明るく鋭い波形＋速い立ち上がり → 攻撃↑・盾↓<br>水：丸い波形＋長い余韻 → 湿潤で敵攻撃↓・攻撃↓<br>風：開いたフィルター＋短い保持 → 命中↑・盾↓<br>土：暗い音＋厚い保持 → 盾↑・攻撃／命中↓</p>
-          <p class="synth-guide">リズム由来の属性はそのまま。音色の攻撃・命中は各パート1/2、盾はBass全量とLead半量で反映。水属性の湿潤は今回の敵反撃のみ、合計12%まで。配分は合計100%、無音には効果なし。</p>
+          <p class="synth-guide">音色の波形・フィルターは自由に選べます。短音を刻むスタイルと長音をつなげるスタイルに小さなトレードオフがあります。敵の弱点に合わせて音色を変える必要はありません。</p>
         </div>
       </div>
       <p id="synthStorage" class="synth-guide" role="status"></p>
@@ -422,7 +469,11 @@
           閉じる
         </button>
       </div>
-      <p>開発用の比較計算です。戦闘・録音・発見メモには反映しません。通常評価は元の入力を保持し、補正後評価は発音時刻を各解析の基準にします。</p>
+      <p>Drumsの演奏開始前に、3パートをまとめて自動入力できます。最大は休符・裏拍・フィルと旋律の変化を含む候補から、現在の敵に対する最高値を探索します（理論上限ではありません）。最小は無音で0ダメージです。音色・エフェクトによって実際のダメージは変化します。</p>
+      <button id="debugMaxDamage" type="button">最大ダメージ譜面を自動入力</button>
+      <button id="debugMinDamage" type="button">最小ダメージ譜面を自動入力（無音）</button>
+      <p id="debugAutoStatus" role="status"></p>
+      <p>以下の比較計算は戦闘・録音・発見メモには反映しません。通常評価は元の入力を保持し、補正後評価は発音時刻を各解析の基準にします。</p>
       <label>比較する補正 <select id="debugPreset">
   <option value="recorded">録音時の補正</option>
   <option value="off">生演奏</option>
@@ -470,6 +521,7 @@
   <option value="two">2音</option>
   <option value="four">4音</option>
   <option value="seven">7音</option>
+  <option value="nine">9音</option>
 </select></label>
         <button id="resetPitch" type="button" class="small">
           初期値に戻す
@@ -495,29 +547,49 @@
       <div id="historyList"></div>
       <p class="history-note">MIDIは音符・テンポのデータです。外部ソフトでは音色が変わります。JSONはRIDUMUで読み戻せます。</p>
     </dialog>
-    <script src="rhythm.js"></script>
+    <dialog id="elementDialog" class="workspace-dialog" aria-labelledby="elementTitle">
+      <h2 id="elementTitle">ドラムと属性</h2>
+      <button id="closeElementDialog" type="button">閉じる</button>
+      <p id="elementExplanation"></p>
+      <table><thead><tr><th>属性</th><th>判定スコア</th><th>表示割合</th></tr></thead><tbody id="elementScores"></tbody></table>
+      <p>割合は表示用です。戦闘は元のスコアで判定します。少ない入力では傾向が大きく変わります。</p>
+      <details id="element-help-earth"><summary>▰ 土</summary><p>キック中心で、間を空ける。規則的な間隔や、間を置いて打つキックも土につながります。</p></details>
+      <details id="element-help-wind"><summary>≋ 風</summary><p>キックとスネアを交互に刻む。交互演奏に加え、スネアの割合、細かい刻み、跳ねるグルーヴも関係します。</p></details>
+      <details id="element-help-fire"><summary>▲ 火</summary><p>後半に向かって音を増やす。短い連打や密度の集中も火につながります。</p></details>
+      <details id="element-help-lightning"><summary>ϟ 雷</summary><p>裏拍やシンコペーションを使う。間隔の変化や再現された揺れも雷につながります。</p></details>
+    </dialog>
+    <script src="rhythm.js?v=8"></script>
     <script src="quantize.js"></script>
-    <script src="groove.js"></script>
-    <script src="feedback.js?v=2"></script>
-    <script src="feedback-ui.js"></script>
+    <script src="groove.js?v=1"></script>
+    <script src="feedback.js?v=4"></script>
+    <script src="element-meter.js?v=2"></script>
+    <script src="feedback-ui.js?v=3"></script>
     <script src="grid-effects.js?v=2"></script>
-    <script src="ensemble.js"></script>
-    <script src="performance-combat.js?v=2"></script>
+    <script src="ensemble.js?v=2"></script>
+    <script src="pitch-combat.js?v=3"></script>
+    <script src="performance-combat.js?v=4"></script>
     <script src="assets/drum-samples.js"></script>
     <script src="drum-audio.js"></script>
     <script src="bass-audio.js"></script>
     <script src="synth.js?v=3"></script>
-    <script src="synth-audio.js?v=3"></script>
-    <script src="sequence-history.js?v=2"></script>
+    <script src="synth-audio.js?v=4"></script>
+    <script src="sequence-history.js?v=5"></script>
     <script src="grid-hazards.js"></script>
-    <script src="evaluation-debug.js"></script>
-    <script src="battle-waveform.js"></script>
+    <script src="evaluation-debug.js?v=5"></script>
+    <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
-    <script src="enemy-music.js?v=3"></script>
-    <script src="game.js?v=17"></script>
-    <script src="synth-ui.js?v=4"></script>
-    <script src="history-ui.js?v=3"></script>
-    <script src="evaluation-debug-ui.js"></script>
-    <script src="ui.js?v=2"></script>
+    <script src="enemy-music.js?v=7"></script>
+    <script src="performance-review.js?v=3"></script>
+    <script src="feedback-audio.js?v=1"></script>
+    <script src="game.js?v=30"></script>
+    <script src="synth-ui.js?v=5"></script>
+    <script src="history-ui.js?v=5"></script>
+    <script src="evaluation-debug-ui.js?v=2"></script>
+    <script src="ui.js?v=5"></script>
+    <script src="pitch-ui.js?v=2"></script>
+    <script src="experience-ui.js?v=2"></script>
+    <script src="element-meter-ui.js?v=2"></script>
+    <script src="title-screen.js?v=2"></script>
+    <link rel="stylesheet" href="title-screen.css?v=1">
   </body>
 </html>

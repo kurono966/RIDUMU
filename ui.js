@@ -22,19 +22,44 @@
   const upcoming=upcomingInputTrack();
   if(upcoming)el('nextAction').textContent='次の '+upcoming.voice.toUpperCase()+' も先行入力できます';
   if(autoHat&&state==='ready')el('nextAction').textContent='HATは自動 · '+model.instruction;
+  if(root.ElementMeterUI?.instruction&&!upcoming)el('nextAction').textContent=root.ElementMeterUI.instruction+(continuousRunning?' / Escで停止':'');
   document.querySelector('#partSteps [data-part=hat]').textContent=autoHat?'1 HAT · AUTO':'1 HAT';
   document.querySelectorAll('#partSteps li').forEach(node=>{if(node.dataset.part===model.step)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');});
   analysis.dataset.panel=el('result').dataset.panel||'summary';
   const label=el('damageLabel').textContent,prepared=label.includes('READY');el('damage').hidden=prepared;el('preparedLabel').hidden=!prepared;el('resultMetricLabel').textContent=prepared?'次のパートへ':label.includes('SHIELD')?'シールド':'ダメージ';
-  el('resultCause').textContent=el('factors').querySelector('li')?.textContent||'';el('resultFeedback').textContent=el('reaction').textContent.split(/(?<=[。！])/)[0]||'';
+  const advice=root.ExperienceUI?.advice;
+  el('resultCause').textContent=el('factors').querySelector('li')?.textContent||'';el('resultFeedback').textContent=advice||el('reaction').textContent||'';el('resultFeedback').title=el('resultFeedback').textContent;
+  el('openResultDetails').textContent=advice?'アドバイス・内訳':'解析・内訳を見る';
   el('openPlaySettings').disabled=['recording','countin','attack','enemyAttack'].includes(state);
  }
  api.refresh=refresh;
  function open(dialog){if(typeof releaseAllInputs==='function')releaseAllInputs();dialog.showModal();}
+ const fullscreenButton=el('toggleFullscreen'),fullscreenHelp=el('fullscreenHelp');
+ function updateFullscreen(){
+  const active=!!document.fullscreenElement;
+  fullscreenButton.textContent=active?'フルスクリーンを終了':'フルスクリーンにする';
+  fullscreenButton.setAttribute('aria-pressed',String(active));
+  fullscreenButton.disabled=!active&&typeof document.documentElement.requestFullscreen!=='function';
+  fullscreenHelp.textContent=fullscreenButton.disabled?'このブラウザでは全画面表示に対応していません。':active?'全画面表示中です。このボタンまたはEscキーで終了できます。':'ブラウザの表示領域を広く使います。Escキーでも終了できます。';
+ }
+ fullscreenButton.addEventListener('click',async()=>{
+  try{
+   if(document.fullscreenElement)await document.exitFullscreen();
+   else if(typeof document.documentElement.requestFullscreen==='function')await document.documentElement.requestFullscreen();
+   else return;
+   if(settings.open)settings.close();
+  }catch(error){
+   fullscreenHelp.textContent='フルスクリーンに切り替えられませんでした。ブラウザの設定や対応状況を確認してください。';
+   return;
+  }
+  updateFullscreen();
+ });
+ document.addEventListener('fullscreenchange',updateFullscreen);
+ updateFullscreen();
  el('openMenu').onclick=el('openPlaySettings').onclick=()=>open(settings);el('closePlaySettings').onclick=()=>settings.close();el('openResultDetails').onclick=()=>open(analysis);el('closeResultDetails').onclick=()=>analysis.close();
  const replay=document.createElement('button');replay.type='button';replay.className='small';replay.id='analysisReplay';replay.textContent='▶ 演奏を再生';replay.onclick=()=>el('replay').click();analysis.querySelector('.analysis-context').prepend(replay);
  for(const [trigger,dialog,parent] of [['openSynth','synthDialog',settings],['pitchSetup','pitchDialog',settings],['openHistory','historyDialog',settings],['openCodex','codexDialog',settings],['openDebug','debugDialog',settings],['damageLabel','damageDialog',analysis]]){
-  el(trigger).addEventListener('click',()=>{parent.close();},{capture:true});el(dialog).addEventListener('close',()=>el(parent===settings?'openPlaySettings':'openResultDetails').focus());
+  el(trigger).addEventListener('click',()=>{if(parent.open)parent.close();});el(dialog).addEventListener('close',()=>el(parent===settings?'openPlaySettings':'openResultDetails').focus());
  }
  function effects(show){el('effectsPanel').hidden=!show;el('toggleEffects').setAttribute('aria-expanded',String(show));if(!show)resetFilterPad();try{localStorage.setItem('ridumu-effects-open',String(show));}catch{}}
  el('toggleEffects').onclick=()=>effects(el('effectsPanel').hidden);el('closeEffects').onclick=()=>{effects(false);el('toggleEffects').focus();};el('restorePads').onclick=()=>setPadsVisible(true);

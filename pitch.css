@@ -1,0 +1,13 @@
+.timeline .melody-trend{position:absolute;right:5px;top:1px;max-width:calc(100% - 30px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;line-height:12px;color:#eff1e9;pointer-events:none;background:#10160fe8}
+.timeline.pitch-active .lane{display:none}
+#pitchAnalysis{border:1px solid #3f4939;border-radius:8px;padding:10px;margin:12px 0}
+#pitchAnalysis summary{cursor:pointer;font-weight:bold;color:#d4f77d}
+#pitchDetails section{margin:12px 0}#pitchDetails h4{margin:8px 0}
+#pitchDetails svg{width:100%;display:block;background:#10160f;border-radius:5px;max-height:150px}
+.pitch-cause{display:block;text-align:left;color:#e9eddf;background:#252d22;border:1px solid #46513e;border-radius:5px;padding:9px;margin:5px 0;width:100%;font-size:13px}
+.pitch-cause:hover,.pitch-cause:focus-visible{border-color:#d4f77d}
+#pitchDetails .pitch-highlight{stroke:#fff;stroke-width:4;fill:#fff}
+#game .result-content:has(.pitch-outcome:not([hidden])){position:relative;padding-bottom:17px}
+#game .result .pitch-outcome{position:absolute;left:0;bottom:0;right:0;margin:0;font-size:12px;line-height:1.3;color:#d4f77d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#game .result-content>div:first-child{min-width:0}
+@media(max-width:740px),(max-height:500px){#game .result .pitch-outcome{font-size:11px}}

@@ -1,0 +1,1714 @@
+TAP version 13
+# Subtest: straight subdivisions never turn into expressive timing at Hat midpoints
+ok 1 - straight subdivisions never turn into expressive timing at Hat midpoints
+  ---
+  duration_ms: 63.7473
+  type: 'test'
+  ...
+# Subtest: swung eighths remain intentional while subdivision aliasing is removed
+ok 2 - swung eighths remain intentional while subdivision aliasing is removed
+  ---
+  duration_ms: 1.4088
+  type: 'test'
+  ...
+# Subtest: correlated groove descriptions share one enemy affinity reward and explanation
+ok 3 - correlated groove descriptions share one enemy affinity reward and explanation
+  ---
+  duration_ms: 1.3191
+  type: 'test'
+  ...
+# Subtest: equal-length Bass phrases gain defense by preparing at the announced strike
+ok 4 - equal-length Bass phrases gain defense by preparing at the announced strike
+  ---
+  duration_ms: 2.9105
+  type: 'test'
+  ...
+# Subtest: a small motif change has a meaningful niche against the conductor
+ok 5 - a small motif change has a meaningful niche against the conductor
+  ---
+  duration_ms: 1.0147
+  type: 'test'
+  ...
+# Subtest: controlled acceleration earns consistency without overtaking a steady beat
+ok 6 - controlled acceleration earns consistency without overtaking a steady beat
+  ---
+  duration_ms: 1.0706
+  type: 'test'
+  ...
+# Subtest: new opening actions and bounded defense agree with real game execution
+ok 7 - new opening actions and bounded defense agree with real game execution
+  ---
+  duration_ms: 77.8251
+  type: 'test'
+  ...
+# Subtest: bass shares a dedicated filtered saturated compressor bus before the existing master
+ok 8 - bass shares a dedicated filtered saturated compressor bus before the existing master
+  ---
+  duration_ms: 7.4539
+  type: 'test'
+  ...
+# Subtest: bass retains its round fundamental and adds quiet pitch-aligned harmonics for small speakers
+ok 9 - bass retains its round fundamental and adds quiet pitch-aligned harmonics for small speakers
+  ---
+  duration_ms: 3.3853
+  type: 'test'
+  ...
+# Subtest: a tap is short while a held note sustains until release and cleans up its voice
+ok 10 - a tap is short while a held note sustains until release and cleans up its voice
+  ---
+  duration_ms: 1.3676
+  type: 'test'
+  ...
+# Subtest: Kick only applies a shallow short dip to the bass bus at the scheduled hit
+ok 11 - Kick only applies a shallow short dip to the bass bus at the scheduled hit
+  ---
+  duration_ms: 0.7392
+  type: 'test'
+  ...
+# Subtest: native cancelAndHold retains the sustain until the recorded gate ends
+ok 12 - native cancelAndHold retains the sustain until the recorded gate ends
+  ---
+  duration_ms: 0.621
+  type: 'test'
+  ...
+# Subtest: analyser is the only master output route and cleanup restores direct audio once
+ok 13 - analyser is the only master output route and cleanup restores direct audio once
+  ---
+  duration_ms: 4.9543
+  type: 'test'
+  ...
+# Subtest: visualization reads the actual audio buffer without changing its samples
+ok 14 - visualization reads the actual audio buffer without changing its samples
+  ---
+  duration_ms: 1.5331
+  type: 'test'
+  ...
+# Subtest: note effects follow the audio clock and element emphasis expires
+ok 15 - note effects follow the audio clock and element emphasis expires
+  ---
+  duration_ms: 2.3179
+  type: 'test'
+  ...
+# Subtest: hidden documents pause and resume a single animation loop
+ok 16 - hidden documents pause and resume a single animation loop
+  ---
+  duration_ms: 0.9606
+  type: 'test'
+  ...
+# Subtest: silence has no artificial waveform while shields can emit a short pulse
+ok 17 - silence has no artificial waveform while shields can emit a short pulse
+  ---
+  duration_ms: 1.4558
+  type: 'test'
+  ...
+# Subtest: waveform metrics are finite for silence and use real amplitude
+ok 18 - waveform metrics are finite for silence and use real amplitude
+  ---
+  duration_ms: 0.349
+  type: 'test'
+  ...
+# Subtest: the standard renderer preserves audio samples with overlapping combat effects
+ok 19 - the standard renderer preserves audio samples with overlapping combat effects
+  ---
+  duration_ms: 1.7698
+  type: 'test'
+  ...
+# Subtest: a simple stable beat wins some matchups while development wins others
+ok 20 - a simple stable beat wins some matchups while development wins others
+  ---
+  duration_ms: 6.768
+  type: 'test'
+  ...
+# Subtest: complete attacks do not let straight alternating spam beat every enemy
+ok 21 - complete attacks do not let straight alternating spam beat every enemy
+  ---
+  duration_ms: 86.62
+  type: 'test'
+  ...
+# Subtest: structure recognizes motif variation, dialogue, intentional rests and tension release without requiring density
+ok 22 - structure recognizes motif variation, dialogue, intentional rests and tension release without requiring density
+  ---
+  duration_ms: 2.7434
+  type: 'test'
+  ...
+# Subtest: nonweak earth acceleration can prevent healing while weak lightning cannot
+ok 23 - nonweak earth acceleration can prevent healing while weak lightning cannot
+  ---
+  duration_ms: 1.1191
+  type: 'test'
+  ...
+# Subtest: actions reward different performances and interfere with state rather than only damage
+ok 24 - actions reward different performances and interfere with state rather than only damage
+  ---
+  duration_ms: 2.2651
+  type: 'test'
+  ...
+# Subtest: Bass timing, held low notes and space defend without counting presses
+ok 25 - Bass timing, held low notes and space defend without counting presses
+  ---
+  duration_ms: 1.6868
+  type: 'test'
+  ...
+# Subtest: Lead placements and two-note motions choose support without a free fixed bonus
+ok 26 - Lead placements and two-note motions choose support without a free fixed bonus
+  ---
+  duration_ms: 0.4874
+  type: 'test'
+  ...
+# Subtest: all melodic modes support a complete deterministic battle and preserve timbre-independent tactics
+ok 27 - all melodic modes support a complete deterministic battle and preserve timbre-independent tactics
+  ---
+  duration_ms: 23.4957
+  type: 'test'
+  ...
+# Subtest: dense duplicate input never multiplies shields, support, damage or action suppression
+ok 28 - dense duplicate input never multiplies shields, support, damage or action suppression
+  ---
+  duration_ms: 53.0773
+  type: 'test'
+  ...
+# Subtest: embedded drum samples are byte-for-byte copies of the original WAV assets
+ok 29 - embedded drum samples are byte-for-byte copies of the original WAV assets
+  ---
+  duration_ms: 17.8073
+  type: 'test'
+  ...
+# Subtest: samples decode once and rapid hits keep separate sources with exact scheduled times
+ok 30 - samples decode once and rapid hits keep separate sources with exact scheduled times
+  ---
+  duration_ms: 103.8418
+  type: 'test'
+  ...
+# Subtest: a decoder error is captured without an unhandled rejected preload
+ok 31 - a decoder error is captured without an unhandled rejected preload
+  ---
+  duration_ms: 174.4676
+  type: 'test'
+  ...
+# Subtest: meter reuses combat scores for every prefix, quantization and groove
+ok 32 - meter reuses combat scores for every prefix, quantization and groove
+  ---
+  duration_ms: 326.4923
+  type: 'test'
+  ...
+# Subtest: silence never claims an element or shows phantom scores
+ok 33 - silence never claims an element or shows phantom scores
+  ---
+  duration_ms: 0.687
+  type: 'test'
+  ...
+# Subtest: meter handles old notes, anticipated inputs and simultaneous notes deterministically
+ok 34 - meter handles old notes, anticipated inputs and simultaneous notes deterministically
+  ---
+  duration_ms: 1.0425
+  type: 'test'
+  ...
+# Subtest: close competition is a display threshold only
+ok 35 - close competition is a display threshold only
+  ---
+  duration_ms: 40.8073
+  type: 'test'
+  ...
+# Subtest: a groove-driven leader change uses the final engine element and explains the groove
+ok 36 - a groove-driven leader change uses the final engine element and explains the groove
+  ---
+  duration_ms: 1.0068
+  type: 'test'
+  ...
+# Subtest: each enemy has a distinct two-bar progression in the player key
+ok 37 - each enemy has a distinct two-bar progression in the player key
+  ---
+  duration_ms: 2.2873
+  type: 'test'
+  ...
+# Subtest: all enemy progressions loop on the same eight-beat boundary as a recorded part
+ok 38 - all enemy progressions loop on the same eight-beat boundary as a recorded part
+  ---
+  duration_ms: 14.7671
+  type: 'test'
+  ...
+# Subtest: finite playback never schedules the first chord of the next loop, including delayed stop and unmute
+ok 39 - finite playback never schedules the first chord of the next loop, including delayed stop and unmute
+  ---
+  duration_ms: 0.6881
+  type: 'test'
+  ...
+# Subtest: enemy timbres differ in waveform, envelope or harmonic layer rather than only filter brightness
+ok 40 - enemy timbres differ in waveform, envelope or harmonic layer rather than only filter brightness
+  ---
+  duration_ms: 0.3105
+  type: 'test'
+  ...
+# Subtest: chords are polyphonic and scheduled from the audio clock at the enemy BPM
+ok 41 - chords are polyphonic and scheduled from the audio clock at the enemy BPM
+  ---
+  duration_ms: 0.3635
+  type: 'test'
+  ...
+# Subtest: aligning a future input downbeat works even between the old chord boundaries
+ok 42 - aligning a future input downbeat works even between the old chord boundaries
+  ---
+  duration_ms: 0.399
+  type: 'test'
+  ...
+# Subtest: mute prevents new voices and unmute resumes the current chord without resetting the clock
+ok 43 - mute prevents new voices and unmute resumes the current chord without resetting the clock
+  ---
+  duration_ms: 0.3933
+  type: 'test'
+  ...
+# Subtest: changing enemy replaces the progression and timer; stop and suspended contexts schedule nothing
+ok 44 - changing enemy replaces the progression and timer; stop and suspended contexts schedule nothing
+  ---
+  duration_ms: 0.3127
+  type: 'test'
+  ...
+# Subtest: a delayed timer skips stale chords instead of scheduling a backlog
+ok 45 - a delayed timer skips stale chords instead of scheduling a backlog
+  ---
+  duration_ms: 0.5419
+  type: 'test'
+  ...
+# Subtest: a saved progression and tone play independently of the current enemy preset
+ok 46 - a saved progression and tone play independently of the current enemy preset
+  ---
+  duration_ms: 1.4117
+  type: 'test'
+  ...
+# Subtest: GROOVE LOCK accepts consistent natural microtiming between Kick and Bass
+ok 47 - GROOVE LOCK accepts consistent natural microtiming between Kick and Bass
+  ---
+  duration_ms: 5.3256
+  type: 'test'
+  ...
+# Subtest: counterfactual omission preserves the other selected synergy weight instead of promoting it
+ok 48 - counterfactual omission preserves the other selected synergy weight instead of promoting it
+  ---
+  duration_ms: 6.9656
+  type: 'test'
+  ...
+# Subtest: RESPONSE rewards Lead answering Snare rather than simultaneous notes
+ok 49 - RESPONSE rewards Lead answering Snare rather than simultaneous notes
+  ---
+  duration_ms: 0.869
+  type: 'test'
+  ...
+# Subtest: INTERLOCK rewards sparse gap filling, and not filling every grid cell
+ok 50 - INTERLOCK rewards sparse gap filling, and not filling every grid cell
+  ---
+  duration_ms: 1.0634
+  type: 'test'
+  ...
+# Subtest: unrelated separated phrases and solo parts do not invent synergy
+ok 51 - unrelated separated phrases and solo parts do not invent synergy
+  ---
+  duration_ms: 0.7172
+  type: 'test'
+  ...
+# Subtest: UNISON rewards limited important accents, not arbitrary simultaneous slots
+ok 52 - UNISON rewards limited important accents, not arbitrary simultaneous slots
+  ---
+  duration_ms: 0.4519
+  type: 'test'
+  ...
+# Subtest: CALL & RESPONSE compares delayed nonuniform rhythm shapes, allowing small timing changes
+ok 53 - CALL & RESPONSE compares delayed nonuniform rhythm shapes, allowing small timing changes
+  ---
+  duration_ms: 0.5898
+  type: 'test'
+  ...
+# Subtest: duplicate input spam cannot stack bonuses and only two synergies contribute
+ok 54 - duplicate input spam cannot stack bonuses and only two synergies contribute
+  ---
+  duration_ms: 2.0328
+  type: 'test'
+  ...
+# Subtest: playback quantization cannot fabricate a raw-timing lock
+ok 55 - playback quantization cannot fabricate a raw-timing lock
+  ---
+  duration_ms: 0.7799
+  type: 'test'
+  ...
+# Subtest: synergy modifies attack and support without replacing roles or mutating source values
+ok 56 - synergy modifies attack and support without replacing roles or mutating source values
+  ---
+  duration_ms: 1.0761
+  type: 'test'
+  ...
+# Subtest: weaknesses remain valuable while guard admits tactical elemental alternatives
+ok 57 - weaknesses remain valuable while guard admits tactical elemental alternatives
+  ---
+  duration_ms: 10255.5347
+  type: 'test'
+  ...
+# Subtest: automatic charts are deterministic, playable and reproduce their evaluated damage
+ok 58 - automatic charts are deterministic, playable and reproduce their evaluated damage
+  ---
+  duration_ms: 1779.9663
+  type: 'test'
+  ...
+# Subtest: development selector provides all seven well-formed preset options
+ok 59 - development selector provides all seven well-formed preset options
+  ---
+  duration_ms: 0.7352
+  type: 'test'
+  ...
+# Subtest: development evaluation uses quantized positions in all raw-based analyzers
+ok 60 - development evaluation uses quantized positions in all raw-based analyzers
+  ---
+  duration_ms: 2.7416
+  type: 'test'
+  ...
+# Subtest: normal comparison exactly reproduces the existing attack evaluation pipeline
+ok 61 - normal comparison exactly reproduces the existing attack evaluation pipeline
+  ---
+  duration_ms: 1.287
+  type: 'test'
+  ...
+# Subtest: merged quantized notes are evaluated once and original timing provenance stays intact
+ok 62 - merged quantized notes are evaluated once and original timing provenance stays intact
+  ---
+  duration_ms: 0.4398
+  type: 'test'
+  ...
+# Subtest: normal play hides development controls and installs no evaluation hook
+ok 63 - normal play hides development controls and installs no evaluation hook
+  ---
+  duration_ms: 1.2605
+  type: 'test'
+  ...
+# Subtest: debug mode snapshots the recording context and displays a comparison
+ok 64 - debug mode snapshots the recording context and displays a comparison
+  ---
+  duration_ms: 2.7959
+  type: 'test'
+  ...
+# Subtest: audio feedback uses existing approved notes, is bounded by its engine and can be fully disabled
+ok 65 - audio feedback uses existing approved notes, is bounded by its engine and can be fully disabled
+  ---
+  duration_ms: 2.5128
+  type: 'test'
+  ...
+# Subtest: damage details render real calculation and clear after non-attack results
+ok 66 - damage details render real calculation and clear after non-attack results
+  ---
+  duration_ms: 13.6531
+  type: 'test'
+  ...
+# Subtest: weakness is saved exactly once on a damaging hit, with a special notice
+ok 67 - weakness is saved exactly once on a damaging hit, with a special notice
+  ---
+  duration_ms: 3.4047
+  type: 'test'
+  ...
+# Subtest: storage failures retain discoveries for this play session
+ok 68 - storage failures retain discoveries for this play session
+  ---
+  duration_ms: 14.7551
+  type: 'test'
+  ...
+# Subtest: stored discoveries restore and malformed records do not break gameplay
+ok 69 - stored discoveries restore and malformed records do not break gameplay
+  ---
+  duration_ms: 5.0749
+  type: 'test'
+  ...
+# Subtest: discoveries for new enemy kinds survive browser storage reload
+ok 70 - discoveries for new enemy kinds survive browser storage reload
+  ---
+  duration_ms: 2.1221
+  type: 'test'
+  ...
+# Subtest: ensemble feedback renders the reason, applied bonus and marked cells for all parts
+ok 71 - ensemble feedback renders the reason, applied bonus and marked cells for all parts
+  ---
+  duration_ms: 7.2512
+  type: 'test'
+  ...
+# Subtest: ensemble feedback clears stale highlights for the next partial recording
+ok 72 - ensemble feedback clears stale highlights for the next partial recording
+  ---
+  duration_ms: 2.3582
+  type: 'test'
+  ...
+# Subtest: chaotic raw rhythm explains the fixed damage loss in the selected feedback
+ok 73 - chaotic raw rhythm explains the fixed damage loss in the selected feedback
+  ---
+  duration_ms: 12.1023
+  type: 'test'
+  ...
+# Subtest: breakdown exactly sums to damage for every enemy with fixed hit efficiency
+ok 74 - breakdown exactly sums to damage for every enemy with fixed hit efficiency
+  ---
+  duration_ms: 98.7389
+  type: 'test'
+  ...
+# Subtest: fixed efficiency formula reproduces all resolved damages
+ok 75 - fixed efficiency formula reproduces all resolved damages
+  ---
+  duration_ms: 2.0967
+  type: 'test'
+  ...
+# Subtest: heavy kick feedback gives matchup priority and marks the actual charged notes
+ok 76 - heavy kick feedback gives matchup priority and marks the actual charged notes
+  ---
+  duration_ms: 1.1693
+  type: 'test'
+  ...
+# Subtest: late acceleration causes fire and marks only the second half
+ok 77 - late acceleration causes fire and marks only the second half
+  ---
+  duration_ms: 0.8753
+  type: 'test'
+  ...
+# Subtest: machine lightning explains its rhythm and yields offbeat markers
+ok 78 - machine lightning explains its rhythm and yields offbeat markers
+  ---
+  duration_ms: 0.7367
+  type: 'test'
+  ...
+# Subtest: discovery is earned on hit, idempotent, and separate for each enemy
+ok 79 - discovery is earned on hit, idempotent, and separate for each enemy
+  ---
+  duration_ms: 1.5729
+  type: 'test'
+  ...
+# Subtest: gentle hints explain light hits on rock and reduced heavy attack efficiency on flyers
+ok 80 - gentle hints explain light hits on rock and reduced heavy attack efficiency on flyers
+  ---
+  duration_ms: 1.6174
+  type: 'test'
+  ...
+# Subtest: poison damages the occupied raw sixteenth slot and nearby danger range, not safe slots
+ok 81 - poison damages the occupied raw sixteenth slot and nearby danger range, not safe slots
+  ---
+  duration_ms: 4.6089
+  type: 'test'
+  ...
+# Subtest: every manual input is evaluated independently, even at the same time
+ok 82 - every manual input is evaluated independently, even at the same time
+  ---
+  duration_ms: 0.6231
+  type: 'test'
+  ...
+# Subtest: future contamination lasts exactly its specified input turns
+ok 83 - future contamination lasts exactly its specified input turns
+  ---
+  duration_ms: 2.159
+  type: 'test'
+  ...
+# Subtest: new and existing contamination coexist and expire independently
+ok 84 - new and existing contamination coexist and expire independently
+  ---
+  duration_ms: 0.4564
+  type: 'test'
+  ...
+# Subtest: overlapping poison uses the strongest damage once per input, without hiding either hazard
+ok 85 - overlapping poison uses the strongest damage once per input, without hiding either hazard
+  ---
+  duration_ms: 0.385
+  type: 'test'
+  ...
+# Subtest: early downbeats use raw distance without wrapping into the last cell
+ok 86 - early downbeats use raw distance without wrapping into the last cell
+  ---
+  duration_ms: 0.4509
+  type: 'test'
+  ...
+# Subtest: reset clears pending and active contamination and starts a fresh battle clock
+ok 87 - reset clears pending and active contamination and starts a fresh battle clock
+  ---
+  duration_ms: 0.5865
+  type: 'test'
+  ...
+# Subtest: registered future interventions receive musical context without implementing them by default
+ok 88 - registered future interventions receive musical context without implementing them by default
+  ---
+  duration_ms: 0.5449
+  type: 'test'
+  ...
+# Subtest: hazard snapshots cannot mutate live state and invalid configuration is rejected
+ok 89 - hazard snapshots cannot mutate live state and invalid configuration is rejected
+  ---
+  duration_ms: 1.1163
+  type: 'test'
+  ...
+# Subtest: future handlers receive isolated per-hazard parameters and original note context
+ok 90 - future handlers receive isolated per-hazard parameters and original note context
+  ---
+  duration_ms: 0.8664
+  type: 'test'
+  ...
+# Subtest: enemy tempo determines two-bar duration and the analysis grid
+ok 91 - enemy tempo determines two-bar duration and the analysis grid
+  ---
+  duration_ms: 6.8444
+  type: 'test'
+  ...
+# Subtest: stable Snare delay and leading Kick create pocket without random instability
+ok 92 - stable Snare delay and leading Kick create pocket without random instability
+  ---
+  duration_ms: 5.6563
+  type: 'test'
+  ...
+# Subtest: a consistent offset is intentional, not poor timing
+ok 93 - a consistent offset is intentional, not poor timing
+  ---
+  duration_ms: 29.4713
+  type: 'test'
+  ...
+# Subtest: repeating unequal offsets distinguish drunk from random timing
+ok 94 - repeating unequal offsets distinguish drunk from random timing
+  ---
+  duration_ms: 1.259
+  type: 'test'
+  ...
+# Subtest: swing is recognized from alternating long and short eighths
+ok 95 - swing is recognized from alternating long and short eighths
+  ---
+  duration_ms: 1.3758
+  type: 'test'
+  ...
+# Subtest: tight, laid-back, and pushed grooves have different enemy affinities
+ok 96 - tight, laid-back, and pushed grooves have different enemy affinities
+  ---
+  duration_ms: 0.4564
+  type: 'test'
+  ...
+# Subtest: groove modifies combat while breakdown still sums to actual damage
+ok 97 - groove modifies combat while breakdown still sums to actual damage
+  ---
+  duration_ms: 3.639
+  type: 'test'
+  ...
+# Subtest: empty or insufficient Hat input gives no invented groove and no NaN
+ok 98 - empty or insufficient Hat input gives no invented groove and no NaN
+  ---
+  duration_ms: 0.6078
+  type: 'test'
+  ...
+# Subtest: random offsets relative to steady Hat are not rewarded as reproducible drunk timing
+ok 99 - random offsets relative to steady Hat are not rewarded as reproducible drunk timing
+  ---
+  duration_ms: 1.1706
+  type: 'test'
+  ...
+# Subtest: consistent leading Snare is independent of pushed Kick, drunk and instability at all enemy tempos
+ok 100 - consistent leading Snare is independent of pushed Kick, drunk and instability at all enemy tempos
+  ---
+  duration_ms: 1.4533
+  type: 'test'
+  ...
+# Subtest: raw input governs groove even when playback copies were quantized
+ok 101 - raw input governs groove even when playback copies were quantized
+  ---
+  duration_ms: 4.3513
+  type: 'test'
+  ...
+# Subtest: random or insufficient Snare anticipation is not rewarded as a stable leading Snare
+ok 102 - random or insufficient Snare anticipation is not rewarded as a stable leading Snare
+  ---
+  duration_ms: 0.7801
+  type: 'test'
+  ...
+# Subtest: leading Snare has real matching combat affinity, feedback and note-specific cause marks
+ok 103 - leading Snare has real matching combat affinity, feedback and note-specific cause marks
+  ---
+  duration_ms: 2.7437
+  type: 'test'
+  ...
+# Subtest: new enemy elemental and groove affinities match feedback and real combat
+ok 104 - new enemy elemental and groove affinities match feedback and real combat
+  ---
+  duration_ms: 2.0441
+  type: 'test'
+  ...
+# Subtest: history capture lists snapshots and exported MIDI/JSON can be saved
+ok 105 - history capture lists snapshots and exported MIDI/JSON can be saved
+  ---
+  duration_ms: 46.177
+  type: 'test'
+  ...
+# Subtest: history playback preserves held notes and historical chord pitches without affecting combat
+ok 106 - history playback preserves held notes and historical chord pitches without affecting combat
+  ---
+  duration_ms: 9.7272
+  type: 'test'
+  ...
+# Subtest: history replay starts its saved accompaniment on the grid downbeat and stops it with playback
+ok 107 - history replay starts its saved accompaniment on the grid downbeat and stops it with playback
+  ---
+  duration_ms: 9.6352
+  type: 'test'
+  ...
+# Subtest: JSON import restores a sequence and rejects unrelated or oversized files
+ok 108 - JSON import restores a sequence and rejects unrelated or oversized files
+  ---
+  duration_ms: 3.0218
+  type: 'test'
+  ...
+# Subtest: an invalid optional history snapshot cannot interrupt gameplay
+ok 109 - an invalid optional history snapshot cannot interrupt gameplay
+  ---
+  duration_ms: 3.8962
+  type: 'test'
+  ...
+# Subtest: automatic damage input is restricted to debug mode and Drums ready state
+ok 110 - automatic damage input is restricted to debug mode and Drums ready state
+  ---
+  duration_ms: 48.5424
+  type: 'test'
+  ...
+# Subtest: chord accompaniment is restricted to the live input window and never starts in idle or combat
+ok 111 - chord accompaniment is restricted to the live input window and never starts in idle or combat
+  ---
+  duration_ms: 7.2048
+  type: 'test'
+  ...
+# Subtest: continuous input keeps four opening rimshots and eight Hat guide beats without a gap before Drums
+ok 112 - continuous input keeps four opening rimshots and eight Hat guide beats without a gap before Drums
+  ---
+  duration_ms: 8.1801
+  type: 'test'
+  ...
+# Subtest: early Drums input is retained in the next track while final Hat hits stay in Hat
+ok 113 - early Drums input is retained in the next track while final Hat hits stay in Hat
+  ---
+  duration_ms: 6.2483
+  type: 'test'
+  ...
+# Subtest: early Bass keeps its own pitch, snapshot and held duration across the boundary without modifying Drums
+ok 114 - early Bass keeps its own pitch, snapshot and held duration across the boundary without modifying Drums
+  ---
+  duration_ms: 14.8162
+  type: 'test'
+  ...
+# Subtest: early Lead is isolated from Bass and preserves multiple quick notes and destination pitches
+ok 115 - early Lead is isolated from Bass and preserves multiple quick notes and destination pitches
+  ---
+  duration_ms: 9.8116
+  type: 'test'
+  ...
+# Subtest: the anticipation window scales down to half a beat at fast tempos
+ok 116 - the anticipation window scales down to half a beat at fast tempos
+  ---
+  duration_ms: 4.2763
+  type: 'test'
+  ...
+# Subtest: anticipated notes apply destination-turn hazards once when adopted
+ok 117 - anticipated notes apply destination-turn hazards once when adopted
+  ---
+  duration_ms: 10.6511
+  type: 'test'
+  ...
+# Subtest: outside the early window and before combat inputs still belong to the current track; stopping discards pending input
+ok 118 - outside the early window and before combat inputs still belong to the current track; stopping discards pending input
+  ---
+  duration_ms: 6.6619
+  type: 'test'
+  ...
+# Subtest: auto Hat generates sixteen eighth notes and skips Hat entry in normal and continuous modes
+ok 119 - auto Hat generates sixteen eighth notes and skips Hat entry in normal and continuous modes
+  ---
+  duration_ms: 19.8069
+  type: 'test'
+  ...
+# Subtest: auto Hat refreshes with each cycle tempo and leaves an existing manually recorded Hat intact
+ok 120 - auto Hat refreshes with each cycle tempo and leaves an existing manually recorded Hat intact
+  ---
+  duration_ms: 3.919
+  type: 'test'
+  ...
+# Subtest: continuous handoff retains backing downbeats and accepts a new part input before the timer fires
+ok 121 - continuous handoff retains backing downbeats and accepts a new part input before the timer fires
+  ---
+  duration_ms: 7.1051
+  type: 'test'
+  ...
+# Subtest: automatic damage chart fills three parts and stops after one combat
+ok 122 - automatic damage chart fills three parts and stops after one combat
+  ---
+  duration_ms: 29.6917
+  type: 'test'
+  ...
+# Subtest: continuous cycle records each part once, resolves combat once and starts the next Hat automatically
+ok 123 - continuous cycle records each part once, resolves combat once and starts the next Hat automatically
+  ---
+  duration_ms: 11.7517
+  type: 'test'
+  ...
+# Subtest: stopping continuous input cancels stale handoffs and leaves earlier completed parts intact
+ok 124 - stopping continuous input cancels stale handoffs and leaves earlier completed parts intact
+  ---
+  duration_ms: 7.4263
+  type: 'test'
+  ...
+# Subtest: stop during combat prevents the next recording without interrupting combat resolution
+ok 125 - stop during combat prevents the next recording without interrupting combat resolution
+  ---
+  duration_ms: 14.3224
+  type: 'test'
+  ...
+# Subtest: restarting stopped Drums keeps the already recorded Hat instead of resetting the cycle
+ok 126 - restarting stopped Drums keeps the already recorded Hat instead of resetting the cycle
+  ---
+  duration_ms: 5.162
+  type: 'test'
+  ...
+# Subtest: audio keeps the existing compressor and inserts the waveform analyser path once
+ok 127 - audio keeps the existing compressor and inserts the waveform analyser path once
+  ---
+  duration_ms: 4.2639
+  type: 'test'
+  ...
+# Subtest: anticipated downbeat is recorded during count-in with raw timing preserved
+ok 128 - anticipated downbeat is recorded during count-in with raw timing preserved
+  ---
+  duration_ms: 4.5768
+  type: 'test'
+  ...
+# Subtest: first beat is accepted even before the UI timer changes state
+ok 129 - first beat is accepted even before the UI timer changes state
+  ---
+  duration_ms: 4.0607
+  type: 'test'
+  ...
+# Subtest: final count-in rimshot and the rest of that beat are accepted
+ok 130 - final count-in rimshot and the rest of that beat are accepted
+  ---
+  duration_ms: 4.8342
+  type: 'test'
+  ...
+# Subtest: earlier count-in beats and inputs at the end are excluded
+ok 131 - earlier count-in beats and inputs at the end are excluded
+  ---
+  duration_ms: 4.0875
+  type: 'test'
+  ...
+# Subtest: rapid opening notes are all retained and preserve their spacing
+ok 132 - rapid opening notes are all retained and preserve their spacing
+  ---
+  duration_ms: 3.9823
+  type: 'test'
+  ...
+# Subtest: enemy HP changes on replayed note times and playback waits for the full phrase
+ok 133 - enemy HP changes on replayed note times and playback waits for the full phrase
+  ---
+  duration_ms: 6.0459
+  type: 'test'
+  ...
+# Subtest: damage replay plays chords on its musical downbeat including early-input pre-roll, then stops them
+ok 134 - damage replay plays chords on its musical downbeat including early-input pre-roll, then stops them
+  ---
+  duration_ms: 5.9903
+  type: 'test'
+  ...
+# Subtest: instruments cycle every three turns
+ok 135 - instruments cycle every three turns
+  ---
+  duration_ms: 4.8546
+  type: 'test'
+  ...
+# Subtest: parts accumulate, update the same instrument, and snapshot the last mix
+ok 136 - parts accumulate, update the same instrument, and snapshot the last mix
+  ---
+  duration_ms: 4.1419
+  type: 'test'
+  ...
+# Subtest: returning to drums resets every saved part before accompaniment starts
+ok 137 - returning to drums resets every saved part before accompaniment starts
+  ---
+  duration_ms: 4.6151
+  type: 'test'
+  ...
+# Subtest: attack replay plays recorded hats at raw times without automatic hats
+ok 138 - attack replay plays recorded hats at raw times without automatic hats
+  ---
+  duration_ms: 4.5554
+  type: 'test'
+  ...
+# Subtest: space starts only when ready and blocks scrolling and repeat
+ok 139 - space starts only when ready and blocks scrolling and repeat
+  ---
+  duration_ms: 3.5611
+  type: 'test'
+  ...
+# Subtest: bass and lead synthesize separate pitches at the requested audio time
+ok 140 - bass and lead synthesize separate pitches at the requested audio time
+  ---
+  duration_ms: 5.857
+  type: 'test'
+  ...
+# Subtest: Hat phase accepts only Hat, then replays its raw offsets in the parts phase
+ok 141 - Hat phase accepts only Hat, then replays its raw offsets in the parts phase
+  ---
+  duration_ms: 5.3475
+  type: 'test'
+  ...
+# Subtest: hat space input works without restarting the turn or invoking the browser default
+ok 142 - hat space input works without restarting the turn or invoking the browser default
+  ---
+  duration_ms: 6.1996
+  type: 'test'
+  ...
+# Subtest: Hat is recorded once, reused for bass and lead, then reset at the next drum turn
+ok 143 - Hat is recorded once, reused for bass and lead, then reset at the next drum turn
+  ---
+  duration_ms: 3.9679
+  type: 'test'
+  ...
+# Subtest: a silent completed Hat phase is reused rather than requesting another Hat recording
+ok 144 - a silent completed Hat phase is reused rather than requesting another Hat recording
+  ---
+  duration_ms: 4.2446
+  type: 'test'
+  ...
+# Subtest: live input is immediate and keeps every raw press regardless of quantize mode
+ok 145 - live input is immediate and keeps every raw press regardless of quantize mode
+  ---
+  duration_ms: 3.8405
+  type: 'test'
+  ...
+# Subtest: closing notes stay raw in storage and receive correction only in the playback copy
+ok 146 - closing notes stay raw in storage and receive correction only in the playback copy
+  ---
+  duration_ms: 4.2056
+  type: 'test'
+  ...
+# Subtest: live recording ends on the phrase boundary without waiting for quantization
+ok 147 - live recording ends on the phrase boundary without waiting for quantization
+  ---
+  duration_ms: 4.4986
+  type: 'test'
+  ...
+# Subtest: the next phase hears quantized Hat while the saved Hat keeps its early input
+ok 148 - the next phase hears quantized Hat while the saved Hat keeps its early input
+  ---
+  duration_ms: 5.4901
+  type: 'test'
+  ...
+# Subtest: attack audio and damage follow the corrected copy while the live recording remains raw
+ok 149 - attack audio and damage follow the corrected copy while the live recording remains raw
+  ---
+  duration_ms: 4.9951
+  type: 'test'
+  ...
+# Subtest: mode changes apply to the next recording and do not retime existing Hat
+ok 150 - mode changes apply to the next recording and do not retime existing Hat
+  ---
+  duration_ms: 4.52
+  type: 'test'
+  ...
+# Subtest: bass holds record raw gate length and release on key up
+ok 151 - bass holds record raw gate length and release on key up
+  ---
+  duration_ms: 3.8036
+  type: 'test'
+  ...
+# Subtest: lead replaces the previous hold and caps the final gate at phrase end
+ok 152 - lead replaces the previous hold and caps the final gate at phrase end
+  ---
+  duration_ms: 4.6298
+  type: 'test'
+  ...
+# Subtest: drums remain one shots and repeat keydown cannot retrigger a held lead
+ok 153 - drums remain one shots and repeat keydown cannot retrigger a held lead
+  ---
+  duration_ms: 4.1535
+  type: 'test'
+  ...
+# Subtest: quantized playback preserves gate length without changing raw recording
+ok 154 - quantized playback preserves gate length without changing raw recording
+  ---
+  duration_ms: 3.7141
+  type: 'test'
+  ...
+# Subtest: sustained synth keeps oscillators running until release
+ok 155 - sustained synth keeps oscillators running until release
+  ---
+  duration_ms: 6.6137
+  type: 'test'
+  ...
+# Subtest: mix playback waits for sustained note tails without adding strikes
+ok 156 - mix playback waits for sustained note tails without adding strikes
+  ---
+  duration_ms: 0.9321
+  type: 'test'
+  ...
+# Subtest: seven-note keyboard records distinct pitches and sustained gates
+ok 157 - seven-note keyboard records distinct pitches and sustained gates
+  ---
+  duration_ms: 3.8511
+  type: 'test'
+  ...
+# Subtest: nine-note mode records ASDFGHJKL with upper C and D, including H and long holds
+ok 158 - nine-note mode records ASDFGHJKL with upper C and D, including H and long holds
+  ---
+  duration_ms: 5.0954
+  type: 'test'
+  ...
+# Subtest: seven-note mode ignores the two added keys and nine mode keeps drums unchanged
+ok 159 - seven-note mode ignores the two added keys and nine mode keeps drums unchanged
+  ---
+  duration_ms: 3.6624
+  type: 'test'
+  ...
+# Subtest: seven-note selection leaves drums and Hat controls intact
+ok 160 - seven-note selection leaves drums and Hat controls intact
+  ---
+  duration_ms: 4.4627
+  type: 'test'
+  ...
+# Subtest: seven pitches survive quantization and mix snapshots including simultaneous notes
+ok 161 - seven pitches survive quantization and mix snapshots including simultaneous notes
+  ---
+  duration_ms: 4.027
+  type: 'test'
+  ...
+# Subtest: seven-note synth uses the selected minor-scale pitch at each octave
+ok 162 - seven-note synth uses the selected minor-scale pitch at each octave
+  ---
+  duration_ms: 4.9171
+  type: 'test'
+  ...
+# Subtest: note mode cannot change during a recording
+ok 163 - note mode cannot change during a recording
+  ---
+  duration_ms: 4.7706
+  type: 'test'
+  ...
+# Subtest: H plays the sixth melody note in parts and Hat in the Hat phase
+ok 164 - H plays the sixth melody note in parts and Hat in the Hat phase
+  ---
+  duration_ms: 7.7219
+  type: 'test'
+  ...
+# Subtest: four-note mode maps ASKL to C Eb G Bb with independent sustained gates
+ok 165 - four-note mode maps ASKL to C Eb G Bb with independent sustained gates
+  ---
+  duration_ms: 4.5088
+  type: 'test'
+  ...
+# Subtest: four-note mode exposes four pads, ignores extra melody keys, and preserves Hat H
+ok 166 - four-note mode exposes four pads, ignores extra melody keys, and preserves Hat H
+  ---
+  duration_ms: 3.3224
+  type: 'test'
+  ...
+# Subtest: pitch settings are independent by voice and mode and are locked while recording
+ok 167 - pitch settings are independent by voice and mode and are locked while recording
+  ---
+  duration_ms: 3.3594
+  type: 'test'
+  ...
+# Subtest: custom pitches sound live, are recorded and remain immutable after settings change
+ok 168 - custom pitches sound live, are recorded and remain immutable after settings change
+  ---
+  duration_ms: 3.3861
+  type: 'test'
+  ...
+# Subtest: two-note mode also records custom absolute pitches
+ok 169 - two-note mode also records custom absolute pitches
+  ---
+  duration_ms: 3.955
+  type: 'test'
+  ...
+# Subtest: absolute MIDI pitch controls replay synthesis independently of slot and settings
+ok 170 - absolute MIDI pitch controls replay synthesis independently of slot and settings
+  ---
+  duration_ms: 4.1083
+  type: 'test'
+  ...
+# Subtest: attack reactions distinguish actual weakness damage from an evaded strike at note timing
+ok 171 - attack reactions distinguish actual weakness damage from an evaded strike at note timing
+  ---
+  duration_ms: 5.4812
+  type: 'test'
+  ...
+# Subtest: roster contains eight distinct enemies with stronger counterattacks
+ok 172 - roster contains eight distinct enemies with stronger counterattacks
+  ---
+  duration_ms: 4.3556
+  type: 'test'
+  ...
+# Subtest: sixth and seventh enemies lead onward and only the eighth completes the run
+ok 173 - sixth and seventh enemies lead onward and only the eighth completes the run
+  ---
+  duration_ms: 16.821
+  type: 'test'
+  ...
+# Subtest: late enemies have stable distinct forecasts across all three recording parts and restore cleanly
+ok 174 - late enemies have stable distinct forecasts across all three recording parts and restore cleanly
+  ---
+  duration_ms: 8.1795
+  type: 'test'
+  ...
+# Subtest: both late enemies resolve complete two-note battles with their own counters and music
+ok 175 - both late enemies resolve complete two-note battles with their own counters and music
+  ---
+  duration_ms: 21.9206
+  type: 'test'
+  ...
+# Subtest: only successfully played Kick samples duck the bass at their actual scheduled time
+ok 176 - only successfully played Kick samples duck the bass at their actual scheduled time
+  ---
+  duration_ms: 3.9367
+  type: 'test'
+  ...
+# Subtest: attack completion captures an accumulated mix plus the unquantized source tracks
+ok 177 - attack completion captures an accumulated mix plus the unquantized source tracks
+  ---
+  duration_ms: 7.6446
+  type: 'test'
+  ...
+# Subtest: hazardous Kick Snare and Hat inputs all sound and record while dealing per-input poison
+ok 178 - hazardous Kick Snare and Hat inputs all sound and record while dealing per-input poison
+  ---
+  duration_ms: 11.2741
+  type: 'test'
+  ...
+# Subtest: poison evaluates raw position rather than the quantized replay position
+ok 179 - poison evaluates raw position rather than the quantized replay position
+  ---
+  duration_ms: 4.3005
+  type: 'test'
+  ...
+# Subtest: a held bass note takes poison once, while release and preview replay do not
+ok 180 - a held bass note takes poison once, while release and preview replay do not
+  ---
+  duration_ms: 3.8975
+  type: 'test'
+  ...
+# Subtest: enemy skill is forecast, starts next turn, and new waves coexist
+ok 181 - enemy skill is forecast, starts next turn, and new waves coexist
+  ---
+  duration_ms: 4.7279
+  type: 'test'
+  ...
+# Subtest: poison defeat cancels the recording clock and resets contamination without rejecting the fatal note
+ok 182 - poison defeat cancels the recording clock and resets contamination without rejecting the fatal note
+  ---
+  duration_ms: 4.3089
+  type: 'test'
+  ...
+# Subtest: victory clears active and pending grid hazards
+ok 183 - victory clears active and pending grid hazards
+  ---
+  duration_ms: 4.07
+  type: 'test'
+  ...
+# Subtest: changing enemies clears the previous enemy contamination
+ok 184 - changing enemies clears the previous enemy contamination
+  ---
+  duration_ms: 3.8432
+  type: 'test'
+  ...
+# Subtest: death during a later enemy counter resets contamination
+ok 185 - death during a later enemy counter resets contamination
+  ---
+  duration_ms: 4.7797
+  type: 'test'
+  ...
+# Subtest: a complete three-part cycle applies Bass shield and Lead support then counters automatically
+ok 186 - a complete three-part cycle applies Bass shield and Lead support then counters automatically
+  ---
+  duration_ms: 6.8861
+  type: 'test'
+  ...
+# Subtest: all note modes resolve the real three-part battle pipeline with pitch and tactical effects
+ok 187 - all note modes resolve the real three-part battle pipeline with pitch and tactical effects
+  ---
+  duration_ms: 25.3234
+  type: 'test'
+  ...
+# Subtest: actual enemy actions apply rhythm interference to armor, healing and attack growth
+ok 188 - actual enemy actions apply rhythm interference to armor, healing and attack growth
+  ---
+  duration_ms: 10.1855
+  type: 'test'
+  ...
+# Subtest: automatic enemy attack consumes shields without recording or requesting inputs
+ok 189 - automatic enemy attack consumes shields without recording or requesting inputs
+  ---
+  duration_ms: 4.9458
+  type: 'test'
+  ...
+# Subtest: raw Drums and Hat remain the source of groove classification after all three parts
+ok 190 - raw Drums and Hat remain the source of groove classification after all three parts
+  ---
+  duration_ms: 5.5246
+  type: 'test'
+  ...
+# Subtest: final battle resolution applies ensemble attack and shield bonuses once
+ok 191 - final battle resolution applies ensemble attack and shield bonuses once
+  ---
+  duration_ms: 6.1932
+  type: 'test'
+  ...
+# Subtest: articulation style applies once after groove/ensemble without replacing the drum element
+ok 192 - articulation style applies once after groove/ensemble without replacing the drum element
+  ---
+  duration_ms: 8.0282
+  type: 'test'
+  ...
+# Subtest: synth recording retains count-in changes and fast XY movements as independent immutable events
+ok 193 - synth recording retains count-in changes and fast XY movements as independent immutable events
+  ---
+  duration_ms: 3.508
+  type: 'test'
+  ...
+# Subtest: both sites preserve bytes and resolve relative assets without exposing source tooling
+ok 194 - both sites preserve bytes and resolve relative assets without exposing source tooling
+  ---
+  duration_ms: 161.2064
+  type: 'test'
+  ...
+# Subtest: updating experiment/chatgpt cannot change stable files; promoting it updates stable
+ok 195 - updating experiment/chatgpt cannot change stable files; promoting it updates stable
+  ---
+  duration_ms: 220.7645
+  type: 'test'
+  ...
+# Subtest: missing, absolute and cross-branch references fail before deployment
+ok 196 - missing, absolute and cross-branch references fail before deployment
+  ---
+  duration_ms: 171.8225
+  type: 'test'
+  ...
+# Subtest: packaging refuses to overwrite directories or write inside a checkout
+ok 197 - packaging refuses to overwrite directories or write inside a checkout
+  ---
+  duration_ms: 61.455
+  type: 'test'
+  ...
+# Subtest: Bass generates shields; strong beats, holds, repetition and Kick alignment contribute
+ok 198 - Bass generates shields; strong beats, holds, repetition and Kick alignment contribute
+  ---
+  duration_ms: 5.1275
+  type: 'test'
+  ...
+# Subtest: overlapping held Bass notes do not double-count sustain
+ok 199 - overlapping held Bass notes do not double-count sustain
+  ---
+  duration_ms: 0.7632
+  type: 'test'
+  ...
+# Subtest: retired POWER zones do not change attack or resolved damage
+ok 200 - retired POWER zones do not change attack or resolved damage
+  ---
+  duration_ms: 3.8789
+  type: 'test'
+  ...
+# Subtest: Lead pitch direction chooses benefits while retired BOOST zones have no effect
+ok 201 - Lead pitch direction chooses benefits while retired BOOST zones have no effect
+  ---
+  duration_ms: 1.6437
+  type: 'test'
+  ...
+# Subtest: enemy attack consumes shield first, with only remaining damage reaching HP
+ok 202 - enemy attack consumes shield first, with only remaining damage reaching HP
+  ---
+  duration_ms: 0.3477
+  type: 'test'
+  ...
+# Subtest: retired PSB zones are never generated or inspected; grid coordinates still use raw timing
+ok 203 - retired PSB zones are never generated or inspected; grid coordinates still use raw timing
+  ---
+  duration_ms: 0.5303
+  type: 'test'
+  ...
+# Subtest: old reactive defense code, UI and module are removed
+ok 204 - old reactive defense code, UI and module are removed
+  ---
+  duration_ms: 1.7199
+  type: 'test'
+  ...
+# Subtest: game presentation has no PSB overlays, hints or zone-specific combat feedback
+ok 205 - game presentation has no PSB overlays, hints or zone-specific combat feedback
+  ---
+  duration_ms: 1.5614
+  type: 'test'
+  ...
+# Subtest: filter combat effects are deterministic and bounded
+ok 206 - filter combat effects are deterministic and bounded
+  ---
+  duration_ms: 2.6403
+  type: 'test'
+  ...
+# Subtest: cutoff responds in opposite directions by mode
+ok 207 - cutoff responds in opposite directions by mode
+  ---
+  duration_ms: 0.3412
+  type: 'test'
+  ...
+# Subtest: XY volume and filter are independent and smoothly applied to the audio chain
+ok 208 - XY volume and filter are independent and smoothly applied to the audio chain
+  ---
+  duration_ms: 0.5344
+  type: 'test'
+  ...
+# Subtest: review reconstructs tactical intent, shields and real counter damage without changing the packet
+ok 209 - review reconstructs tactical intent, shields and real counter damage without changing the packet
+  ---
+  duration_ms: 50.9403
+  type: 'test'
+  ...
+# Subtest: counterfactual evaluation is deterministic, read-only and responds to every existing source
+ok 210 - counterfactual evaluation is deterministic, read-only and responds to every existing source
+  ---
+  duration_ms: 10.3375
+  type: 'test'
+  ...
+# Subtest: actual benefits respect overkill, held shields and zero-value caps
+ok 211 - actual benefits respect overkill, held shields and zero-value caps
+  ---
+  duration_ms: 16.6931
+  type: 'test'
+  ...
+# Subtest: normalization removes remaining HP, existing shields and enemy balance differences
+ok 212 - normalization removes remaining HP, existing shields and enemy balance differences
+  ---
+  duration_ms: 17.3672
+  type: 'test'
+  ...
+# Subtest: comparison explains changed melody, ensemble, groove and timbre through shared calculations
+ok 213 - comparison explains changed melody, ensemble, groove and timbre through shared calculations
+  ---
+  duration_ms: 22.7709
+  type: 'test'
+  ...
+# Subtest: live cues use the actual partial ensemble, never future notes, and are explicitly provisional
+ok 214 - live cues use the actual partial ensemble, never future notes, and are explicitly provisional
+  ---
+  duration_ms: 1.888
+  type: 'test'
+  ...
+# Subtest: hints target missing effects, armor and damage and avoid immediately repeating themselves
+ok 215 - hints target missing effects, armor and damage and avoid immediately repeating themselves
+  ---
+  duration_ms: 22.2175
+  type: 'test'
+  ...
+# Subtest: nine-note upper pitches roundtrip through history, JSON, MIDI and legacy pitch evaluation
+ok 216 - nine-note upper pitches roundtrip through history, JSON, MIDI and legacy pitch evaluation
+  ---
+  duration_ms: 29.0583
+  type: 'test'
+  ...
+# Subtest: semitone intervals distinguish repeat, small, medium, large and direction
+ok 217 - semitone intervals distinguish repeat, small, medium, large and direction
+  ---
+  duration_ms: 1.9918
+  type: 'test'
+  ...
+# Subtest: melody effects use proportions and are invariant to transposition and note duration
+ok 218 - melody effects use proportions and are invariant to transposition and note duration
+  ---
+  duration_ms: 0.4841
+  type: 'test'
+  ...
+# Subtest: simultaneous monophonic input and dense spam count only the final note in each cell
+ok 219 - simultaneous monophonic input and dense spam count only the final note in each cell
+  ---
+  duration_ms: 7.5421
+  type: 'test'
+  ...
+# Subtest: Bass register is relative to recorded palette and cannot be increased by transposition
+ok 220 - Bass register is relative to recorded palette and cannot be increased by transposition
+  ---
+  duration_ms: 1.9153
+  type: 'test'
+  ...
+# Subtest: two-note repeat and movement give useful choices without mode multipliers
+ok 221 - two-note repeat and movement give useful choices without mode multipliers
+  ---
+  duration_ms: 0.3373
+  type: 'test'
+  ...
+# Subtest: actual damage includes pitch attack, deterministic accuracy cost and armored shield penetration
+ok 222 - actual damage includes pitch attack, deterministic accuracy cost and armored shield penetration
+  ---
+  duration_ms: 2.7546
+  type: 'test'
+  ...
+# Subtest: same-note accuracy and small intervals expose the exact applied cap in feedback ledger
+ok 223 - same-note accuracy and small intervals expose the exact applied cap in feedback ledger
+  ---
+  duration_ms: 0.391
+  type: 'test'
+  ...
+# Subtest: bass shields and resistance and descending lead change actual incoming damage with shared caps
+ok 224 - bass shields and resistance and descending lead change actual incoming damage with shared caps
+  ---
+  duration_ms: 3.0955
+  type: 'test'
+  ...
+# Subtest: JSON storage preserves relative pitch after key changes and accepts older note records
+ok 225 - JSON storage preserves relative pitch after key changes and accepts older note records
+  ---
+  duration_ms: 2.5892
+  type: 'test'
+  ...
+# Subtest: raw mode preserves timestamps exactly
+ok 226 - raw mode preserves timestamps exactly
+  ---
+  duration_ms: 1.7588
+  type: 'test'
+  ...
+# Subtest: all playback modes stay close to the original note at every enemy BPM
+ok 227 - all playback modes stay close to the original note at every enemy BPM
+  ---
+  duration_ms: 31.1821
+  type: 'test'
+  ...
+# Subtest: just produces exact sixteenth positions
+ok 228 - just produces exact sixteenth positions
+  ---
+  duration_ms: 0.1952
+  type: 'test'
+  ...
+# Subtest: both early and late notes move to the same nearest beat
+ok 229 - both early and late notes move to the same nearest beat
+  ---
+  duration_ms: 0.151
+  type: 'test'
+  ...
+# Subtest: rendering merges playback notes without mutating the complete raw recording
+ok 230 - rendering merges playback notes without mutating the complete raw recording
+  ---
+  duration_ms: 2.3507
+  type: 'test'
+  ...
+# Subtest: laid-back keeps Hat aligned and places Snare behind it
+ok 231 - laid-back keeps Hat aligned and places Snare behind it
+  ---
+  duration_ms: 3.3032
+  type: 'test'
+  ...
+# Subtest: drunk repeats the same shifted pattern every bar instead of randomizing each note
+ok 232 - drunk repeats the same shifted pattern every bar instead of randomizing each note
+  ---
+  duration_ms: 1.936
+  type: 'test'
+  ...
+# Subtest: swing produces repeating long-short eighths
+ok 233 - swing produces repeating long-short eighths
+  ---
+  duration_ms: 1.3014
+  type: 'test'
+  ...
+# Subtest: a quantized closing note is not lost from replay or damage timing
+ok 234 - a quantized closing note is not lost from replay or damage timing
+  ---
+  duration_ms: 2.5115
+  type: 'test'
+  ...
+# Subtest: leading Snare playback preset scales with tempo and leaves Kick and Hat raw
+ok 235 - leading Snare playback preset scales with tempo and leaves Kick and Hat raw
+  ---
+  duration_ms: 0.9072
+  type: 'test'
+  ...
+# Subtest: intent bonuses stay linear after elemental contrast and respect the shared cap
+ok 236 - intent bonuses stay linear after elemental contrast and respect the shared cap
+  ---
+  duration_ms: 11.6403
+  type: 'test'
+  ...
+# Subtest: lightning keeps specialization without neutral elemental coverage
+ok 237 - lightning keeps specialization without neutral elemental coverage
+  ---
+  duration_ms: 3.8227
+  type: 'test'
+  ...
+# Subtest: raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity
+ok 238 - raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity
+  ---
+  duration_ms: 3.2982
+  type: 'test'
+  ...
+# Subtest: repeated uneven motifs and consistent laid-back or drunk offsets count as skill
+ok 239 - repeated uneven motifs and consistent laid-back or drunk offsets count as skill
+  ---
+  duration_ms: 1.36
+  type: 'test'
+  ...
+# Subtest: sparse heavy attacks stay neutral while clustered spam cannot bypass low quality
+ok 240 - sparse heavy attacks stay neutral while clustered spam cannot bypass low quality
+  ---
+  duration_ms: 0.8209
+  type: 'test'
+  ...
+# Subtest: playback quantization does not repair raw rhythmic quality, including merged notes
+ok 241 - playback quantization does not repair raw rhythmic quality, including merged notes
+  ---
+  duration_ms: 5.1086
+  type: 'test'
+  ...
+# Subtest: matchup tuning raises effective attacks and lowers resisted attacks for every enemy
+ok 242 - matchup tuning raises effective attacks and lowers resisted attacks for every enemy
+  ---
+  duration_ms: 1.5445
+  type: 'test'
+  ...
+# Subtest: stacked weaknesses stay capped and the contrast multiplier is visible in the ledger
+ok 243 - stacked weaknesses stay capped and the contrast multiplier is visible in the ledger
+  ---
+  duration_ms: 0.651
+  type: 'test'
+  ...
+# Subtest: calculation details match deterministic hits and contain no random rolls
+ok 244 - calculation details match deterministic hits and contain no random rolls
+  ---
+  duration_ms: 1.3034
+  type: 'test'
+  ...
+# Subtest: identical analysis and enemy always produce identical complete results without Math.random
+ok 245 - identical analysis and enemy always produce identical complete results without Math.random
+  ---
+  duration_ms: 33.5123
+  type: 'test'
+  ...
+# Subtest: same pattern repeated at same timing yields high performanceQuality
+ok 246 - same pattern repeated at same timing yields high performanceQuality
+  ---
+  duration_ms: 0.6407
+  type: 'test'
+  ...
+# Subtest: consistent laid-back repetition does not lower performanceQuality
+ok 247 - consistent laid-back repetition does not lower performanceQuality
+  ---
+  duration_ms: 0.4485
+  type: 'test'
+  ...
+# Subtest: consistent drunk pattern is evaluated highly
+ok 248 - consistent drunk pattern is evaluated highly
+  ---
+  duration_ms: 0.407
+  type: 'test'
+  ...
+# Subtest: random jitter lowers performanceQuality even with same average interval
+ok 249 - random jitter lowers performanceQuality even with same average interval
+  ---
+  duration_ms: 0.517
+  type: 'test'
+  ...
+# Subtest: irregularity alone does not directly penalize damage
+ok 250 - irregularity alone does not directly penalize damage
+  ---
+  duration_ms: 0.3244
+  type: 'test'
+  ...
+# Subtest: resolve has no stabilityMultiplier or instability in calculation
+ok 251 - resolve has no stabilityMultiplier or instability in calculation
+  ---
+  duration_ms: 0.3971
+  type: 'test'
+  ...
+# Subtest: same input always produces identical damage result
+ok 252 - same input always produces identical damage result
+  ---
+  duration_ms: 0.3818
+  type: 'test'
+  ...
+# Subtest: groove, Lead and ensemble remain deterministic without retired zone bonuses
+ok 253 - groove, Lead and ensemble remain deterministic without retired zone bonuses
+  ---
+  duration_ms: 21.8817
+  type: 'test'
+  ...
+# Subtest: silence does no damage and features remain finite
+ok 254 - silence does no damage and features remain finite
+  ---
+  duration_ms: 0.3378
+  type: 'test'
+  ...
+# Subtest: sparse kick is heavy, rapid snare is multi hit
+ok 255 - sparse kick is heavy, rapid snare is multi hit
+  ---
+  duration_ms: 0.6726
+  type: 'test'
+  ...
+# Subtest: late acceleration creates fire, irregular offbeats create lightning
+ok 256 - late acceleration creates fire, irregular offbeats create lightning
+  ---
+  duration_ms: 0.9719
+  type: 'test'
+  ...
+# Subtest: regular alternation repeats and raw timing survives grid analysis
+ok 257 - regular alternation repeats and raw timing survives grid analysis
+  ---
+  duration_ms: 0.4446
+  type: 'test'
+  ...
+# Subtest: enemy traits change damage and accuracy
+ok 258 - enemy traits change damage and accuracy
+  ---
+  duration_ms: 0.3102
+  type: 'test'
+  ...
+# Subtest: simultaneous input and boundary notes are safe
+ok 259 - simultaneous input and boundary notes are safe
+  ---
+  duration_ms: 0.2479
+  type: 'test'
+  ...
+# Subtest: attack replay keeps raw spacing including the last count-in beat
+ok 260 - attack replay keeps raw spacing including the last count-in beat
+  ---
+  duration_ms: 0.6649
+  type: 'test'
+  ...
+# Subtest: playback preserves resolved damage without adding damage for extra notes
+ok 261 - playback preserves resolved damage without adding damage for extra notes
+  ---
+  duration_ms: 0.6717
+  type: 'test'
+  ...
+# Subtest: layered replay aligns every part to the same clock and damages only the new part
+ok 262 - layered replay aligns every part to the same clock and damages only the new part
+  ---
+  duration_ms: 0.6462
+  type: 'test'
+  ...
+# Subtest: straight alternating drums are an enemy-specific choice, not a universal damage answer
+ok 263 - straight alternating drums are an enemy-specific choice, not a universal damage answer
+  ---
+  duration_ms: 0.6674
+  type: 'test'
+  ...
+# Subtest: deliberate offbeat accents favor lightning even with kick or snare bias
+ok 264 - deliberate offbeat accents favor lightning even with kick or snare bias
+  ---
+  duration_ms: 0.565
+  type: 'test'
+  ...
+# Subtest: snapshots survive JSON and local storage while preserving raw input and copied pitches
+ok 265 - snapshots survive JSON and local storage while preserving raw input and copied pitches
+  ---
+  duration_ms: 9.3054
+  type: 'test'
+  ...
+# Subtest: recorded accompaniment survives JSON/storage without aliasing current enemy presets
+ok 266 - recorded accompaniment survives JSON/storage without aliasing current enemy presets
+  ---
+  duration_ms: 1.8974
+  type: 'test'
+  ...
+# Subtest: MIDI exports saved chord pitches on a dedicated channel at the original tempo
+ok 267 - MIDI exports saved chord pitches on a dedicated channel at the original tempo
+  ---
+  duration_ms: 4.0472
+  type: 'test'
+  ...
+# Subtest: history retains the latest 50 and removal persists without modifying returned snapshots
+ok 268 - history retains the latest 50 and removal persists without modifying returned snapshots
+  ---
+  duration_ms: 21.0008
+  type: 'test'
+  ...
+# Subtest: storage failures retain usable in-memory history and bad imported timing is rejected
+ok 269 - storage failures retain usable in-memory history and bad imported timing is rejected
+  ---
+  duration_ms: 0.8916
+  type: 'test'
+  ...
+# Subtest: MIDI contains tempo and separate pitched and drum tracks with preserved timing and gates
+ok 270 - MIDI contains tempo and separate pitched and drum tracks with preserved timing and gates
+  ---
+  duration_ms: 1.5342
+  type: 'test'
+  ...
+# Subtest: MIDI note-off precedes a repeated note-on and does not cut off later held notes
+ok 271 - MIDI note-off precedes a repeated note-on and does not cut off later held notes
+  ---
+  duration_ms: 0.6466
+  type: 'test'
+  ...
+# Subtest: traits are deterministic, normalized and require combinations of timbre features
+ok 272 - traits are deterministic, normalized and require combinations of timbre features
+  ---
+  duration_ms: 4.4169
+  type: 'test'
+  ...
+# Subtest: timbre is element-neutral and articulation changes play style
+ok 273 - timbre is element-neutral and articulation changes play style
+  ---
+  duration_ms: 0.9517
+  type: 'test'
+  ...
+# Subtest: profile integrates recorded changes over audible gates without duplicate-note bonuses
+ok 274 - profile integrates recorded changes over audible gates without duplicate-note bonuses
+  ---
+  duration_ms: 3.6329
+  type: 'test'
+  ...
+# Subtest: pad cutoff and attributes return to the configured patch at neutral
+ok 275 - pad cutoff and attributes return to the configured patch at neutral
+  ---
+  duration_ms: 0.4361
+  type: 'test'
+  ...
+# Subtest: bass and lead settings persist independently and malformed storage falls back safely
+ok 276 - bass and lead settings persist independently and malformed storage falls back safely
+  ---
+  duration_ms: 4.5
+  type: 'test'
+  ...
+# Subtest: history JSON round-trips full per-part patches and automation without aliasing live settings
+ok 277 - history JSON round-trips full per-part patches and automation without aliasing live settings
+  ---
+  duration_ms: 7.2652
+  type: 'test'
+  ...
+# Subtest: recorded audio schedules waveform/cutoff/volume changes at the audio clock and releases from its current envelope
+ok 278 - recorded audio schedules waveform/cutoff/volume changes at the audio clock and releases from its current envelope
+  ---
+  duration_ms: 8.2423
+  type: 'test'
+  ...
+# Subtest: monophonic gates use last-note priority, including same-time notes, without mutating the source
+ok 279 - monophonic gates use last-note priority, including same-time notes, without mutating the source
+  ---
+  duration_ms: 0.55
+  type: 'test'
+  ...
+# Subtest: scheduled monophonic note stealing cuts only its own part at note onset and survives release or automation
+ok 280 - scheduled monophonic note stealing cuts only its own part at note onset and survives release or automation
+  ---
+  duration_ms: 2.3646
+  type: 'test'
+  ...
+# Subtest: classic lead defaults restore its octave layer, filter sweep and exponential ADSR
+ok 281 - classic lead defaults restore its octave layer, filter sweep and exponential ADSR
+  ---
+  duration_ms: 1.8223
+  type: 'test'
+  ...
+# Subtest: previous unchanged lead defaults migrate while custom sounds remain intact
+ok 282 - previous unchanged lead defaults migrate while custom sounds remain intact
+  ---
+  duration_ms: 5.6869
+  type: 'test'
+  ...
+# Subtest: next action follows the real performance phase and current part
+ok 283 - next action follows the real performance phase and current part
+  ---
+  duration_ms: 2.6817
+  type: 'test'
+  ...
+# Subtest: phrase progress uses the engine duration, stays bounded, and resets outside recording
+ok 284 - phrase progress uses the engine duration, stays bounded, and resets outside recording
+  ---
+  duration_ms: 0.3184
+  type: 'test'
+  ...
+1..284
+# tests 284
+# suites 0
+# pass 284
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12334.78

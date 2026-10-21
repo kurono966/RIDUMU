@@ -1,0 +1,19 @@
+.title-screen{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 50% 25%,#35402a,#101210 70%);overflow:auto}
+.title-screen[hidden]{display:none}
+.title-panel{width:min(100%,640px);text-align:center;color:#f1f3eb}
+.title-kicker{color:#d4f77d;letter-spacing:.35em;font-size:12px}
+.title-panel h1{font-size:clamp(52px,12vw,108px);letter-spacing:-.09em;margin:12px 0}
+.title-panel>p:not(.title-kicker){color:#abb5a3}
+.title-choices{display:grid;gap:14px;margin-top:42px}
+.title-choices button{color:#eff5df;background:#252e20;border:1px solid #526447;border-radius:15px;padding:20px;text-align:left;display:grid;gap:8px;cursor:pointer}
+.title-choices button:hover,.title-choices button:focus-visible{border-color:#d4f77d;background:#334027}
+.title-choices strong{font-size:21px}
+.title-choices span{font-size:13px;color:#b8c5af;line-height:1.6}
+.mode-badge{font-size:10px;color:#d4f77d;letter-spacing:.05em}
+.rogue-rewards{border:1px solid #667a54;border-radius:16px;max-width:min(92vw,540px);background:#1b211a;color:#eff5df;padding:24px}
+.rogue-rewards::backdrop{background:#030704c9}
+.reward-choices{display:grid;gap:10px}
+.reward-choices button{border:1px solid #5d7050;border-radius:8px;background:#2a3828;color:#ecf5e6;padding:14px;text-align:left;font-weight:bold;cursor:pointer}
+.reward-choices small{display:block;color:#c3d0b9;margin-top:6px;font-weight:normal}
+#game>header{flex-wrap:wrap}
+@media(max-width:600px){#game .mode-badge{display:none}#game #returnTitle{padding:7px;font-size:11px}.title-panel h1{font-size:58px}}

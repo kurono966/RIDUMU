@@ -1,6 +1,39 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
 
+test('steady kicks stay earth and steady alternation stays wind across tempos, density and small timing errors',()=>{
+ const G=require('./groove.js');
+ for(const bpm of [82,100,108,120,150,180])for(const count of [8,16,32])for(const alternate of [false,true])for(const jitter of [0,.015]){
+  const beat=60/bpm,duration=beat*8,expected=alternate?'wind':'earth';
+  const input=Array.from({length:count},(_,i)=>({t:i*duration/count+(i%2?jitter:0),type:alternate&&i%2?'snare':'kick'}));
+  const a=R.analyze(input,duration,bpm),label=JSON.stringify({bpm,count,alternate,jitter});
+  assert.equal(a.element,expected,label);
+  for(const division of [1,2,4]){
+   const hats=Array.from({length:8*division},(_,i)=>({type:'hat',t:i*beat/division}));
+   assert.equal(G.enrich(a,G.analyzeRelations(input,hats,bpm,duration)).element,expected,label+' Hat '+division);
+  }
+ }
+});
+
+test('intent bonuses stay linear after elemental contrast and respect the shared cap',()=>{
+ const a={...R.analyze(notes([0,.375,.75,1.375,2,2.375,2.75,3.375],'kick')),element:'lightning',groove:null};
+ for(const kind of ['fly','machine','plant','crystal']){
+  const neutral=R.resolve(a,{kind}),guard=R.resolve(a,{kind,intentId:'guard'});
+  const tactical=1+.35*a.syncopation+.15*a.offbeat;
+  assert.ok(Math.abs(guard.affinity-Math.min(3,neutral.affinity*tactical))<1e-9);
+  assert.ok(guard.affinity>neutral.affinity,'syncopation still counters guard');
+ }
+});
+
+test('lightning keeps specialization without neutral elemental coverage',()=>{
+ const a={...R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick')),weight:0,element:'lightning'};
+ for(const kind of ['stone','fly','plant','crystal']){
+  const lightning=R.resolve(a,{kind}),neutral=R.resolve({...a,element:kind==='stone'?'wind':'earth'},{kind});
+  assert.ok(lightning.affinity<neutral.affinity,kind+' resists lightning');
+ }
+ for(const kind of ['machine','ghost'])assert.ok(R.resolve(a,{kind}).affinity>R.resolve({...a,element:'wind'},{kind}).affinity);
+});
+
 test('raw rhythmic consistency rewards regular playing and penalizes chaotic intervals independently of enemy affinity',()=>{
  const regular=R.analyze(notes([0,.5,1,1.5,2,2.5,3,3.5],'kick'));
  const chaotic=R.analyze(notes([.01,.04,.06,.51,.55,1.72,2.01,3.85],'kick'));
@@ -176,4 +209,25 @@ test('layered replay aligns every part to the same clock and damages only the ne
  assert.equal(mix.events.filter(n=>n.damages.length).length,1);
  assert.equal(mix.events.at(-1).voice,'lead');assert.deepEqual(mix.events.at(-1).damages,[30]);
  assert.ok(R.mixTimeline(tracks,null).events.every(n=>n.damages.length===0));
+});
+
+test('straight alternating drums are an enemy-specific choice, not a universal damage answer',()=>{
+ const straight=R.analyze(Array.from({length:16},(_,i)=>({t:i*.25,type:i%2?'snare':'kick'})));
+ const offbeat=R.analyze([0,.375,.75,1.25,1.375,1.875,2.25,2.375,2.875,3.375,3.5,3.875].map((t,i)=>({t,type:i%3?'snare':'kick'})));
+ // Fix the attack budget and base quality to isolate the enemy's rhythmic preference.
+ const comparable=a=>({...a,power:65,hits:3,accuracy:.9,element:'lightning',performanceQuality:{multiplier:1}});
+ const againstMachine=[R.resolve(comparable(straight),{kind:'machine'}),R.resolve(comparable(offbeat),{kind:'machine'})];
+ assert.ok(againstMachine[1].total>againstMachine[0].total,'machine should reward syncopation over basic alternation');
+ const flyStraight=R.resolve(comparable(straight),{kind:'fly'}),flyOther=R.resolve(comparable(offbeat),{kind:'fly'});
+ assert.ok(flyStraight.total>flyOther.total,'flying enemy should still reward alternating regular rhythm');
+});
+
+test('deliberate offbeat accents favor lightning even with kick or snare bias',()=>{
+ const sync=[0,.375,.75,1.25,1.75,2.375,2.75,3.25,3.75];
+ for(const voice of ['kick','snare']){
+  const a=R.analyze(sync.map(t=>({t,type:voice})),4,120);
+  assert.equal(a.element,'lightning',voice+' syncopation should favor lightning');
+ }
+ const straight=R.analyze([0,.5,1,1.5,2,2.5,3,3.5].map(t=>({t,type:'kick'})),4,120);
+ assert.equal(straight.element,'earth','straight kick pulse must remain earth');
 });

@@ -45,10 +45,23 @@
   if(audible)for(const key in result)result[key]/=audible;
   return result;
  }
- function modifiers(s){return {attack:1+.2*s.fire-.12*s.water-.10*s.earth,shield:1+.35*s.earth-.22*s.fire-.12*s.wind,accuracy:.06*s.wind-.025*s.earth,weaken:.08*s.water};}
+ function modifiers(s){return {attack:1,shield:1,accuracy:0,weaken:0};}
+ function style(snapshot,notes,duration){
+  const neutral={attack:1,shield:1,accuracy:0,weaken:0};
+  if(!snapshot||!notes?.length||!duration)return neutral;
+  const performed=monoNotes(notes).filter(n=>Number.isFinite(n.duration)&&n.duration>0);
+  if(!performed.length)return neutral;
+  const beat=duration/8;
+  const avg=performed.reduce((sum,n)=>sum+Math.min(n.duration,beat*2),0)/performed.length;
+  const short=clamp((beat*.75-avg)/(beat*.6)),long=clamp((avg-beat*.75)/(beat));
+  const p=at(snapshot,Math.max(0,performed[0].rawT??performed[0].t??0)).patch;
+  const crisp=1-clamp(p.attack/(beat*.7)),smooth=clamp((p.release+avg)/(beat*2));
+  const shortFit=short*crisp,longFit=long*smooth;
+  return {attack:1+.06*shortFit-.035*longFit,shield:1+.06*longFit-.035*shortFit,accuracy:0,weaken:0};
+ }
  const labels={fire:'炎',water:'水',wind:'風',earth:'土'};
  function combine(bass,lead){const a=modifiers(bass),b=modifiers(lead);return {attack:1+((a.attack-1)+(b.attack-1))*.5,accuracy:(a.accuracy+b.accuracy)*.5,weaken:Math.min(.12,a.weaken+b.weaken)};}
- function describe(s){const m=modifiers(s);return Object.entries(s).map(([k,v])=>labels[k]+Math.round(v*100)+'%').join(' / ')+` → 攻撃 ×${m.attack.toFixed(2)}・盾 ×${m.shield.toFixed(2)}・命中 ${m.accuracy>=0?'+':''}${(m.accuracy*100).toFixed(1)}pt・湿潤 敵攻撃 −${(m.weaken*100).toFixed(1)}%`;}
+ function describe(s){return '自由な音色（属性による強弱なし）。短音／長音の演奏との相性が戦闘スタイルに影響';}
  const settings={bass:patch({},'bass'),lead:patch({},'lead')},pads={bass:pad(),lead:pad()},listeners=new Set();
  let persistent=true;
  try{const data=JSON.parse(root.localStorage?.getItem('ridumu.synth.v1')??'null');for(const voice of voices)if(data?.[voice]){const saved=data[voice],oldLead={wave:'triangle',cutoff:3600,resonance:.8,attack:.008,decay:.08,sustain:.65,release:.18};const wasDefault=voice==='lead'&&saved.harmonic===undefined&&Object.entries(oldLead).every(([k,v])=>saved[k]===v);settings[voice]=wasDefault?patch({},voice):patch({harmonic:0,toneDecay:0,toneSustain:1,curve:'linear',...saved},voice);}}catch{persistent=false;}
@@ -57,6 +70,6 @@
  function setPad(voice,value){if(!voices.includes(voice))return;pads[voice]=pad(value);emit(voice);}
  const current=voice=>({patch:{...settings[voice]},pad:{...pads[voice]}});
  function engine(...args){if(!root.SynthAudio&&typeof require==='function')root.SynthAudio=require('./synth-audio.js');return root.SynthAudio.get(...args);}
- const api={voices,waves,ranges,defaults,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,monoNotes,profile,modifiers,combine,describe,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
+ const api={voices,waves,ranges,defaults,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,monoNotes,profile,modifiers,style,combine,describe,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
  root.Synth=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

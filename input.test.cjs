@@ -5,14 +5,25 @@ const fs=require('node:fs');
 function game(){
  const elements=new Map();
  const document={getElementById(id){if(!elements.has(id))elements.set(id,{addEventListener(){},replaceChildren(){},dataset:{},setAttribute(){},querySelector(){return {}},style:{},classList:{add(){},remove(){},toggle(){}}});return elements.get(id);},querySelector(selector){return this.getElementById(selector)},addEventListener(){}};
- const sandbox=vm.createContext({document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
+ const sandbox=vm.createContext({URLSearchParams,document,performance:{now:()=>0},setTimeout(){},clearTimeout(){},clearInterval(){},Ensemble:require('./ensemble.js'),renderEnsemble(){},GridHazards:require('./grid-hazards.js'),BassAudio:require('./bass-audio.js'),GridEffects:require('./grid-effects.js'),PerformanceCombat:require('./performance-combat.js'),Rhythm:require('./rhythm.js'),Quantize:require('./quantize.js'),Groove:require('./groove.js'),CombatFeedback:require('./feedback.js'),showHitFeedback(){},clearHitFeedback(){},renderDiscoveries(){},activeReport:null});
  sandbox.window=sandbox;sandbox.addEventListener=()=>{};
+ sandbox.PitchCombat=require('./pitch-combat.js');
  vm.runInContext(fs.readFileSync('synth.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('synth-audio.js','utf8'),sandbox);vm.runInContext(fs.readFileSync('performance-filter.js','utf8'),sandbox);
  vm.runInContext(fs.readFileSync('game.js','utf8').split("const canvas=$('scope')")[0],sandbox);
  vm.runInContext("enemies[0].bpm=120;lastDuration=4;lastBpm=120;ctx={currentTime:10,state:'running'};recordAudioAt=10;state='countin';sound=()=>{};clickSound=()=>{};flash=()=>{};",sandbox);
  return {run:code=>vm.runInContext(code,sandbox)};
 }
 
+test('automatic damage input is restricted to debug mode and Drums ready state',()=>{
+ const g=game();
+ assert.equal(g.run("autoInputDamageChart('max')"),false);
+ g.run("location={search:'?debug=1'};state='ready';turn=2");
+ assert.equal(g.run("autoInputDamageChart('max')"),false);
+ g.run("turn=1;EvaluationDebug={damageChart:()=>({parts:new Map([['drums',[]],['bass',[]],['lead',[]]]),hats:[]})};audio=()=>{};countIn=()=>{};");
+ assert.equal(g.run("autoInputDamageChart('min')"),true);
+ assert.equal(g.run('continuousRunning&&hatReady&&debugDamagePlan!==null'),true);
+ g.run("stopContinuousInput()");assert.equal(g.run('debugDamagePlan'),null);
+});
 test('chord accompaniment is restricted to the live input window and never starts in idle or combat',()=>{
  const g=game();g.run("let musicStarts=[],musicStops=0;enemyMusic={start:at=>musicStarts.push(at),stop:()=>musicStops++,setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
  for(const state of ['ready','countin','attack','enemyAttack','cleared','over'])g.run(`state='${state}';syncEnemyMusic()`);
@@ -132,6 +143,19 @@ test('continuous handoff retains backing downbeats and accepts a new part input 
  assert.equal(g.run("tracks.get('drums').length"),1);
 });
 
+test('automatic damage chart fills three parts and stops after one combat',async()=>{
+ const g=game();
+ g.run("debugDamagePlan={parts:new Map(['drums','bass','lead'].map(v=>[v,[{type:'kick',t:0,rawT:0,quantize:'off'}]]))};hatReady=true;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickAuto,autoAttacks=0;setInterval=fn=>{tickAuto=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{autoAttacks++};enemyCounter=async()=>{};");
+ await g.run("countIn('parts')");
+ for(let part=0;part<3;part++){
+  assert.equal(g.run('notes.length'),1);
+  g.run("ctx.currentTime=recordAudioAt+.01;tickAuto();input('snare');ctx.currentTime=recordAudioAt+timing().duration+.001;tickAuto()");
+  await Promise.resolve();await Promise.resolve();await Promise.resolve();
+ }
+ assert.equal(g.run('autoAttacks'),1);assert.equal(g.run('continuousRunning'),false);
+ assert.equal(g.run('debugDamagePlan'),null);assert.equal(g.run('state'),'ready');
+ assert.equal(g.run('tracks.size'),3);
+});
 test('continuous cycle records each part once, resolves combat once and starts the next Hat automatically',async()=>{
  const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
  await g.run("countIn('hat')");
@@ -395,6 +419,17 @@ test('seven-note keyboard records distinct pitches and sustained gates',()=>{
  assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,1,2,3,4,5,6');assert.equal(g.run('prevented'),7);
  assert.ok(g.run('notes.every(n=>Math.abs(n.duration-.1)<1e-8)'));
 });
+
+test('nine-note mode records ASDFGHJKL with upper C and D, including H and long holds',()=>{
+ const g=game();g.run("turn=3;noteMode='nine';for(const code of melodyKeys){handleKeyDown({code,target:{},preventDefault(){}});ctx.currentTime+=.1;releaseInput('key:'+code)};saveTrack('lead',notes)");
+ assert.equal(g.run('notes.map(n=>n.midi).join()'),'60,62,63,65,67,68,70,72,74');assert.equal(g.run('notes.map(n=>n.pitch).join()'),'0,1,2,3,4,5,6,7,8');assert(g.run('notes.every(n=>Math.abs(n.duration-.1)<1e-8)'));assert.equal(g.run('hatNotes.length'),0);
+ g.run("state='ready';setKeyPitch('lead','nine',8,77);state='recording';phase='hat';handleKeyDown({code:'KeyH',target:{},preventDefault(){}})");assert.equal(g.run("pitchesFor('lead','nine')[8]"),77);assert.equal(g.run('lastMix[0].notes.at(-1).midi'),74);assert.equal(g.run('hatNotes.length'),1);
+});
+
+test('seven-note mode ignores the two added keys and nine mode keeps drums unchanged',()=>{
+ const g=game();g.run("turn=2;noteMode='seven';for(const code of ['KeyK','KeyL'])handleKeyDown({code,target:{},preventDefault(){}})");assert.equal(g.run('notes.length'),0);
+ g.run("turn=1;noteMode='nine';handleKeyDown({code:'KeyL',target:{},preventDefault(){}})");assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].type'),'snare');assert.equal(g.run('notes[0].midi'),undefined);
+});
 test('seven-note selection leaves drums and Hat controls intact',()=>{
  const g=game();g.run("noteMode='seven';handleKeyDown({code:'KeyS',target:{},preventDefault(){}});input('kick','key:KeyA');phase='hat';input('hat')");
  assert.equal(g.run('notes.length'),1);assert.equal(g.run('notes[0].pitch'),undefined);assert.equal(g.run('hatNotes.length'),1);
@@ -457,15 +492,37 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
  assert.equal(g.run('reactions.length'),0);g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('reactions[0].kind'),'weak');assert.equal(g.run('reactions[0].element'),'earth');
  g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('reactions[1].kind'),'dodge');g.run('ctx.currentTime=4.07;playbackTick()');await playback;
 });
-test('roster contains six distinct enemies with stronger counterattacks',()=>{
- const g=game();assert.equal(g.run('enemies.length'),6);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),6);
+test('roster contains eight distinct enemies with stronger counterattacks',()=>{
+ const g=game();assert.equal(g.run('enemies.length'),8);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),8);
  assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'88,96,104');
- g.run('stage=5;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 06 / 06');
+ g.run('stage=7;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 08 / 08');
 });
-test('third enemy no longer ends the game and only the sixth enemy completes the run',async()=>{
- for(const [stage,expected] of [[2,'cleared'],[5,'over']]){
+test('sixth and seventh enemies lead onward and only the eighth completes the run',async()=>{
+ for(const [stage,expected] of [[2,'cleared'],[5,'cleared'],[6,'cleared'],[7,'over']]){
   const g=game();g.run(`stage=${stage};enemyHp=0;notes=[];hatNotes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};`);
   await g.run('finish()');assert.equal(g.run('state'),expected);
+ }
+});
+
+test('late enemies have stable distinct forecasts across all three recording parts and restore cleanly',()=>{
+ const g=game();
+ for(const [stage,order] of [[6,['heavy','guard','pierce','heal','guard','special']],[7,['buff','pierce','guard','heavy','heal','special']]]){
+  for(let round=0;round<6;round++)for(let part=0;part<3;part++){
+   g.run(`stage=${stage};turn=${round*3+part+1}`);
+   assert.equal(g.run('enemyIntent().id'),order[round]);assert.doesNotMatch(g.run('enemyIntent().name'),/undefined/);
+  }
+ }
+ g.run("enemies[6].intentOrder[0]='buff'");assert.equal(g.run('standardEnemies[6].intentOrder[0]'),'heavy');
+ g.run("document.body={dataset:{}};prepareMode('normal')");assert.equal(g.run('enemies[6].intentOrder[0]'),'heavy');assert.equal(g.run('enemies.length'),8);
+});
+
+test('both late enemies resolve complete two-note battles with their own counters and music',async()=>{
+ for(const nextStage of [6,7]){
+  const g=game();g.run(`stage=${nextStage};enemyHp=enemies[stage].hp;muted=true;setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async r=>{enemyHp=Math.max(0,enemyHp-r.total)};notes=[0,4,8,12,16,20,24,28].map((q,i)=>({t:q*timing().step,rawT:q*timing().step,type:i%2?'snare':'kick'}));`);
+  await g.run('finish()');
+  g.run("notes=[0,8,16,28].map(q=>({t:q*timing().step,rawT:q*timing().step,type:'kick',midi:36,duration:timing().beat}))");await g.run('finish()');
+  g.run("notes=[2,10,18,26].map((q,i)=>({t:q*timing().step,rawT:q*timing().step,type:i%2?'snare':'kick',midi:i%2?63:60,duration:.25}))");await g.run('finish()');
+  assert.equal(g.run('turn'),4);assert.equal(g.run('state'),'ready');assert.ok(g.run('enemyHp')<g.run('enemies[stage].hp'));assert.ok(g.run('hp')>0);
  }
 });
 
@@ -490,7 +547,7 @@ test('a held bass note takes poison once, while release and preview replay do no
  const g=game();g.run("turn=2;gridHazards.add({type:'poison',slots:[4],turns:4,power:3});ctx.currentTime=10.5;input('kick','key:KeyA');input('kick','key:KeyA');ctx.currentTime=10.7;releaseInput('key:KeyA');state='ready';input('kick');sound('kick');");assert.equal(g.run('hp'),97);assert.equal(g.run('notes.length'),1);assert.ok(Math.abs(g.run('notes[0].duration')-.2)<1e-9);
 });
 test('enemy skill is forecast, starts next turn, and new waves coexist',()=>{
- const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);renderGridHazards();castGridSkill()");assert.match(g.run("$('enemyIntent').textContent"),/毒汚染/);assert.equal(g.run('gridHazards.active().length'),0);
+ const g=game();g.run("turn=3;gridHazards.advanceToTurn(3);renderGridHazards();castGridSkill()");assert.match(g.run("$('enemyIntent').textContent"),/防御態勢/);g.run('turn=18;renderBattlePlan()');assert.match(g.run("$('enemyIntent').textContent"),/毒汚染/);assert.equal(g.run('gridHazards.active().length'),0);
  g.run('turn=4;ready();ready()');assert.equal(g.run('gridHazards.active()[0].remainingTurns'),4);assert.equal(g.run("$('hazardBar').hidden"),false);
  g.run('turn=6;advanceGridHazards();castGridSkill();turn=7;ready()');assert.equal(g.run('gridHazards.active().length'),2);assert.equal(g.run('gridHazards.active()[0].remainingTurns'),1);
 });
@@ -518,10 +575,30 @@ test('a complete three-part cycle applies Bass shield and Lead support then coun
  g.run("notes=[{type:'kick',t:0,rawT:0,duration:.3,midi:60},{type:'snare',t:1,rawT:1,duration:.3,midi:67}]");
  await g.run('finish()');assert.equal(g.run('turn'),4);assert.equal(g.run('counters'),1);assert.equal(g.run('attacks.length'),1);assert.equal(g.run('attacks[0].voice'),'drums');assert.ok(g.run('cycleLead.attack')>0);assert.equal(g.run('state'),'ready');
 });
+test('all note modes resolve the real three-part battle pipeline with pitch and tactical effects',async()=>{
+ for(const mode of ['two','four','seven','nine']){
+  const g=game();g.run(`noteMode='${mode}';state='ready';enemyHp=10000;let modeResults=[];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async r=>modeResults.push(r);enemyCounter=async()=>{};notes=[0,3,6,10,16,19,22,27].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125}));`);
+  await g.run('finish()');
+  g.run("notes=[0,8,16,28].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125,duration:.4,midi:i%2?43:36}))");await g.run('finish()');
+  g.run("notes=[2,10,18,26].map((q,i)=>({type:i%2?'snare':'kick',t:q*.125,rawT:q*.125,duration:.3,midi:i%2?63:60}))");await g.run('finish()');
+  assert.equal(g.run('turn'),4);assert.equal(g.run('modeResults.length'),1);assert.ok(g.run('modeResults[0].total')>0);assert.ok(g.run('shield')>0);assert.ok(g.run('modeResults[0].calculation.guard.guardBreak')>0);assert.equal(g.run('tracks.size'),3);
+ }
+});
+test('actual enemy actions apply rhythm interference to armor, healing and attack growth',async()=>{
+ for(const [part,stageIndex,id] of [[3,0,'guard'],[9,0,'heal'],[9,1,'buff']]){
+  const g=game();
+  g.run(`turn=${part};stage=${stageIndex};enemyHp=100;muted=true;setTimeout=fn=>{fn();return 1};let rhythmAction=Rhythm.analyze([0,16,20,24,26,28,29,30,31].map(q=>({t:q*.125,type:'kick'})));rhythmAction.tactics={guardBreak:.8,healBlock:1,buffSuppress:1,value:1,label:'テスト'};const beforeGuard=enemies[stage].guard??0,beforeAttack=enemies[stage].attack;`);
+  await g.run('enemyCounter(rhythmAction,{},{total:20})');
+  if(id==='guard')assert.ok(g.run('enemies[stage].guard')<=g.run('beforeGuard'));
+  if(id==='heal')assert.equal(g.run('enemyHp'),100);
+  if(id==='buff')assert.equal(g.run('enemies[stage].attack'),g.run('beforeAttack'));
+  assert.match(g.run("$('summaryHint').textContent"),/テスト/);
+ }
+});
 test('automatic enemy attack consumes shields without recording or requesting inputs',async()=>{
- const g=game();g.run("state='attack';muted=true;shield=12;cycleLead={weaken:0};setTimeout=fn=>{fn();return 1};turn=3;castGridSkill=()=>{};");
+ const g=game();g.run("state='attack';muted=true;shield=12;cycleLead={weaken:0};setTimeout=fn=>{fn();return 1};turn=6;castGridSkill=()=>{};");
  await g.run("enemyCounter({count:4,element:'wind',effect:.5},{},{total:20})");
- assert.equal(g.run('shield'),0);assert.equal(g.run('hp'),24);assert.equal(g.run('notes.length'),0);assert.equal(g.run('state'),'enemyAttack');
+ assert.equal(g.run('shield'),0);assert.equal(g.run('hp'),6);assert.equal(g.run('notes.length'),0);assert.equal(g.run('state'),'enemyAttack');
 });
 test('raw Drums and Hat remain the source of groove classification after all three parts',async()=>{
  const g=game();g.run("turn=3;notes=[];tracks.set('drums',[{type:'snare',t:.47,rawT:.47,inputT:.47,quantize:'just'}]);hatNotes=[{type:'hat',t:.5,rawT:.5}];let seen;Groove={...Groove,analyzeRelations:(raw,hat)=>{seen={raw,hat};return {}}};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};");
@@ -531,18 +608,18 @@ test('raw Drums and Hat remain the source of groove classification after all thr
 
 test('final battle resolution applies ensemble attack and shield bonuses once',async()=>{
  const g=game();g.run("turn=3;shield=20;cycleBass={shield:20};notes=[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:60,duration:.2}));tracks.set('drums',[0,1,2].map(t=>({type:'kick',t,rawT:t})));tracks.set('bass',[0,1,2].map(t=>({type:'kick',t,rawT:t,midi:36,duration:.2})));renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};let resolved;playbackAttack=async result=>{resolved=result};enemyCounter=async()=>{};");
- await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.ok(g.run('shield')>24);assert.ok(g.run('resolved.total')>=0);
+ await g.run('finish()');assert.ok(g.run('cycleEnsemble.scores.grooveLock')>.9);assert.ok(g.run('cycleEnsemble.bonus.shield')>0);assert.equal(g.run('shield'),g.run('20+Math.round(20*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield'));assert.ok(g.run('resolved.total')>=0);
 });
 
-test('timbre correction applies once after groove/ensemble without replacing the drum element',async()=>{
+test('articulation style applies once after groove/ensemble without replacing the drum element',async()=>{
  const g=game();g.run(`state='ready';turn=1;notes=[{type:'kick',t:0,rawT:0},{type:'snare',t:1,rawT:1}];hatNotes=[{type:'hat',t:0,rawT:0}];renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};enemyCounter=async()=>{};`);
  await g.run('finish()');
  g.run(`const bassPatch=Synth.patch({wave:'square',cutoff:12000,sustain:.6});synthTracks.set('bass',{version:1,patch:bassPatch,events:[{t:0,patch:bassPatch,pad:Synth.pad()}]});notes=[{type:'kick',t:0,rawT:0,midi:36,duration:1}];`);
  await g.run('finish()');
- assert.equal(g.run('cycleBass.shield'),g.run("Math.round(cycleBass.rawShield*Synth.modifiers(toneProfile('bass')).shield)"));
+ assert.equal(g.run('cycleBass.shield'),g.run("Math.round(cycleBass.rawShield*Synth.style(synthTracks.get('bass'),tracks.get('bass'),lastDuration).shield)"));
  g.run(`const leadPatch=Synth.patch({wave:'sine',cutoff:400,release:2});synthTracks.set('lead',{version:1,patch:leadPatch,events:[{t:0,patch:leadPatch,pad:Synth.pad()}]});notes=[{type:'kick',t:.5,rawT:.5,midi:60,duration:1}];let capturedTimbre;const baseExplain=CombatFeedback.explain;CombatFeedback={...CombatFeedback,explain:(a,...args)=>{capturedTimbre=a;return baseExplain(a,...args)}};`);
  await g.run('finish()');
- g.run(`const drumNotes=tracks.get('drums'),zonesForTest=currentZones(),baseAttack=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(Quantize.render(drumNotes,lastBpm,lastDuration),lastDuration,lastBpm),Groove.analyzeRelations(drumNotes,hatNotes,lastBpm,lastDuration)),drumNotes,lastBpm,zonesForTest,cycleLead),cycleEnsemble),appliedTone=Synth.combine(toneProfile('bass'),toneProfile('lead'));`);
+ g.run(`const drumNotes=tracks.get('drums'),zonesForTest=currentZones(),baseAttack=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(Quantize.render(drumNotes,lastBpm,lastDuration),lastDuration,lastBpm),Groove.analyzeRelations(drumNotes,hatNotes,lastBpm,lastDuration)),drumNotes,lastBpm,zonesForTest,cycleLead),cycleEnsemble),bassStyle=Synth.style(synthTracks.get('bass'),tracks.get('bass'),lastDuration),leadStyle=Synth.style(synthTracks.get('lead'),tracks.get('lead'),lastDuration),appliedTone={attack:1+((bassStyle.attack-1)+(leadStyle.attack-1))*.5,weaken:0};`);
  assert.equal(g.run('capturedTimbre.power'),g.run('baseAttack.power*appliedTone.attack'));
  assert.equal(g.run('capturedTimbre.element'),g.run('baseAttack.element'));
  assert.equal(g.run('capturedTimbre.timbreWeaken'),g.run('appliedTone.weaken'));

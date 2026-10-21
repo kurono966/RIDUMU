@@ -14,17 +14,29 @@
   fly:{chords:['Ebmaj7','Bbadd9','Cm7','Abmaj7'],wave:'sine',cutoff:3600,resonance:.5,detune:4,attack:.075,decay:.12,sustain:.82,release:.24,level:.85},
   machine:{chords:['Cmadd9','Gm7','Abmaj7','Bbsus2'],wave:'sawtooth',cutoff:1400,resonance:1.8,detune:0,attack:.008,decay:.055,sustain:.7,release:.09,level:1.3},
   plant:{chords:['Fm7','Cm7','Abmaj7','Gm7'],wave:'square',cutoff:950,resonance:1.2,detune:2,attack:.02,decay:.11,sustain:.73,release:.13,level:.72},
-  ghost:{chords:['Cm9','Abmaj7','Ebmaj7','Gm7'],wave:'sine',cutoff:1400,resonance:.4,detune:7,attack:.15,decay:.18,sustain:.9,release:.32,level:.8},
-  crystal:{chords:['Abmaj7','Bbsus2','Gm7','Cm9'],wave:'triangle',harmonic:.32,cutoff:3800,resonance:.6,detune:3,attack:.006,decay:.16,sustain:.62,release:.24,level:1.15}
+  ghost:{chords:['Cm9','Abmaj7','Ebmaj7','Gm7'],wave:'sine',harmonic:.3,cutoff:2000,resonance:.4,detune:7,attack:.09,decay:.18,sustain:.9,release:.32,level:1.05},
+  crystal:{chords:['Abmaj7','Bbsus2','Gm7','Cm9'],wave:'triangle',harmonic:.32,cutoff:3800,resonance:.6,detune:3,attack:.006,decay:.16,sustain:.62,release:.24,level:1.15},
+  furnace:{chords:['Fm7','Abmaj7','Cmadd9','Gm7'],wave:'triangle',harmonic:.2,cutoff:1700,resonance:1,detune:2,attack:.02,decay:.12,sustain:.7,release:.18,level:1.05},
+  conductor:{chords:['Cm9','Fm7','Bbsus2','Gm7'],wave:'sine',harmonic:.35,cutoff:2800,resonance:.5,detune:4,attack:.035,decay:.15,sustain:.8,release:.25,level:1.1}
  };
  function progression(kind){return progressions[kind]??progressions.stone;}
+ function cleanSnapshot(value){
+  const finite=(n,a,b)=>Number.isFinite(n)&&n>=a&&n<=b;
+  if(!value||value.version!==1||!finite(value.bpm,40,240)||!finite(value.chordBeats,.25,8)||!Array.isArray(value.chords)||value.chords.length!==4)throw Error('コード伴奏の設定が不正です。');
+  const savedChords=value.chords.map(c=>{if(!c||typeof c.name!=='string'||!Array.isArray(c.notes)||!c.notes.length||c.notes.length>12||!c.notes.every(n=>Number.isInteger(n)&&finite(n,12,107)))throw Error('コードの音高が不正です。');return {name:c.name.slice(0,32),notes:[...c.notes]};});
+  const t=value.tone,tone={};if(!t||!['sine','triangle','sawtooth','square'].includes(t.wave))throw Error('コード音色が不正です。');tone.wave=t.wave;
+  for(const [name,a,b] of [['cutoff',20,20000],['resonance',0,20],['detune',0,40],['attack',.001,5],['decay',.001,5],['sustain',0,1],['release',.01,5],['level',0,2],['harmonic',0,1]]){const n=name==='harmonic'?(t[name]??0):t[name];if(!finite(n,a,b))throw Error('コード音色の値が不正です。');tone[name]=n;}
+  return {version:1,bpm:value.bpm,chordBeats:value.chordBeats,chords:savedChords,tone};
+ }
+ function snapshot(kind,bpm){const {chords:ids,...tone}=progression(kind);return cleanSnapshot({version:1,bpm,chordBeats,chords:ids.map(id=>chords[id]),tone});}
  function create(ctx,output=ctx.destination,options={}){
   const every=options.setInterval??setInterval,cancel=options.clearInterval??clearInterval;
   const bus=ctx.createGain();bus.gain.value=1;bus.connect(output);
-  const active=new Set();let kind='stone',bpm=82,playing=false,muted=false,timer=null,origin=0,next=0,anchor=null,shown=-1,rotation=0;
-  const chordSeconds=()=>chordBeats*60/bpm,at=index=>origin+index*chordSeconds();
+  const active=new Set();let kind='stone',bpm=82,playing=false,muted=false,timer=null,origin=0,next=0,anchor=null,shown=-1,rotation=0,saved=null,sequenceEnd=Infinity;
+  const chordAt=index=>saved?saved.chords[(rotation+index)%4]:chords[progression(kind).chords[(rotation+index)%4]];
+  const chordSeconds=()=>(saved?.chordBeats??chordBeats)*60/bpm,at=index=>origin+index*chordSeconds();
   function play(index,start,length){
-   const spec=progression(kind),chord=chords[spec.chords[(rotation+index)%spec.chords.length]];
+   const spec=saved?.tone??progression(kind),chord=chordAt(index);
    const filter=ctx.createBiquadFilter(),amp=ctx.createGain(),sources=[],blends=[];
    filter.type='lowpass';filter.frequency.value=spec.cutoff;filter.Q.value=spec.resonance;filter.connect(amp);amp.connect(bus);
    // A stronger sustained level keeps the chords present beneath live playing.
@@ -49,33 +61,34 @@
    const now=ctx.currentTime;
    // Skip missed chords after a delayed tab timer instead of creating a burst.
    if(at(next)<now-.15)next=Math.max(next,Math.floor((now-origin)/chordSeconds()));
-   while(Math.min(at(next),anchor??Infinity)<now+.12){
+   while(Math.min(at(next),anchor??Infinity)<now+.12&&at(next)<sequenceEnd-1e-9){
     if(anchor!==null&&at(next)>=anchor-1e-9){rotation=(rotation+Math.max(0,Math.ceil((anchor-origin)/chordSeconds()-1e-9)))%4;origin=anchor;anchor=null;next=0;shown=-1;}
     const start=at(next),length=anchor===null?chordSeconds():Math.min(chordSeconds(),anchor-start);
     if(!muted&&start>=now-.15&&length>0){const voice=play(next,Math.max(now,start),length);if(anchor!==null)voice.stop(anchor);}
     next++;
    }
-   if(now>=origin){const index=Math.floor((now-origin)/chordSeconds());if(index!==shown){shown=index;options.onChord?.(chords[progression(kind).chords[(rotation+index)%4]].name);}}
+   if(now>=origin){const index=Math.floor((now-origin)/chordSeconds());if(index!==shown){shown=index;options.onChord?.(chordAt(index).name);}}
   }
   const api={
    setEnemy(nextKind,nextBpm){
     if(!Number.isFinite(nextBpm)||nextBpm<=0)throw Error('Invalid accompaniment tempo');
-    if(kind===nextKind&&bpm===nextBpm)return;
-    const resume=playing;api.stop();kind=nextKind;bpm=nextBpm;shown=-1;
+    if(!saved&&kind===nextKind&&bpm===nextBpm)return;
+    const resume=playing;api.stop();saved=null;kind=nextKind;bpm=nextBpm;shown=-1;
     options.onChord?.(chords[progression(kind).chords[0]].name);if(resume)api.start();
    },
-   start(start=ctx.currentTime+.06){if(playing)return;playing=true;origin=start;next=0;anchor=null;shown=-1;rotation=0;timer=every(tick,25);tick();},
+   setSnapshot(value){const next=cleanSnapshot(value);api.stop();saved=next;kind='recorded';bpm=next.bpm;shown=-1;},
+   start(start=ctx.currentTime+.06,end=Infinity){if(playing)return;playing=true;origin=start;sequenceEnd=end;next=0;anchor=null;shown=-1;rotation=0;timer=every(tick,25);tick();},
    align(start){if(!Number.isFinite(start)||start<ctx.currentTime-.15)return;if(!playing){api.start(start);return;}if(Math.abs(origin-start)<1e-6)return;anchor=start;stopVoices(start);tick();},
    stop(){playing=false;if(timer!==null)cancel(timer);timer=null;anchor=null;stopVoices();},
    setMuted(value){
     value=!!value;if(value===muted)return;muted=value;
     bus.gain.setTargetAtTime(value?0:1,ctx.currentTime,.015);
     if(value)stopVoices();
-    else if(playing&&ctx.state==='running'&&ctx.currentTime>=origin){const index=Math.floor((ctx.currentTime-origin)/chordSeconds());next=index+1;play(index,ctx.currentTime+.01,Math.max(.04,at(next)-ctx.currentTime));tick();}
+    else if(playing&&ctx.state==='running'&&ctx.currentTime>=origin&&ctx.currentTime+.01<sequenceEnd){const index=Math.floor((ctx.currentTime-origin)/chordSeconds());next=index+1;play(index,ctx.currentTime+.01,Math.max(.04,Math.min(at(next),sequenceEnd)-ctx.currentTime));tick();}
    },
-   get state(){const index=Math.max(0,Math.floor((ctx.currentTime-origin)/chordSeconds()));return {kind,bpm,playing,muted,origin,next,anchor,chordDuration:chordSeconds(),loopDuration:loopBeats*60/bpm,voices:active.size,chord:chords[progression(kind).chords[(rotation+index)%4]].name};}
+   get state(){const index=Math.max(0,Math.floor((ctx.currentTime-origin)/chordSeconds()));return {kind,bpm,playing,muted,origin,next,anchor,chordDuration:chordSeconds(),loopDuration:4*chordSeconds(),voices:active.size,chord:chordAt(index).name};}
   };
   return api;
  }
- const api={chords,progressions,chordBeats,loopBeats,progression,create};root.EnemyMusic=api;if(typeof module!=='undefined')module.exports=api;
+ const api={chords,progressions,chordBeats,loopBeats,progression,create,snapshot,cleanSnapshot};root.EnemyMusic=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

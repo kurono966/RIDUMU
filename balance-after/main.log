@@ -1,0 +1,18 @@
+matrix stone complete
+matrix fly complete
+matrix machine complete
+matrix plant complete
+matrix ghost complete
+matrix crystal complete
+matrix furnace complete
+matrix conductor complete
+single-turn results saved; starting actual game multi-turn battles
+battles stone complete
+battles fly complete
+battles machine complete
+battles plant complete
+battles ghost complete
+battles crystal complete
+battles furnace complete
+battles conductor complete
+{"patterns":53,"matrix":2544,"engineMatches":288,"partRows":2304,"modes":192,"synergies":192,"runs":2176,"campaigns":104,"reproducibleBattles":8,"productionUnchanged":true}

@@ -1,6 +1,7 @@
 /* Local sequence snapshots and Standard MIDI File export; no audio data in storage. */
 (function(root){
 if(!root.Synth&&typeof require==='function')root.Synth=require('./synth.js');
+if(!root.EnemyMusic&&typeof require==='function')root.EnemyMusic=require('./enemy-music.js');
 const key='ridumu.sequence-history.v1',limit=50,voices=['drums','hat','bass','lead','chord'];
 const finite=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max;
 function cleanTracks(tracks){
@@ -14,9 +15,10 @@ function cleanTracks(tracks){
    const n={type:note.type,t:note.t};
    for(const name of ['rawT','inputT'])if(note[name]!==undefined){if(!finite(note[name],-30,120))throw Error('入力時刻が不正です。');n[name]=note[name];}
    if(note.duration!==undefined){if(!finite(note.duration,.001,60))throw Error('音の長さが不正です。');n.duration=note.duration;}
-   for(const name of ['midi','pitch'])if(note[name]!==undefined){if(!Number.isInteger(note[name])||!finite(note[name],0,name==='midi'?127:6))throw Error('音高が不正です。');n[name]=note[name];}
+   for(const name of ['midi','pitch'])if(note[name]!==undefined){if(!Number.isInteger(note[name])||!finite(note[name],0,name==='midi'?127:8))throw Error('音高が不正です。');n[name]=note[name];}
    if(note.pitches!==undefined){if(!Array.isArray(note.pitches)||!note.pitches.length||note.pitches.length>12||!note.pitches.every(p=>Number.isInteger(p)&&finite(p,0,127)))throw Error('コードの音高が不正です。');n.pitches=[...note.pitches];}
    if(typeof note.quantize==='string')n.quantize=note.quantize.slice(0,24);
+   if(note.register!==undefined){if(!finite(note.register,0,1))throw Error('音域の位置が不正です。');n.register=note.register;}
    return n;
   });const result={voice:track.voice,notes};if(track.synth!==undefined){if(!['bass','lead'].includes(track.voice)||!root.Synth)throw Error('シンセパートが不正です。');result.synth=root.Synth.cleanSnapshot(track.synth,track.voice);}if(track.effects!==undefined)result.effects=cleanEffects(track.effects);return result;
  });
@@ -28,7 +30,9 @@ function cleanEffects(events){
 function validate(value){
  if(!value||value.version!==1||!finite(value.bpm,40,240)||!finite(value.duration,.1,120))throw Error('RIDUMUのシーケンスJSONを選んでください。');
  const tracks=cleanTracks(value.tracks);if(!tracks.some(t=>t.notes.length))throw Error('ノートがありません。');
- return {version:1,id:typeof value.id==='string'?value.id.slice(0,100):makeId(),createdAt:typeof value.createdAt==='string'&&!Number.isNaN(Date.parse(value.createdAt))?new Date(value.createdAt).toISOString():new Date().toISOString(),title:String(value.title??'演奏シーケンス').slice(0,100),enemy:String(value.enemy??'').slice(0,80),bpm:value.bpm,duration:value.duration,turn:Number.isInteger(value.turn)?value.turn:1,kind:value.kind==='defense'?'defense':'attack',tracks,rawTracks:value.rawTracks?cleanTracks(value.rawTracks):[]};
+ const entry={version:1,id:typeof value.id==='string'?value.id.slice(0,100):makeId(),createdAt:typeof value.createdAt==='string'&&!Number.isNaN(Date.parse(value.createdAt))?new Date(value.createdAt).toISOString():new Date().toISOString(),title:String(value.title??'演奏シーケンス').slice(0,100),enemy:String(value.enemy??'').slice(0,80),bpm:value.bpm,duration:value.duration,turn:Number.isInteger(value.turn)?value.turn:1,kind:value.kind==='defense'?'defense':'attack',tracks,rawTracks:value.rawTracks?cleanTracks(value.rawTracks):[]};
+ if(value.accompaniment!==undefined){entry.accompaniment=root.EnemyMusic.cleanSnapshot(value.accompaniment);if(entry.accompaniment.bpm!==entry.bpm)throw Error('伴奏と演奏のテンポが一致しません。');}
+ return entry;
 }
 function makeId(){return root.crypto?.randomUUID?.()??Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);}
 function snapshot(info){return validate({...info,version:1,id:makeId(),createdAt:new Date().toISOString()});}
@@ -49,10 +53,12 @@ function midi(value){
  const phraseEnd=tick(entry.duration),tempo=Math.round(60000000/entry.bpm);
  const conductor=[0,255,81,3,...number(tempo,3),0,255,88,4,4,2,24,8,...vlq(phraseEnd),255,47,0];
  const tracks=[chunk('MTrk',conductor)];
- const settings={drums:[9,null,100],hat:[9,null,58],bass:[0,33,90],lead:[1,80,80],chord:[2,4,70]},scale=[0,2,3,5,7,8,10];
- for(const track of entry.tracks){
+ const settings={drums:[9,null,100],hat:[9,null,58],bass:[0,33,90],lead:[1,80,80],chord:[2,4,70]},scale=[0,2,3,5,7,8,10,12,14];
+ const exportTracks=[...entry.tracks];
+ if(entry.accompaniment){const music=entry.accompaniment,step=music.chordBeats*60/entry.bpm,notes=[];for(let t=0,i=0;t<entry.duration;t+=step,i++)notes.push({type:'kick',t,rawT:t,duration:Math.min(step,entry.duration-t),pitches:music.chords[i%4].notes});exportTracks.push({voice:'chord',notes,accompaniment:true});}
+ for(const track of exportTracks){
   if(!track.notes.length)continue;
-  const [channel,program,velocity]=settings[track.voice],name=text(track.voice.toUpperCase()),events=[];
+  const [channel,program,velocity]=track.accompaniment?[3,89,80]:settings[track.voice],name=text(track.accompaniment?'ACCOMPANIMENT':track.voice.toUpperCase()),events=[];
   const merged=new Map();
   for(const note of track.notes){
    const at=note.rawT??note.t,start=tick(at),gate=note.duration??(track.voice==='bass'?.15:track.voice==='lead'?.17:track.voice==='chord'?.32:.07);

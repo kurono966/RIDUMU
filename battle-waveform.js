@@ -30,6 +30,15 @@
   // A quieter surrounding echo provides the delayed breadth of laid-back playing.
   if(!reduced&&strength>.05){const tail=(groove.laidBack??0)>0?clamp((effects.attackAge-.06)/.18):1;paint.lineWidth=.8;draw((3+8*(groove.laidBack??0))*strength*tail,.12*strength*tail);}
   paint.restore();
+  // Quiet directional contours; reduced-motion users keep static pitch labels.
+  if(!reduced&&effects.pitch){const e=effects.pitch;paint.save();paint.globalAlpha=.45;paint.strokeStyle='#c6b0ff';
+   if(e.rise){paint.lineWidth=1+e.rise*8;paint.beginPath();paint.moveTo(w*.25,h*.7);paint.lineTo(w*.55,h*(.7-e.rise*2));paint.stroke();}
+   if(e.fall){paint.lineWidth=1;paint.strokeStyle='#8edcdd';paint.beginPath();for(let i=0;i<40;i++){const x=w*(.3+i/100),y=h*(.35+i/140)+Math.sin(i*.6+time*3)*h*.025;if(i)paint.lineTo(x,y);else paint.moveTo(x,y);}paint.stroke();}
+   if(e.pierce){paint.strokeStyle='#c6b0ff';paint.lineWidth=1+e.pierce*3;paint.beginPath();paint.moveTo(w*.3,h*.7);paint.lineTo(w*.52,h*.3);paint.lineTo(w*.47,h*.55);paint.lineTo(w*.7,h*.3);paint.stroke();}
+   if(e.repeat){paint.strokeStyle='#efd88b';paint.lineWidth=1;for(const y of [.42,.5]){paint.beginPath();paint.moveTo(w*.35,h*y);paint.lineTo(w*.65,h*y);paint.stroke();}}
+   if(e.low||e.high){paint.strokeStyle=e.high?'#efa568':'#8edcdd';paint.lineWidth=1+(e.low??0)*20;paint.beginPath();paint.ellipse(w*.5,h*.58,w*.28,h*.2,0,0,Math.PI*2);paint.stroke();if(e.high){paint.beginPath();paint.moveTo(w*.5,h*.4);paint.lineTo(w*.7,h*.25);paint.stroke();}}
+   paint.restore();
+  }
   if(!reduced&&effects.shield>0){
    paint.save();paint.strokeStyle='#8edcdd';paint.globalAlpha=effects.shield*.22;paint.lineWidth=1;
    paint.beginPath();paint.ellipse(w*.5,h*.53,w*(.18+.28*(1-effects.shield)),h*(.08+.18*(1-effects.shield)),0,0,Math.PI*2);paint.stroke();paint.restore();
@@ -68,10 +77,11 @@
    for(let i=effects.length-1;i>=0;i--)if(time-effects[i].at>effects[i].duration)effects.splice(i,1);
    analyser.getFloatTimeDomainData(samples);
    const measured=metrics(samples);level=level*.82+measured.rms*.18;
-   const state={strength:0,enemy:0,poison:0,shield:0,boost:0,groove:null,element:null,attackAge:0};let color='#a4b99c',colorTime=-Infinity;
+   const state={strength:0,enemy:0,poison:0,shield:0,boost:0,groove:null,element:null,attackAge:0,pitch:null};let color='#a4b99c',colorTime=-Infinity;
    for(const event of effects){
     const remaining=clamp(1-(time-event.at)/event.duration),power=remaining*remaining;
-    if(event.kind==='enemy')state.enemy=Math.max(state.enemy,power);
+    if(event.kind==='pitch')state.pitch=Object.fromEntries(Object.entries(event.data).map(([k,v])=>[k,v*remaining]));
+    else if(event.kind==='enemy')state.enemy=Math.max(state.enemy,power);
     else if(event.kind==='poison')state.poison=Math.max(state.poison,power);
     else if(event.kind==='shield')state.shield=Math.max(state.shield,remaining);
     else if(event.kind==='boost'){state.boost=Math.max(state.boost,power);state.strength=Math.max(state.strength,power*.65);}

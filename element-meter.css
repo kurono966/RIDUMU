@@ -1,0 +1,14 @@
+.element-meter{position:relative;display:flex;align-items:center;gap:5px;flex:0 0 32px;min-width:0}
+.element-meter>span{font-size:11px;white-space:nowrap;min-width:28px}
+.element-meter>button{--tone:#d4f77d;position:relative;flex:1;min-width:0;height:28px;padding:0 3px 5px;border:1px solid #50594a;border-radius:5px;background:#20281e;color:var(--tone);font-size:12px;cursor:pointer;overflow:hidden}
+.element-meter>button::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:var(--share,0%);background:var(--tone)}
+#element-wind{--tone:#82d9e8}#element-fire{--tone:#ffa573}#element-lightning{--tone:#c5a1ff}
+.element-meter>button.dominant{border:2px solid var(--tone);font-weight:800;background:#36412c}
+.element-meter>button.contending{border-style:dashed}
+.element-meter.is-close>span::after{content:" ≈"}
+#elementMore{flex:0 0 28px;color:#fff}
+.element-hint{position:absolute;z-index:8;top:100%;right:0;max-width:100%;padding:8px;border:1px solid #71805f;border-radius:5px;background:#20281ef2;font-size:12px;pointer-events:none}
+#elementDialog{width:min(480px,calc(100vw - 24px));padding:18px;line-height:1.6}
+#elementDialog table{width:100%;text-align:left}#elementDialog td{text-align:right;font-variant-numeric:tabular-nums}
+#elementDialog details{padding:5px 0}#elementDialog summary{cursor:pointer}#elementDialog p{font-size:14px}
+@media(max-width:759px) and (max-height:650px) and (orientation:portrait){#game,#game:has(>.result:not([hidden])){grid-template-rows:36px minmax(120px,1fr) 294px}#game>.console{gap:4px}#game .console-top{display:none}.element-meter{flex-basis:28px}.element-meter>button{height:26px}}

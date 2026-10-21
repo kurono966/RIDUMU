@@ -5,11 +5,12 @@ const root=path.resolve(__dirname,'..');
  browser=await chromium.launch({headless:true,args:['--disable-logging'],executablePath:process.env.RIDUMU_CHROME||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(require('node:url').pathToFileURL(path.join(root,'index.html')).href);await page.waitForFunction(()=>globalThis.Synth&&document.getElementById('openSynth').onclick);
+ await page.click('[data-choose-mode="normal"]');
  assert.deepEqual(await page.evaluate(()=>currentZones()),[]);assert.doesNotMatch(await page.locator('#scope').getAttribute('aria-label'),/P＝|S＝|B＝|POWER|BOOST/);
  await page.click('#toggleEffects');
  for(const [width,height] of [[1280,720],[1024,600],[390,844],[320,568],[320,480],[844,390],[667,375],[740,360]]){
   await page.setViewportSize({width,height});
-  for(const mode of ['two','four','seven'])for(const collapsed of [false,true])for(const showResult of [false,true])for(const phaseName of ['hat','parts']){
+  for(const mode of ['two','four','seven','nine'])for(const collapsed of [false,true])for(const showResult of [false,true])for(const phaseName of ['hat','parts']){
    await page.evaluate(({mode,collapsed,showResult,phaseName})=>{document.getElementById('result').hidden=!showResult;state='ready';turn=2;hatReady=phaseName!=='hat';noteMode=mode;phase=phaseName;updatePhaseUI();syncNoteMode();setPadsVisible(!collapsed);}, {mode,collapsed,showResult,phaseName});
    const boxes=await page.evaluate(()=>['filterPad','start',...(!document.querySelector('.console').classList.contains('pads-collapsed')?(document.querySelector('.console').classList.contains('hat-phase')?['hat']:(noteMode==='two'?['kick','snare']:(noteMode==='four'?['note0','note2']:['note0','note1']))):[])].map(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();return {id,x:r.x,y:r.y,w:r.width,h:r.height,visible:getComputedStyle(e).display!=='none'};}));
    for(const b of boxes){if(b.id==='hat'&&!b.visible)continue;assert(b.w>0&&b.h>0&&b.x>=0&&b.y>=0&&b.x+b.w<=width+1&&b.y+b.h<=height+1,JSON.stringify({width,height,mode,collapsed,b}));}
@@ -21,7 +22,7 @@ const root=path.resolve(__dirname,'..');
  await page.setViewportSize({width:1280,height:720});await page.evaluate(()=>{state='ready';turn=2;noteMode='two';syncNoteMode();setPadsVisible(true);document.getElementById('result').hidden=true;});
  await page.click('#openPlaySettings');await page.click('#openSynth');await page.click('#synthPreview');await page.selectOption('#synth-wave','sawtooth');await page.locator('#synth-cutoff').evaluate(e=>{e.value=.85;e.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>Synth.current('bass').patch.wave),'sawtooth');
- assert(await page.locator('#synthGauges meter').count()===4);assert(await page.locator('#synthEffects').innerText());
+ assert(await page.locator('#synthEnvelopePath').getAttribute('d'));assert(await page.locator('#synthEffects').innerText());
  await page.selectOption('#synthVoice','lead');await page.click('#synthReset');assert.equal(await page.evaluate(()=>Synth.current('lead').patch.harmonic),.18);await page.locator('#synth-harmonic').evaluate(e=>{e.value=.31;e.dispatchEvent(new Event('input',{bubbles:true}));});assert.equal(await page.evaluate(()=>Synth.current('lead').patch.harmonic),.31);await page.click('#synthReset');await page.selectOption('#synthVoice','bass');
  if(process.env.RIDUMU_SCREENSHOT_DIR){fs.mkdirSync(process.env.RIDUMU_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'synth-desktop.png')});}
  await page.click('#closeSynth');const filter=await page.locator('#filterPad').boundingBox();await page.mouse.move(filter.x+filter.width*.8,filter.y+filter.height*.7);
@@ -51,9 +52,9 @@ const root=path.resolve(__dirname,'..');
  await page.evaluate(()=>finish());
  await page.evaluate(()=>{state='recording';phase='parts';recordAudioAt=ctx.currentTime-.2;beginSynthRecording();Synth.setPatch('bass',{cutoff:2000});Synth.setPad('bass',{amount:.6,volume:.8});notes=[{type:'kick',t:0,rawT:0,midi:36,duration:1}];});await page.evaluate(()=>finish());
  await page.evaluate(()=>{state='recording';phase='parts';recordAudioAt=ctx.currentTime-.2;beginSynthRecording();Synth.setPatch('lead',{wave:'square'});notes=[{type:'snare',t:1,rawT:1,midi:60,duration:.5}];});await page.evaluate(()=>finish());
- const result=await page.evaluate(()=>({turn,history:sequenceStore.list()[0],tone:document.getElementById('timbreResult').textContent}));assert.equal(result.turn,4);assert(result.history.tracks.find(t=>t.voice==='bass').synth.events.length>=2);assert(result.history.tracks.find(t=>t.voice==='lead').synth);assert(result.tone.includes('湿潤'));
+ const result=await page.evaluate(()=>({turn,history:sequenceStore.list()[0],tone:document.getElementById('timbreResult').textContent}));assert.equal(result.turn,4);assert(result.history.tracks.find(t=>t.voice==='bass').synth.events.length>=2);assert(result.history.tracks.find(t=>t.voice==='lead').synth);assert(result.tone.includes('音色は属性を変えません'));
  await page.reload();assert.equal(await page.evaluate(()=>Synth.current('bass').patch.wave),'sawtooth');
- const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const phone=await touch.newPage();phone.on('pageerror',e=>errors.push(e.message));await phone.goto(page.url());await phone.evaluate(()=>{turn=2;updateInstrument();});
+ const touch=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const phone=await touch.newPage();phone.on('pageerror',e=>errors.push(e.message));await phone.goto(page.url());await phone.click('[data-choose-mode="normal"]');await phone.evaluate(()=>{turn=2;updateInstrument();});
  await phone.click('#toggleEffects');const target=await phone.locator('#filterPad').boundingBox();await phone.touchscreen.tap(target.x+target.width*.5,target.y+target.height*.5);assert.equal(await phone.evaluate(()=>Synth.current('bass').pad.volume),1);
  await phone.click('#openPlaySettings');await phone.click('#openSynth');if(process.env.RIDUMU_SCREENSHOT_DIR)await phone.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'synth-mobile.png')});
  assert.deepEqual(errors,[]);console.log('PASS: eight viewports, Hat/parts phases, 2/4/7 notes, pads ON/OFF, live editor, hover/touch reset, persisted settings, deterministic monophonic offline audio, three-part battle and saved synth snapshots.');

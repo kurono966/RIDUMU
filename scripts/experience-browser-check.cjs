@@ -1,0 +1,38 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {chromium}=require(process.env.RIDUMU_PLAYWRIGHT_PATH||'playwright');
+(async()=>{const browser=await chromium.launch({headless:true,args:['--disable-logging'],executablePath:process.env.RIDUMU_CHROME});try{
+ const page=await browser.newPage({viewport:{width:1280,height:720}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(process.env.RIDUMU_GAME_URL||require('node:url').pathToFileURL(path.resolve(__dirname,'../index.html')).href);await page.click('[data-choose-mode="normal"]');await page.click('#sound');
+ await page.evaluate(()=>{audio();muted=false;enemies[0].bpm=240;enemies[0].attack=40;enemies[0].hp=10000;enemyHp=10000;hatReady=true;hatNotes=[0,.5,1,1.5].map(t=>({type:'hat',t,rawT:t}));globalThis.reviewRuns=[];const originalComplete=ExperienceUI.complete;ExperienceUI.complete=(...args)=>{const result=originalComplete(...args);reviewRuns.push(result);return result;};});
+ async function cycle(style){
+  await page.evaluate(style=>{state='ready';notes=[0,.25,.5,.75,1,1.25,1.5,1.75].map((t,i)=>({type:i%2?'snare':'kick',t,rawT:t}));if(style==='changed')notes=notes.filter((n,i)=>i%2===0);},style);await page.evaluate(()=>finish());
+  await page.evaluate(style=>{state='recording';phase='parts';recordAudioAt=ctx.currentTime;beginSynthRecording();notes=[0,.5,1,1.5].map(t=>({type:'kick',midi:style==='changed'?43:36,register:style==='changed'?1:0,t,rawT:t,duration:.35}));},style);await page.evaluate(()=>finish());
+  await page.evaluate(style=>{state='recording';phase='parts';recordAudioAt=ctx.currentTime;beginSynthRecording();notes=(style==='changed'?[60,67,60,67]:[60,63,67,70]).map((midi,i)=>({type:'kick',midi,register:PitchCombat.register(midi,[60,63,67,70]),t:i*.4+.125,rawT:i*.4+.125,duration:.3}));},style);await page.evaluate(()=>finish());
+ }
+ await cycle('first');assert.equal(await page.evaluate(()=>reviewRuns[0].matches),true,'reconstruction must equal the actual attack and shield pipeline');
+ const first=await page.evaluate(()=>reviewRuns[0]);assert.equal(first.actual.damage,first.review.actual.damage);assert.equal(first.actual.received,first.review.actual.received.damage);
+ // Completed advice survives the next part's presentation and has a persistent full-text view.
+ await page.evaluate(()=>{ExperienceUI.reset();document.getElementById('reaction').textContent='次のパートの説明';RidumuUI.refresh();});
+ assert.equal(await page.locator('#resultFeedback').textContent(),first.tip.text);
+ assert.match(await page.locator('#openResultDetails').textContent(),/アドバイス/);
+ await page.click('#openResultDetails');await page.waitForTimeout(800);
+ assert.equal(await page.locator('#nextPerformanceTip').textContent(),'次はひとつ：'+first.tip.text);
+ assert(await page.locator('#nextPerformanceTip').isVisible());await page.click('#closeResultDetails');
+ await page.evaluate(()=>{hp=90;shield=60;});await cycle('changed');
+ const second=await page.evaluate(()=>reviewRuns[1]);assert.equal(second.matches,true);assert.equal(second.actual.damage,second.review.actual.damage);assert.equal(second.actual.received,second.review.actual.received.damage);assert.notEqual(first.tip.id,second.tip.id);
+ if(process.env.RIDUMU_SCREENSHOT_DIR){await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'experience-main-mobile.png')});}
+ assert((await page.locator('#factors li').count())<=3);assert.match(await page.locator('#performanceComparison').textContent(),/持ち越し盾0/);assert.match(await page.locator('#performanceComparison').textContent(),/実戦条件は別/);assert.match(await page.locator('#nextPerformanceTip').textContent(),/^次はひとつ：/);
+ const before=await page.evaluate(()=>({hp,enemyHp,count:reviewRuns.length}));await page.evaluate(async()=>{await playHistory(sequenceStore.list()[0]);});await page.waitForTimeout(150);await page.evaluate(()=>stopHistoryPlayback());assert.deepEqual(await page.evaluate(()=>({hp,enemyHp,count:reviewRuns.length})),before);
+ // Real live input is sounded before deferred analysis; its partial match must be explicit.
+ await page.evaluate(()=>{turn=2;state='recording';phase='parts';recordAudioAt=ctx.currentTime;notes=[];tracks.set('drums',[{type:'kick',t:0,rawT:0}]);hatNotes=[];updateInstrument();ExperienceUI.effects(true);input('kick','feedback-test');});await page.waitForFunction(()=>!document.getElementById('performanceCue').hidden);assert.match(await page.locator('#performanceCue').textContent(),/途中/);assert.match(await page.locator('#performanceCue').textContent(),/同期/);
+ if(process.env.RIDUMU_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'experience-live-mobile.png')});
+ await page.evaluate(()=>{releaseAllInputs();state='ready';ExperienceUI.effects(false);});assert.equal(await page.locator('#performanceCue').isVisible(),false);
+ const audio=await page.evaluate(async()=>{
+  async function render(mode){const c=new OfflineAudioContext(1,24000,48000),patch=Synth.patch({wave:'sine',attack:.003,decay:.01,sustain:1,release:.03,cutoff:8000},'bass'),handle=Synth.engine(c).play('bass',110,.01,1,.3,{snapshot:{version:1,patch,events:[]},noteTime:0});FeedbackAudio.setEnabled(mode!=='off');if(mode!=='base')FeedbackAudio.apply(handle,{kind:'lock',strength:1},.1);return Array.from((await c.startRendering()).getChannelData(0));}
+  const base=await render('base'),accent=await render('on'),off=await render('off');let prefix=0,offError=0,power=0,accentPower=0;for(let i=0;i<base.length;i++){if(i<4800)prefix=Math.max(prefix,Math.abs(base[i]-accent[i]));offError=Math.max(offError,Math.abs(base[i]-off[i]));if(i>5000&&i<10000){power+=base[i]**2;accentPower+=accent[i]**2;}}return {prefix,offError,ratio:accentPower/power};
+ });assert.equal(audio.prefix,0);assert(audio.offError<1e-6);assert(audio.ratio>1.02&&audio.ratio<1.3,JSON.stringify(audio));
+ for(const [width,height] of [[1280,720],[1024,600],[390,844],[320,568],[320,480],[844,390],[667,375],[740,360]]){await page.setViewportSize({width,height});await page.evaluate(()=>RidumuUI.refresh());const b=await page.locator('#start').boundingBox();assert(b.y+b.height<=height+1);assert(await page.evaluate(()=>document.documentElement.scrollHeight<=innerHeight+1));}
+ await page.setViewportSize({width:390,height:844});await page.click('#openResultDetails');await page.locator('#performanceReview > details > summary').click();assert(await page.locator('#performanceComparison table').isVisible());
+ if(process.env.RIDUMU_SCREENSHOT_DIR){await page.locator('#performanceComparison table tr').first().scrollIntoViewIfNeeded();await page.screenshot({path:path.join(process.env.RIDUMU_SCREENSHOT_DIR,'experience-comparison-mobile.png')});}await page.click('#closeResultDetails');await page.reload();assert.equal(await page.evaluate(()=>ExperienceUI.enabled),false);
+ assert.deepEqual(errors,[]);console.log('PASS: two real battle cycles equal reconstructed attack/defense, normalized comparison, changed hints, no replay mutation, provisional live sync, optional subtle audio with OFF identical to original, eight viewports and persisted effects setting. '+JSON.stringify(audio));
+ }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -48,12 +48,23 @@ function analyzeHat(input,bpm=120,duration=8*60/bpm){
 function analyzeRelations(input,hats,bpm=120,duration=8*60/bpm){
  const hat=analyzeHat(hats,bpm,duration),beat=60/bpm,step=beat/4;
  const hatTimes=hat.events.map(e=>e.t),events=[];
+ // An eighth-note Hat is a clock, not the only playable subdivision. Measure
+ // sixteenths against its interpolated phase; midpoint ties must not invent feel.
+ const eighthClock=values=>{
+  const indices=values.map(t=>Math.round(t/(beat/2)));
+  return values.length>=6&&new Set(indices).size===values.length&&values.every((t,i)=>Math.abs(t-indices[i]*beat/2)<=beat*.26+1e-8);
+ };
+ const drumTimes=input.map(raw).filter(Number.isFinite),eighthDrums=eighthClock(drumTimes);
+ const eighthHat=eighthClock(hatTimes);
+ const clock=hat.events.map(e=>{const q=eighthHat?2*Math.round(e.t/(beat/2)):e.q;return {q,offset:e.t-q*step};}).sort((a,b)=>a.q-b.q);
  for(const n of input){
   const t=raw(n);if(!hatTimes.length||!Number.isFinite(t))continue;
-  const nearest=hatTimes.reduce((a,b)=>Math.abs(a-t)<=Math.abs(b-t)?a:b);
-  const offset=t-nearest;
+  const q=eighthDrums?2*Math.round(t/(beat/2)):Math.round(t/step);
+  const left=clock.findLast(e=>e.q<=q)??clock[0],right=clock.find(e=>e.q>=q)??clock.at(-1);
+  const phase=left.q===right.q?left.offset:left.offset+(right.offset-left.offset)*(q-left.q)/(right.q-left.q);
+  const nearest=q*step+phase,offset=Math.abs(t-nearest)<1e-8?0:t-nearest;
   if(Math.abs(offset)>beat*.45)continue;
-  events.push({t,type:n.type,hatT:nearest,offset,q:Math.round(t/step)});
+  events.push({t,type:n.type,hatT:nearest,offset,q});
  }
  const kicks=events.filter(e=>e.type==='kick').map(e=>e.offset),snares=events.filter(e=>e.type==='snare').map(e=>e.offset);
  const consistency=values=>values.length<2?0:Math.exp(-sd(values)/.018)*clamp(values.length/3);
@@ -82,12 +93,12 @@ function enrich(analysis,groove){
  if(!groove||groove.confidence===0)return a;
  const oldWeight=a.weight;
  const intentional=Math.max(groove.laidBack,groove.drunk,groove.pocket,groove.swing,groove.snarePushed??0);
- a.weight=clamp(a.weight+.12*groove.laidBack);
- a.groovePower=6*groove.laidBack+4*groove.pocket+3*groove.pushed+3*(groove.snarePushed??0);
+ a.weight=clamp(a.weight+.12*groove.laidBack*(1-groove.swing));
+ a.groovePower=Math.max(6*groove.laidBack*(1-groove.swing),4*groove.pocket,3*groove.pushed,3*(groove.snarePushed??0));
  a.power+=18*(a.weight-oldWeight)+a.groovePower;
  a.hits=Math.min(8,Math.max(1,a.hits+Math.round(groove.pushed)));
- a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+.12*groove.tight+.08*groove.pocket+.08*intentional));
- a.instability=Math.min(.55,Math.max(.04,a.instability*(1-.7*intentional)+.2*groove.unstable));
+ a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+Math.max(.12*groove.tight,.08*groove.pocket,.08*intentional)));
+ a.instability=Math.min(.55,Math.max(0,(a.instability??0)*(1-.7*intentional)+.2*groove.unstable));
  a.scores.lightning+=.7*groove.drunk;a.scores.wind+=.35*groove.swing;
  a.element=Object.keys(a.scores).reduce((x,y)=>a.scores[x]>=a.scores[y]?x:y);
  a.effect=clamp(a.effect+.25*groove.drunk);
@@ -95,8 +106,9 @@ function enrich(analysis,groove){
 }
 function affinity(g,kind){
  if(!g)return [];
- const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:kind==='plant'?[['swing',.18],['laidBack',.12]]:kind==='ghost'?[['laidBack',.25],['drunk',.25]]:kind==='crystal'?[['pocket',.2],['tight',.15]]:[];
- return choices.map(([id,strength])=>({id,multiplier:1+strength*(g[id]??0)}));
+ const choices=kind==='stone'?[['laidBack',.25],['pocket',.12]]:kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:kind==='machine'?[['tight',.2],['drunk',.26]]:kind==='plant'?[['swing',.18],['laidBack',.12]]:kind==='ghost'?[['laidBack',.25],['drunk',.25]]:kind==='crystal'?[['pocket',.2],['tight',.15]]:kind==='furnace'?[['swing',.18],['pocket',.15]]:kind==='conductor'?[['tight',.15],['laidBack',.12]]:[];
+ const bonuses=choices.map(([id,strength])=>({id,multiplier:1+strength*(g[id]??0)}));
+ return bonuses.length?[bonuses.reduce((best,next)=>next.multiplier>best.multiplier?next:best)]:[];
 }
 function describe(g){
  if(!g||!g.matched)return 'Hatとの対応が少ないため、今回は音の特徴から攻撃。';
