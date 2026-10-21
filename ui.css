@@ -1240,3 +1240,45 @@ body.game-ui code {
  #game>.console>.result .result-feedback { display:none; }
  #game>.console .performance-safety-divider { flex-basis:24px; min-height:24px; }
 }
+
+
+/* Persistent move slot between performance input and the transport controls. */
+.mobile-move-slot { display:none; }
+@media(max-width:759px) {
+ #game>.console>.mobile-move-slot {
+   display:block; flex:0 0 auto; min-width:0;
+   border:1px solid #536747; border-radius:8px;
+   background:#20291d; overflow:hidden;
+ }
+ #game>.console>.mobile-move-slot .mobile-move-placeholder {
+   display:flex; flex-direction:column; justify-content:center;
+   gap:4px; min-height:55px; padding:9px 12px;
+ }
+ #game>.console>.mobile-move-slot .mobile-move-placeholder strong {
+   font-size:14px; color:var(--lime);
+ }
+ #game>.console>.mobile-move-slot .mobile-move-placeholder small {
+   font-size:10px; color:#b9c5af;
+ }
+ #game>.console>.mobile-move-slot:has(>.result:not([hidden])) .mobile-move-placeholder {
+   display:none;
+ }
+ #game>.console>.mobile-move-slot>.result {
+   position:relative!important; inset:auto!important; grid-area:auto!important;
+   display:block; width:100%; height:auto; max-height:135px;
+   margin:0; padding:8px 10px; overflow-y:auto;
+   border:0; border-radius:0; box-shadow:none;
+   background:transparent;
+ }
+ #game>.console>.mobile-move-slot>.result[hidden] { display:none!important; }
+ #game>.console>.mobile-move-slot>.result .result-heading { display:flex; }
+ #game>.console>.mobile-move-slot>.result .result-content {
+   display:flex; align-items:center; justify-content:space-between;
+   padding:4px 0; gap:8px;
+ }
+ #game>.console>.mobile-move-slot>.result #openResultDetails {
+   display:block; min-height:38px; max-width:none;
+ }
+ #game>.console>.mobile-move-slot>.result .result-cause,
+ #game>.console>.mobile-move-slot>.result .result-feedback { display:none!important; }
+}
