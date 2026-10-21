@@ -77,6 +77,7 @@
 /* On phones the result is part of the performance flow, not an enemy overlay.
    Reparent the original node so its data and detail button remain functional. */
 (()=>{
+ if(typeof document==='undefined')return;
  const game=document.getElementById('game');
  const consolePanel=game?.querySelector(':scope > .console');
  const result=document.getElementById('result');
