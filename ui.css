@@ -1282,3 +1282,26 @@ body.game-ui code {
  #game>.console>.mobile-move-slot>.result .result-cause,
  #game>.console>.mobile-move-slot>.result .result-feedback { display:none!important; }
 }
+
+
+/* The move display replaces the former '操作メニュー' separator. */
+@media(max-width:759px) {
+ #game>.console>.mobile-move-slot {
+   display:block!important;
+   flex:0 0 auto;
+   min-height:44px;
+   margin:5px 0 7px;
+   border:1px solid #536747;
+   border-radius:8px;
+   background:#20291d;
+ }
+ #game>.console>.mobile-move-slot .mobile-move-placeholder {
+   display:flex;
+   min-height:44px;
+   padding:7px 12px;
+ }
+ #game>.console>.mobile-move-slot:has(>.result:not([hidden])) .mobile-move-placeholder {
+   display:none;
+ }
+ #game>.console>.controls { margin-top:0; }
+}
