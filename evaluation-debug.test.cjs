@@ -1,5 +1,39 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 const D=require('./evaluation-debug.js'),R=require('./rhythm.js'),G=require('./groove.js'),Q=require('./quantize.js'),C=require('./performance-combat.js'),E=require('./ensemble.js');
+test('maximum charts establish effective laid-back or drunk timing before maximizing damage',()=>{
+ const roster=[['stone',82,.2],['machine',120,.25],['plant',100,0],['ghost',72,0],['conductor',126,.18]];
+ for(const [kind,bpm,guard] of roster)for(const intentId of [undefined,'guard']){
+  const enemy={kind,guard,intentId},duration=480/bpm,plan=D.damageChart('max',bpm,duration,[],enemy);
+  const expected=['laidBack','drunk'].filter(id=>G.affinity({[id]:1},kind).some(b=>b.id===id&&b.multiplier>1));
+  assert.deepEqual(plan.preferredGrooves,expected);assert.ok(expected.includes(plan.grooveStyle),kind);
+  const actual=D.compare(plan.parts,plan.hats,bpm,duration,[],enemy).normal;
+  assert.equal(actual.result.total,plan.total);assert.equal(G.classify(actual.groove),plan.grooveStyle);
+  assert.ok(actual.groove[plan.grooveStyle]>=.55);assert.ok(actual.groove.unstable<.35);
+  // Musical constraints intentionally replace the previous unconstrained floor.
+  assert.ok(plan.total>0,'effective groove must produce a nonempty attack: '+kind);
+  for(const notes of [...plan.parts.values(),plan.hats])for(const n of notes){assert.equal(n.rawT,n.t);assert.equal(n.quantize,'off');assert.ok(n.t>=0&&n.t<duration);}
+ }
+});
+test('musical maximum charts establish the pulse, develop both bars and resolve their melodies',()=>{
+ const roster=[['stone',82,.2],['fly',150,0],['machine',120,.25],['plant',100,0],['ghost',72,0],['crystal',138,.3],['furnace',108,.15],['conductor',126,.18]];
+ for(const [kind,bpm,guard] of roster)for(const intentId of ['guard','heavy','heal','pierce','buff','special']){
+  const p=D.damageChart('max',bpm,480/bpm,[],{kind,guard,intentId}),step=60/bpm/4,drums=p.parts.get('drums'),bass=p.parts.get('bass'),lead=p.parts.get('lead');
+  assert.equal(drums[0].type,'kick');assert.equal(drums[0].t,0,kind+' must establish the first beat');
+  assert.equal(p.hats.length,16);p.hats.forEach((n,i)=>assert.equal(n.t,i*step*2,'Hat remains the audible clock'));
+  for(const bar of [0,1]){
+   const ns=drums.filter(n=>Math.round(n.t/step)>=bar*16&&Math.round(n.t/step)<(bar+1)*16);
+   assert.ok(ns.length>=3,'each bar must have a voiced phrase');assert.ok(ns.some(n=>n.type==='snare'));
+   assert.ok(bass.some(n=>n.t===bar*16*step&&n.pitch===0),'Bass supports each bar with its low tonic');
+  }
+  for(const ns of [bass,lead]){
+   assert.equal(ns.at(-1).pitch,0,'melody returns to the tonic');
+   assert.ok(ns.some((n,i)=>i&&n.t>ns[i-1].t+ns[i-1].duration+.01),'phrases have breathing room');
+   ns.forEach((n,i)=>{assert.ok(n.duration>0);assert.ok(n.t+n.duration<=480/bpm+1e-8);if(i)assert.ok(ns[i-1].t+ns[i-1].duration<=n.t+1e-8);});
+  }
+  assert.ok(bass.some(n=>n.duration>=step*3),'Bass has sustained support');
+  assert.notDeepEqual(bass.map(n=>n.t),lead.map(n=>n.t),'accompaniment and reply have distinct rhythms');
+ }
+});
 test('weaknesses remain valuable while guard admits tactical elemental alternatives',()=>{
  const roster=[['stone',82,.2,'earth'],['fly',150,0,'wind'],['machine',120,.25,'lightning'],['plant',100,0,'fire'],['ghost',72,0,'lightning'],['crystal',138,.3,'earth'],['furnace',108,.15,'wind'],['conductor',126,.18,'fire']];
  for(const intentId of [undefined,'guard','buff'])for(const [kind,bpm,guard,weakness] of roster){

@@ -110,24 +110,36 @@ function affinity(g,kind){
  const bonuses=choices.map(([id,strength])=>({id,multiplier:1+strength*(g[id]??0)}));
  return bonuses.length?[bonuses.reduce((best,next)=>next.multiplier>best.multiplier?next:best)]:[];
 }
-function describe(g){
- if(!g||!g.matched)return 'Hatとの対応が少ないため、今回は音の特徴から攻撃。';
- const millis=n=>Math.round(Math.abs(n)*1000);
- if(g.unstable>.55)return 'ズレ方が毎回変わっている → 不安定。';
- if(g.snarePushed>.2&&g.snarePushed>=Math.max(g.pocket,g.laidBack,g.pushed,g.drunk,g.swing))return `SnareがHatより平均${millis(g.snareMean)}ms前 → 前ノリスネア。`;
- if(g.drunk>.35&&g.drunk>Math.max(g.laidBack,g.pushed,g.pocket,g.swing)*1.15)return `同じズレ方を${Math.max(2,g.repetitions)}回再現 → ドランク。`;
- if(g.swing>.6&&g.swing>=Math.max(g.laidBack,g.pushed,g.pocket,g.drunk)*.9)return '裏拍を繰り返し遅らせた → スウィング。';
- if(g.pocket>.25)return `KickがHatより${millis(g.kickMean)}ms前、Snareが${millis(g.snareMean)}ms後ろ → ポケット。`;
- if(g.laidBack>.2&&g.snareMean>.008)return `SnareがHatより平均${millis(g.snareMean)}ms後ろ → レイドバック。`;
- if(g.pushed>.2&&g.kickMean<-.008)return `KickがHatより平均${millis(g.kickMean)}ms前 → 前ノリ。`;
- if(g.swing>.6)return '裏拍を繰り返し遅らせた → スウィング。';
- if(g.drunk>.2)return `同じズレ方を${Math.max(2,g.repetitions)}回再現 → ドランク。`;
- if(g.swing>.2)return '裏拍を繰り返し遅らせた → スウィング。';
- if(g.hat.laidBack>.2)return `Hatを平均${millis(g.hat.meanOffset)}ms後ろに配置 → レイドバック。`;
- if(g.hat.pushed>.2)return `Hatを平均${millis(g.hat.meanOffset)}ms前に配置 → 前ノリ。`;
- if(g.tight>.35)return 'Hatと低音・高音がほぼ同時 → タイト。';
- return 'Hatとの間隔を変えて、自分のノリを試そう。';
+function classify(g){
+ if(!g||!g.matched)return 'none';
+ if(g.unstable>.55)return 'unstable';
+ if(g.snarePushed>.2&&g.snarePushed>=Math.max(g.pocket,g.laidBack,g.pushed,g.drunk,g.swing))return 'snarePushed';
+ if(g.drunk>.35&&g.drunk>Math.max(g.laidBack,g.pushed,g.pocket,g.swing)*1.15)return 'drunk';
+ if(g.swing>.6&&g.swing>=Math.max(g.laidBack,g.pushed,g.pocket,g.drunk)*.9)return 'swing';
+ if(g.pocket>.25)return 'pocket';
+ if(g.laidBack>.2&&g.snareMean>.008)return 'laidBack';
+ if(g.pushed>.2&&g.kickMean<-.008)return 'pushed';
+ if(g.swing>.6)return 'swing';
+ if(g.drunk>.2)return 'drunk';
+ if(g.swing>.2)return 'swing';
+ if(g.hat.laidBack>.2)return 'hatLaidBack';
+ if(g.hat.pushed>.2)return 'hatPushed';
+ return g.tight>.35?'tight':'other';
 }
-root.Groove={analyzeHat,analyzeRelations,enrich,affinity,describe};
+function describe(g){
+ const id=classify(g),millis=n=>Math.round(Math.abs(n)*1000);
+ if(id==='none')return 'Hatとの対応が少ないため、今回は音の特徴から攻撃。';
+ if(id==='unstable')return 'ズレ方が毎回変わっている → 不安定。';
+ if(id==='snarePushed')return `SnareがHatより平均${millis(g.snareMean)}ms前 → 前ノリスネア。`;
+ if(id==='drunk')return `同じズレ方を${Math.max(2,g.repetitions)}回再現 → ドランク。`;
+ if(id==='swing')return '裏拍を繰り返し遅らせた → スウィング。';
+ if(id==='pocket')return `KickがHatより${millis(g.kickMean)}ms前、Snareが${millis(g.snareMean)}ms後ろ → ポケット。`;
+ if(id==='laidBack')return `SnareがHatより平均${millis(g.snareMean)}ms後ろ → レイドバック。`;
+ if(id==='pushed')return `KickがHatより平均${millis(g.kickMean)}ms前 → 前ノリ。`;
+ if(id==='hatLaidBack')return `Hatを平均${millis(g.hat.meanOffset)}ms後ろに配置 → レイドバック。`;
+ if(id==='hatPushed')return `Hatを平均${millis(g.hat.meanOffset)}ms前に配置 → 前ノリ。`;
+ return id==='tight'?'Hatと低音・高音がほぼ同時 → タイト。':'Hatとの間隔を変えて、自分のノリを試そう。';
+}
+root.Groove={analyzeHat,analyzeRelations,enrich,affinity,classify,describe};
 if(typeof module!=='undefined')module.exports=root.Groove;
 })(typeof window!=='undefined'?window:globalThis);

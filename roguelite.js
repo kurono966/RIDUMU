@@ -24,7 +24,7 @@
  function shuffle(values,rng=Math.random){const out=[...values];for(let i=out.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
  function encounter(enemy,kind='normal'){
   const out=copy(enemy),hp=kind==='elite'?1.2:kind==='session'?1.1:1,attack=kind==='elite'?1.12:1;
-  out.hp=Math.round(out.hp*hp);out.attack=Math.round(out.attack*attack);out.attackCap=Math.round(out.attack*1.6);
+  out.hp=Math.round(out.hp*hp);out.attack=Math.round(out.attack*attack);out.baseAttack=out.attack;out.attackCap=Math.round(out.attack*1.6);
   out.routeKind=kind;return out;
  }
  function create(roster,rng=Math.random){

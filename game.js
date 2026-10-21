@@ -656,7 +656,12 @@ function renderBattlePlan(){
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
  $('enemyIntent').hidden=ended;
  const intent=enemyIntent();
- $('enemyIntent').textContent=ended?'':`予告：${intent.name} / ${intent.power?'威力 '+enemyIntentDamage(intent)+' · Bass '+PerformanceCombat.attackBeat(intent)+'拍目で防御準備':'非攻撃'}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
+ if(!globalThis.EnemyState)$('enemyIntent').textContent=ended?'':`予告：${intent.name} / ${intent.power?'威力 '+enemyIntentDamage(intent)+' · Bass '+PerformanceCombat.attackBeat(intent)+'拍目で防御準備':'非攻撃'}${intent.pierce?' · 盾40%貫通':''}${intent.poison?' · 毒汚染':''} · LEAD後｜${intent.hint}`;
+ if(globalThis.EnemyState){
+  const enemy=enemies[stage],base=standardEnemies.find(e=>e.kind===enemy.kind),actionEnemy={...enemy,attackCap:enemy.attackCap??Math.round(base.attack*1.6)};
+  const forecast=PerformanceCombat.enemyAction(actionEnemy,enemyHp,intent,{guardBreak:0,healBlock:0,buffSuppress:0})??{};
+  EnemyState.render(document,enemy,{baseAttack:enemy.baseAttack??base.attack,hp:enemyHp,intent,damage:enemyIntentDamage(intent),forecast,ended});
+ }
  const names=[];
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  if(hazards.length)names.push(...hazards.map(h=>`毒：${h.slots.map(q=>q+1).join('・')}番 / −${h.power}HP / 残${h.remainingTurns}パート`));
@@ -683,11 +688,14 @@ async function enemyCounter(a,report,result){
  const tacticalText=tactic.value>.05?`${tactic.label} ${Math.round(tactic.value*100)}% / `:'';
  $('status').textContent='ENEMY / '+intent.name;$('hint').textContent=intent.hint;
  $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
- reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);
+ if(intent.power){reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);}
+ else reactEnemy(intent.id);
  await wait(180);
  // Non-attacking actions resolve after the player's full performance and do not damage HP.
  if(!intent.power){
   const enemy=enemies[stage];
+  const beforeAction={guard:enemy.guard??0,attack:enemy.attack,hp:enemyHp};
+  const forecastAction=PerformanceCombat.enemyAction({...enemy,attackCap:enemy.attackCap??Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6)},enemyHp,intent,{guardBreak:0,healBlock:0,buffSuppress:0});
   let message='';
   if(intent.id==='guard'){
    const before=enemy.guard??0;enemy.guard=PerformanceCombat.enemyAction(enemy,enemyHp,intent,tactic).guard;
@@ -700,8 +708,9 @@ async function enemyCounter(a,report,result){
    message='敵の攻撃力 '+old+' → '+enemy.attack;
   }
   $('arena').classList.remove('enemy-impact','guard-flash');
+  const actionNotice=globalThis.EnemyState?.record(enemy,{type:intent.id,before:beforeAction,after:{guard:enemy.guard??0,attack:enemy.attack,hp:enemyHp},forecast:forecastAction});
   message=tacticalText+message;
-  $('impact').textContent=message;
+  $('impact').textContent=actionNotice?actionNotice.headline+' / '+actionNotice.short:message;
   $('summaryHint').textContent=message;
   $('detailHint').textContent+=' / '+message;
   update();
@@ -716,6 +725,7 @@ async function enemyCounter(a,report,result){
  const leadDown=cycleLead?.pitch?.effects?.weaken??0;
  const specialCounter=intent.id==='special'&&!intent.poison&&leadDown>=.05?.25:0;
  const received=PerformanceCombat.counterAttack(hp,shield,enemyIntentDamage(intent)*(1-specialCounter),intent,reduction,tactic),piercing=received.pierce;
+ globalThis.EnemyState?.record(enemies[stage],{type:intent.id,received});
  shield=received.shield;renderBattlePlan();
  $('impact').style.color='#8edcdd';$('impact').textContent=received.absorbed?'SHIELD −'+received.absorbed:'';
  if(received.absorbed){$('arena').classList.add('guard-flash');await wait(260);}
@@ -729,9 +739,10 @@ async function enemyCounter(a,report,result){
 let enemyReactionTimer;
 function reactEnemy(kind,element='earth'){
  const enemy=$('enemy');
- for(const name of ['hit','weak','dodge','stun','burn','strike','evaded','guard','poison'])enemy.classList.remove('react-'+name);
+ for(const name of ['hit','weak','dodge','stun','burn','strike','evaded','guard','poison','heal','buff'])enemy.classList.remove('react-'+name);
  clearTimeout(enemyReactionTimer);void enemy.offsetWidth;
  enemy.style.setProperty?.('--impact-color',elements[element]?.[2]??'#d4f77d');enemy.classList.add('react-'+kind);
+ globalThis.EnemyArt?.react(enemy,kind);
  enemyReactionTimer=setTimeout(()=>enemy.classList.remove('react-'+kind),kind==='stun'?750:kind==='burn'?650:380);
 }
 let attackPlayhead=null;
@@ -930,6 +941,8 @@ function drawGridHazards(w,h){
 const canvas=$('scope'),paint=canvas.getContext('2d');
 function draw(){
  globalThis.ElementMeterUI?.observe();
+ const artBeat=attackPlayhead!==null?attackPlayhead/(60/lastBpm):ctx&&recordAudioAt!==null&&['countin','recording'].includes(state)?(ctx.currentTime-recordAudioAt)/(60/timing().bpm):null;
+ globalThis.EnemyArt?.update($('enemy'),{kind:enemies[stage].kind,time:performance.now()/1000,bpm:timing().bpm,beat:artBeat,phase:state,intent:enemyIntent().id,armor:enemies[stage].guard??0,charging:$('enemy').classList.contains('enemy-charge'),reduced:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false});
  const box=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
  if(canvas.width!==Math.round(box.width*ratio)||canvas.height!==Math.round(box.height*ratio)){canvas.width=Math.round(box.width*ratio);canvas.height=Math.round(box.height*ratio);}
  paint.setTransform(ratio,0,0,ratio,0,0);const w=box.width,h=box.height;

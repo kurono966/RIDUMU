@@ -1,0 +1,32 @@
+#game .enemy-state{flex-shrink:0;margin:5px 20px 8px;padding:8px 10px;border:1px solid #49564a;border-radius:8px;background:#18211b;min-width:0;font-size:11px;line-height:1.55}
+.enemy-effects{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.enemy-effects>small,.enemy-next-row>small,#enemyActionResult>small{font-size:9px;color:#9aab9c;letter-spacing:.04em;flex-shrink:0}
+.enemy-armor-badge,.enemy-attack-badge{padding:2px 7px;border-radius:4px;background:#252e27;border:1px solid #49574b;font-variant-numeric:tabular-nums}
+.enemy-armor-badge[data-active=true]{background:#243b3e;border-color:#66979b;color:#c8edef}
+.enemy-armor-badge[data-active=true]::before{content:'◇ ';font-weight:bold}
+.enemy-attack-badge[data-boosted=true]{background:#3b2d20;border-color:#ac8355;color:#f2c994}
+#game #enemyState .enemy-intent{display:block;margin:6px 0 0;padding:6px 0 0;border-top:1px solid #3c493f;max-height:none;overflow:visible;white-space:normal;text-overflow:clip;color:#d3ddd0}
+.enemy-next-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.enemy-next-row>strong{font-size:12px;font-weight:600}
+.enemy-next-row>span{font-size:11px;font-variant-numeric:tabular-nums;color:#c1cdbd}
+[data-intent=guard] .enemy-next-row>strong{color:#aedcde}
+[data-intent=buff] .enemy-next-row>strong,[data-intent=heavy] .enemy-next-row>strong{color:#efc08f}
+[data-intent=heal] .enemy-next-row>strong{color:#b5d69e}
+[data-intent=pierce] .enemy-next-row>strong,[data-intent=special] .enemy-next-row>strong{color:#d0bce8}
+#game #enemyState .enemy-next-help{margin:3px 0 0;color:#a5b5a3;font-size:10px;line-height:1.5}
+#enemyActionResult{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-top:6px;padding:6px 8px;border-left:2px solid #9ba99c;background:#253027;font-size:11px}
+#enemyActionResult>strong{font-size:11px;font-weight:600}
+#enemyActionResult>span{color:#c0ccbd;font-variant-numeric:tabular-nums}
+#enemyActionResult[data-tone=success]{border-color:#c7e391}
+#enemyActionResult[data-tone=guard]{border-color:#94c9ce}
+#enemyActionResult[data-tone=buff],#enemyActionResult[data-tone=attack]{border-color:#e4ad76}
+#enemyActionResult[data-tone=heal]{border-color:#9bc88e}
+#game #enemyState [hidden]{display:none!important}
+@media(max-width:759px),(max-height:600px){
+ #game .enemy-state{margin:2px 8px 3px;padding:4px 7px;font-size:10px;line-height:1.4}
+ .enemy-effects{gap:5px;flex-wrap:nowrap}.enemy-armor-badge,.enemy-attack-badge{padding:1px 5px;white-space:nowrap}
+ #game #enemyState .enemy-intent{margin-top:3px;padding-top:3px}.enemy-next-row{gap:5px}.enemy-next-row>strong,.enemy-next-row>span{font-size:10px}
+ #game #enemyState .enemy-next-help{display:none}
+ #enemyActionResult{margin-top:3px;padding:3px 5px;gap:4px;line-height:1.4}
+ #enemyActionResult>small{display:none}#enemyActionResult>strong,#enemyActionResult>span{font-size:9px}
+}

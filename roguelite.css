@@ -146,3 +146,30 @@ body[data-game-mode=roguelite] #rogueRack .rogue-proc { margin:3px 0; }
     overflow-y:auto;
   }
 }
+
+/* Desktop: every direct grid child needs an explicit named area. Omitting
+   rig/result caused implicit columns when the mobile result returned to main. */
+@media(min-width:760px) {
+  body[data-game-mode=roguelite] #game {
+    grid-template-rows:44px auto minmax(0,1fr);
+    grid-template-areas:"header header" "rig rig" "arena console";
+  }
+  body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+    grid-template-rows:44px auto minmax(0,1fr) clamp(120px,18dvh,180px);
+    grid-template-areas:"header header" "rig rig" "arena console" "result console";
+  }
+  body[data-game-mode=roguelite] #rogueRack {
+    position:relative;inset:auto;grid-area:rig;align-self:start;
+    width:100%;min-width:0;max-height:min(18dvh,160px);
+    overflow-x:hidden;overflow-y:auto;
+  }
+  body[data-game-mode=roguelite] #game>.result {
+    position:static;inset:auto;grid-area:result;
+    width:auto;height:auto;min-width:0;min-height:0;max-height:100%;
+    margin:0;overflow:auto;
+  }
+  body[data-game-mode=roguelite] #game>.result[hidden] {display:none!important;}
+  body[data-game-mode=roguelite] #game>.console {
+    min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  }
+}
