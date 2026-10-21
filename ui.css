@@ -1198,3 +1198,20 @@ body.game-ui code {
     justify-content:flex-start;
   }
 }
+
+
+/* A noninteractive buffer prevents stray performance taps hitting Stop. */
+.performance-safety-divider { display:none; }
+@media(max-width:759px) {
+  #game>.console .performance-safety-divider {
+    display:flex; align-items:center; gap:12px;
+    flex:0 0 32px; min-height:32px;
+    color:#929e85; font-size:10px; letter-spacing:.12em;
+    pointer-events:none; user-select:none;
+  }
+  #game>.console .performance-safety-divider::before,
+  #game>.console .performance-safety-divider::after {
+    content:""; flex:1; height:1px; background:#48543f;
+  }
+  #game>.console .controls { margin-top:0; }
+}
