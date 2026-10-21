@@ -42,3 +42,61 @@ dialog.rogue-rewards{box-sizing:border-box;width:min(880px,94vw);max-width:94vw;
 @media(max-width:650px){.rogue-gear{grid-template-columns:repeat(2,minmax(0,1fr))}.rogue-rack{padding:12px}.rogue-rack-head{gap:8px}.rogue-rack-head small{width:100%}dialog.rogue-rewards{padding:18px}.rogue-rewards .reward-choices{grid-template-columns:1fr}.rogue-rewards .rogue-choice{min-height:0;gap:8px;padding:15px}.rogue-choice>em{padding-top:8px}.rogue-rewards h2{font-size:21px}}
 @media(prefers-reduced-motion:reduce){.rogue-rewards .rogue-choice{transition:none}}
 @media(max-width:759px){body[data-game-mode=roguelite] #game,body[data-game-mode=roguelite] #game:has(>.result:not([hidden])){height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:44px auto minmax(260px,auto) minmax(560px,auto) auto;grid-template-areas:"header" "rig" "arena" "console" "result";overflow:visible}body[data-game-mode=roguelite] #game>.result{position:static;grid-area:result;width:auto;max-height:none}.rogue-rack{min-width:0}.rogue-proc{overflow-wrap:anywhere}}
+
+
+/* Rogue mode must use the same viewport shell as standard mode.
+   The old auto-height layout caused page scrolling and empty space. */
+html:has(body[data-game-mode=roguelite]),
+body[data-game-mode=roguelite] {
+  height:100%; min-height:0; overflow:hidden; overscroll-behavior:none;
+}
+body[data-game-mode=roguelite] #game,
+body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+  height:100vh; height:100dvh; min-height:0; overflow:hidden;
+  grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+  grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"header header" "arena console";
+}
+body[data-game-mode=roguelite] #rogueRack {
+  position:absolute; z-index:9; top:48px; left:8px; right:8px;
+  max-height:min(35dvh,240px); min-height:0; overflow-y:auto;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  padding:8px 10px;
+}
+body[data-game-mode=roguelite] #rogueRack .rogue-gear { margin:5px 0; }
+body[data-game-mode=roguelite] #rogueRack .rig-item { padding:5px 8px; }
+body[data-game-mode=roguelite] #rogueRack .rogue-run-status,
+body[data-game-mode=roguelite] #rogueRack .rogue-proc { margin:3px 0; }
+@media(max-width:759px) {
+  body[data-game-mode=roguelite] #game,
+  body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+    padding:max(3px,env(safe-area-inset-top)) 5px max(3px,env(safe-area-inset-bottom));
+    gap:4px;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:minmax(32px,auto) minmax(0,28fr) minmax(0,72fr);
+    grid-template-areas:"header" "arena" "console";
+  }
+  body[data-game-mode=roguelite] #rogueRack {
+    top:39px; left:5px; right:5px; max-height:min(26dvh,170px);
+    padding:5px 8px; font-size:10px;
+  }
+  body[data-game-mode=roguelite] #rogueRack .rogue-rack-head { gap:3px; }
+  body[data-game-mode=roguelite] #rogueRack .rogue-progress span { width:18px; height:18px; font-size:9px; }
+  body[data-game-mode=roguelite] #rogueRack .rogue-gear { grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+  body[data-game-mode=roguelite] #game>.result:not([hidden]) {
+    position:absolute; grid-area:auto; left:5px; right:5px;
+    top:8%; bottom:auto; width:auto; height:auto; max-height:45%;
+    overflow-y:auto; display:block;
+  }
+  body[data-game-mode=roguelite] #game>.result[hidden] { display:none!important; }
+  body[data-game-mode=roguelite] #game>.console { min-height:0; overflow-y:auto; }
+}
+@media(max-width:759px) and (orientation:landscape) {
+  body[data-game-mode=roguelite] #game,
+  body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+    grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+    grid-template-rows:minmax(30px,auto) minmax(0,1fr);
+    grid-template-areas:"header header" "arena console";
+  }
+  body[data-game-mode=roguelite] #rogueRack { max-height:38dvh; }
+}
