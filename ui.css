@@ -213,13 +213,13 @@
 #game .console.hat-phase>.hat{
   display:flex
 }
-#game .console.hat-phase>.pads,#game .console.hat-phase>.melody-pads{
+#game .console.hat-phase>.performance-input-slot>.pads,#game .console.hat-phase>.performance-input-slot>.melody-pads{
   display:none
 }
-#game .console.seven-notes:not(.hat-phase)>.pads{
+#game .console.seven-notes:not(.hat-phase)>.performance-input-slot>.pads{
   display:none
 }
-#game .console.seven-notes:not(.hat-phase)>.melody-pads{
+#game .console.seven-notes:not(.hat-phase)>.performance-input-slot>.melody-pads{
   display:grid
 }
 #game .console>.pads{
@@ -246,7 +246,7 @@
   gap:6px;
   grid-template-columns:repeat(7,minmax(0,1fr))
 }
-#game .console.four-notes>.melody-pads{
+#game .console.four-notes>.performance-input-slot>.melody-pads{
   grid-template-columns:repeat(4,minmax(0,1fr))
 }
 #game .console .melody-pad{
@@ -267,7 +267,7 @@
   display:none;
   min-height:80px
 }
-#game .pads-collapsed>#hat,#game .pads-collapsed>.pads,#game .pads-collapsed>#melodyPads{
+#game .pads-collapsed>#hat,#game .pads-collapsed>.performance-input-slot>.pads,#game .pads-collapsed>.performance-input-slot>#melodyPads{
   display:none!important
 }
 #game .pads-collapsed>.restore-pads{
@@ -670,7 +670,7 @@ dialog::backdrop{
   #game .console .melody-pad{
     min-height:44px
   }
-  #game .console.four-notes>.melody-pads{
+  #game .console.four-notes>.performance-input-slot>.melody-pads{
     height:74px;
     min-height:74px
   }
@@ -888,7 +888,7 @@ dialog::backdrop{
   #game .console .melody-pad{
     min-height:40px
   }
-  #game .console.four-notes>.melody-pads{
+  #game .console.four-notes>.performance-input-slot>.melody-pads{
     height:64px;
     min-height:64px
   }
@@ -1058,8 +1058,8 @@ dialog::backdrop{
 }
 /* A large, explicit opt-in for the alternate recording workflow. */
 #continuousInput,#autoHat{width:44px;height:28px;accent-color:var(--lime);cursor:pointer;flex-shrink:0}
-#game .console.nine-notes>.melody-pads{grid-template-columns:repeat(9,minmax(0,1fr))}
-@media(max-width:740px),(max-height:500px){#game .console.nine-notes>.melody-pads{grid-template-columns:repeat(5,minmax(0,1fr))}}
+#game .console.nine-notes>.performance-input-slot>.melody-pads{grid-template-columns:repeat(9,minmax(0,1fr))}
+@media(max-width:740px),(max-height:500px){#game .console.nine-notes>.performance-input-slot>.melody-pads{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
 
 /* The interface behaves like a game, not a selectable document.
@@ -1129,7 +1129,7 @@ body.game-ui code {
   #game .timeline { height:44px; min-height:40px; flex:0 0 44px; }
   #game .console .pad { box-sizing:border-box; height:auto; min-height:52px; padding:7px 9px; }
   #game .console .melody-pads { box-sizing:border-box; height:auto; min-height:92px; }
-  #game .console.four-notes>.melody-pads { min-height:68px; height:auto; }
+  #game .console.four-notes>.performance-input-slot>.melody-pads { min-height:68px; height:auto; }
   #game .console .melody-pad { min-height:44px; }
   #game .controls {
     position:sticky; bottom:0; z-index:5; flex-shrink:0;
@@ -1343,5 +1343,26 @@ body.game-ui code {
  }
  #game>.console>.mobile-move-slot>.result {
    max-height:88px; overflow-y:auto;
+ }
+}
+
+/* Instrument mode selectors must target pads nested in the fixed input slot. */
+#game .console>.performance-input-slot>.pads { display:flex; gap:12px; }
+#game .console>.performance-input-slot>.melody-pads { display:none; }
+#game .console.hat-phase>.performance-input-slot>.pads,
+#game .console.hat-phase>.performance-input-slot>.melody-pads { display:none!important; }
+#game .console.seven-notes:not(.hat-phase)>.performance-input-slot>.pads { display:none!important; }
+#game .console.seven-notes:not(.hat-phase)>.performance-input-slot>.melody-pads { display:grid!important; }
+#game .console.four-notes>.performance-input-slot>.melody-pads { grid-template-columns:repeat(4,minmax(0,1fr)); }
+#game .console.nine-notes>.performance-input-slot>.melody-pads { grid-template-columns:repeat(9,minmax(0,1fr)); }
+#game .console.pads-collapsed>.performance-input-slot>.pads,
+#game .console.pads-collapsed>.performance-input-slot>.melody-pads { display:none!important; }
+@media(max-width:740px) {
+ #game .console.nine-notes>.performance-input-slot>.melody-pads {
+   grid-template-columns:repeat(5,minmax(0,1fr));
+   grid-template-rows:repeat(2,minmax(0,1fr));
+ }
+ #game .console.nine-notes>.performance-input-slot .melody-pad {
+   height:100%; min-height:0; padding:2px;
  }
 }
