@@ -72,3 +72,21 @@
  observer.observe(el('result'),{attributes:true,attributeFilter:['hidden','data-panel']});observer.observe(document.querySelector('.console'),{attributes:true,attributeFilter:['class']});
  try{effects(localStorage.getItem('ridumu-effects-open')==='true');}catch{effects(false);}refresh();
 })(globalThis);
+
+
+/* On phones the result is part of the performance flow, not an enemy overlay.
+   Reparent the original node so its data and detail button remain functional. */
+(()=>{
+ const game=document.getElementById('game');
+ const consolePanel=game?.querySelector(':scope > .console');
+ const result=document.getElementById('result');
+ const divider=consolePanel?.querySelector('.performance-safety-divider');
+ if(!game||!consolePanel||!result||!divider)return;
+ const move=()=>{
+  const mobile=window.matchMedia('(max-width:759px)').matches;
+  if(mobile&&result.parentElement!==consolePanel)consolePanel.insertBefore(result,divider);
+  else if(!mobile&&result.parentElement!==game)game.appendChild(result);
+ };
+ window.addEventListener('resize',move,{passive:true});
+ move();
+})();
