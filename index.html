@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="pitch.css?v=1">
     <link rel="stylesheet" href="experience.css?v=1">
     <link rel="stylesheet" href="element-meter.css?v=1">
+    <link rel="stylesheet" href="roguelite.css?v=1">
   </head>
   <body class="game-ui">
     <section id="titleScreen" class="title-screen" aria-labelledby="titleHeading">
@@ -25,18 +26,15 @@
         <p>あなたのリズムで、道を切り拓け。</p>
         <div class="title-choices">
           <button type="button" data-choose-mode="normal"><strong>通常モード</strong><span>8体に順番に挑戦。演奏を磨いて終奏の指揮者へ。</span></button>
-          <button type="button" data-choose-mode="roguelite"><strong>ローグライトモード</strong><span>敵の順番が変化。勝利ごとに報酬を選び、敗北したら最初から。</span></button>
+          <button type="button" data-choose-mode="roguelite"><strong>ローグライトモード</strong><span>機材を集め、演奏スタイルを育てる。敵と報酬を見て進路を選び、全8戦の終奏へ。</span></button>
         </div>
       </div>
     </section>
-    <dialog id="rogueRewardDialog" class="rogue-rewards" aria-labelledby="rewardTitle">
+    <dialog id="rogueRewardDialog" class="rogue-rewards" aria-labelledby="rewardTitle" aria-describedby="rogueChoiceHelp">
       <h2 id="rewardTitle">勝利報酬を選ぶ</h2>
-      <p>次の敵に持ち込む強化を1つ選択。</p>
-      <div class="reward-choices">
-        <button type="button" data-rogue-reward="heal">休息 <small>HPを45回復</small></button>
-        <button type="button" data-rogue-reward="weaken">弱体化 <small>次の敵の攻撃 −20%</small></button>
-        <button type="button" data-rogue-reward="break">奇襲 <small>次の敵のHP −18%</small></button>
-      </div>
+      <p id="rogueChoiceHelp"></p>
+      <div id="rogueChoices" class="reward-choices"></div>
+      <div class="rogue-choice-footer"><button id="rogueChoiceCancel" type="button">あとで選ぶ</button></div>
     </dialog>
     <main id="game">
       <header>
@@ -50,6 +48,13 @@
           音 ON
         </button>
       </header>
+      <section id="rogueRack" class="rogue-rack" aria-label="今回の周回と機材" hidden>
+        <div class="rogue-rack-head"><strong id="rogueRigCount">機材 0 / 4</strong><div id="rogueProgress" class="rogue-progress" aria-label="全8戦の進行"></div><small id="rogueResources"></small></div>
+        <p id="rogueRunStatus" class="rogue-run-status"></p>
+        <div id="rogueGear" class="rogue-gear"></div>
+        <p id="rogueChallenge" class="rogue-challenge" hidden></p>
+        <p id="rogueProc" class="rogue-proc" role="status" aria-live="polite"></p>
+      </section>
       <section class="arena" id="arena">
         <div class="enemy-info">
           <div>
@@ -579,13 +584,15 @@
     <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
     <script src="enemy-music.js?v=7"></script>
-    <script src="performance-review.js?v=3"></script>
+    <script src="roguelite.js?v=1"></script>
+    <script src="roguelite-ui.js?v=1"></script>
+    <script src="performance-review.js?v=4"></script>
     <script src="feedback-audio.js?v=1"></script>
-    <script src="game.js?v=30"></script>
+    <script src="game.js?v=31"></script>
     <script src="synth-ui.js?v=5"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js?v=2"></script>
-    <script src="ui.js?v=5"></script>
+    <script src="ui.js?v=6"></script>
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=2"></script>
     <script src="element-meter-ui.js?v=2"></script>

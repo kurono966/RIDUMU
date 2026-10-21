@@ -3,8 +3,10 @@
  'use strict';
  const get=(file,name)=>typeof module!=='undefined'?require('./'+file+'.js'):root[name];
  const R=get('rhythm','Rhythm'),Q=get('quantize','Quantize'),G=get('groove','Groove'),C=get('performance-combat','PerformanceCombat'),E=get('ensemble','Ensemble'),P=get('pitch-combat','PitchCombat'),S=get('synth','Synth');
+ const Gear=get('roguelite','RogueRun');
  const copy=value=>JSON.parse(JSON.stringify(value)),raw=n=>n.inputT??n.rawT??n.t;
  const labels={drums:'● Drumsの刻み',bass:'▰ Bassの配置・長押し',lead:'↗ Leadの支援',affinity:'◇ 属性・敵との相性',rhythm:'＝ タイミングの再現',groove:'～ グルーヴ',ensemble:'◎ パートの掛け合い',pitch:'↕ 音程の使い分け',timbre:'◇ 音色の性格'};
+ labels.gear='◈ 機材';
  const grooveNames={pocket:'ポケット',laidBack:'後ろに置くノリ',pushed:'前に押すノリ',snarePushed:'スネアの前ノリ',swing:'跳ねるリズム',drunk:'同じ揺れの再現',tight:'タイトな重なり'};
  function evaluate(packet,options={}){
   const omit=options.omit,bpm=packet.bpm,duration=packet.duration,enemy=options.enemy??packet.enemy,parts=new Map(packet.tracks.map(t=>[t.voice,t.notes])),hats=packet.hats??[];
@@ -22,20 +24,24 @@
   const carry=options.neutral?{hp:100,shield:0,enemyHp:enemy.hp}:packet.conditions??{hp:100,shield:0,enemyHp:enemy.hp};
   const initialShield=carry.shield??0,bassRaw=bass.shield,bassShield=Math.round(bassRaw*bassStyle.shield),afterBass=Math.min(90,initialShield+bassShield);
   const toneShield=Math.round(bassRaw*(leadStyle.shield-1)*.5),bonus=toneShield+Math.round(bassShield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield;
-  const shield=Math.max(0,Math.min(90,afterBass+bonus));
+  let shield=Math.max(0,Math.min(90,afterBass+bonus));
   const groove=G.analyzeRelations(drums,hats,bpm,duration);
   let a=R.analyze(Q.render(drums,bpm,duration),duration,bpm);if(omit==='rhythm')a={...a,performanceQuality:{...a.performanceQuality,multiplier:1}};
   a=omit==='groove'?a:G.enrich(a,groove);
   a=E.attack(C.enhance(a,drums,bpm,[],lead),ensemble);
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a=P.apply(a,bass.pitch,lead.pitch);
+  const inventory=options.gear??packet.gear??[],gearEffects=Gear.effects(omit==='gear'?[]:inventory,a,bass,lead,ensemble);
+  if(inventory.length){a=Gear.apply(a,gearEffects);shield=Math.min(90,shield+gearEffects.shield);}
+  const healedHp=Math.min(100,(carry.hp??100)+gearEffects.heal);
   a.tactics=C.tactics(a,bass,lead,intent??{});
   const result=R.resolve(a,omit==='affinity'?{...enemy,kind:'neutral'}:enemy),reduction=C.reduction(lead,bass,ensemble,a),counter=!!options.neutral||(carry.enemyHp??enemy.hp)>result.total;
   const special=intent?.id==='special'&&!intent.poison&&(lead.pitch?.effects.weaken??0)>=.05?.25:0;
-  const received=!counter||intent?.power===0?{incoming:0,damage:0,absorbed:0,shield,hp:carry.hp??100}:intent?C.counterAttack(carry.hp??100,shield,Math.max(1,Math.round(enemy.attack*intent.power))*(1-special),intent,reduction.total,a.tactics):C.receive(carry.hp??100,shield,enemy.attack,reduction.total);
-  return {analysis:a,result,bass,lead,ensemble,groove,profiles:{bass:bassProfile,lead:leadProfile},shield,shieldGenerated:shield-initialShield,damage:options.neutral?result.total:Math.min(carry.enemyHp??enemy.hp,result.total),received,counter,reduction,conditions:{...carry}};
+  const received=!counter||intent?.power===0?{incoming:0,damage:0,absorbed:0,shield,hp:healedHp}:intent?C.counterAttack(healedHp,shield,Math.max(1,Math.round(enemy.attack*intent.power))*(1-special),intent,reduction.total,a.tactics):C.receive(healedHp,shield,enemy.attack,reduction.total);
+  return {analysis:a,result,bass,lead,ensemble,groove,profiles:{bass:bassProfile,lead:leadProfile},shield,shieldGenerated:shield-initialShield,healed:healedHp-(carry.hp??100),damage:options.neutral?result.total:Math.min(carry.enemyHp??enemy.hp,result.total),received,counter,reduction,conditions:{...carry}};
  }
  function description(id,value){const a=value.analysis,b=value.bass,l=value.lead;
+  if(id==='gear')return (a.gearEffects?.triggers??[]).filter(t=>t.value>0).map(t=>t.name).join('・')+'の演奏条件を達成';
   if(id==='drums')return a.charged>.3?'間の後のKickで重い一撃':a.alternation>.5?'KickとSnareの交互打ちで攻撃':'Drumsのリズムで攻撃';
   if(id==='bass')return b.locked?'Kickに重ねたBassで盾':b.sustain>.35?'Bassの長押しで厚い盾':'Bassの配置で盾';
   if(id==='lead')return l.shieldEfficiency>.15?'Leadの長音で盾を支援':'Leadの裏拍と配置で攻撃を支援';
@@ -49,19 +55,20 @@
  function factors(packet,options={}){
   const actual=evaluate(packet,options),list=[],ensembleBenefits=actual.ensemble.selected.filter(s=>{const off=evaluate(packet,{...options,omitSynergy:s.id});return actual.damage>off.damage||(actual.counter&&actual.shieldGenerated>off.shieldGenerated)||actual.received.damage<off.received.damage;}).map(s=>s.id);
   for(const id of Object.keys(labels)){const without=evaluate(packet,{...options,omit:id}),damage=actual.damage-without.damage,shield=actual.counter?actual.shieldGenerated-without.shieldGenerated:0,saved=without.received.damage-actual.received.damage;
-   const score=Math.max(0,damage)+.6*Math.max(0,shield)+1.3*Math.max(0,saved);if(score<.5)continue;
-   const effects=[damage>0?'攻撃を強化':null,shield>0?'盾を強化':null,saved>0?'HPを守った':null].filter(Boolean);
+   const healing=actual.healed-without.healed,score=Math.max(0,damage)+.6*Math.max(0,shield)+1.3*Math.max(0,saved)+Math.max(0,healing);if(score<.5)continue;
+   const effects=[damage>0?'攻撃を強化':null,shield>0?'盾を強化':null,saved>0?'HPを守った':null,healing>0?'HPを回復':null].filter(Boolean);
    const described=id==='ensemble'?{...actual,ensemble:{...actual.ensemble,selected:actual.ensemble.selected.filter(s=>ensembleBenefits.includes(s.id))}}:actual;
    list.push({id,label:labels[id],cause:description(id,described),text:description(id,described)+' → '+effects.join('・'),damage,shield,saved,score});
   }return {actual,ensembleBenefits,all:list.sort((a,b)=>b.score-a.score),top:list.sort((a,b)=>b.score-a.score).slice(0,3)};
  }
  function compare(previous,current){
   if(!previous||previous.enemy.kind!==current.enemy.kind)return null;
-  const options={neutral:true,enemy:current.enemy},before=factors(previous,options),after=factors(current,options),a=before.actual,b=after.actual;
+  const options={neutral:true,enemy:current.enemy,gear:current.gear??[]},before=factors(previous,options),after=factors(current,options),a=before.actual,b=after.actual;
   const changes=Object.keys(labels).map(id=>{const x=before.all.find(f=>f.id===id),y=after.all.find(f=>f.id===id);return {id,label:labels[id],delta:(y?.score??0)-(x?.score??0),cause:y?.cause??x?.cause,observation:changeDescription(id,a,b)};}).filter(c=>Math.abs(c.delta)>=.5).sort((x,y)=>Math.abs(y.delta)-Math.abs(x.delta));
   return {before:a,after:b,damage:b.damage-a.damage,shield:b.shieldGenerated-a.shieldGenerated,received:b.received.damage-a.received.damage,changes,conditions:'今回の敵性能・HP100・持ち越し盾0で再計算。敵が生存し反撃する想定。実戦の撃破・オーバーキル・残HPの影響は除外。'};
  }
  function changeDescription(id,a,b){
+  if(id==='gear')return '同じ機材で、演奏条件の成立と発動効果が変わった';
   if(id==='drums')return b.analysis.count<a.analysis.count?'Drumsの音を減らし、間が広がった':b.analysis.count>a.analysis.count?'Drumsを細かく刻むようになった':'Drumsの間隔やアクセントが変わった';
   if(id==='rhythm')return b.analysis.performanceQuality.multiplier>a.analysis.performanceQuality.multiplier?'同じタイミングを前回より再現できた':'タイミングの形が前回より揺れた';
   if(id==='bass')return b.bass.sustain>a.bass.sustain?'Bassを前回より長く伸ばした':b.bass.locked>a.bass.locked?'Kickに重なるBassが増えた':'Bassの長さ・Kickとの重なりが変わった';

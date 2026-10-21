@@ -13,16 +13,14 @@ const enemies=[
 // Game mode and encounter progression; normal mode keeps the original lineup.
 const copyEnemy=enemy=>({...enemy,...(enemy.intentOrder?{intentOrder:[...enemy.intentOrder]}:{}),...(enemy.gridSkill?{gridSkill:{...enemy.gridSkill}}:{})});
 const standardEnemies=enemies.map(copyEnemy);
-let gameMode='normal',rewardChoice='heal',rogueFloor=0;
+let gameMode='normal',rogueRun=null,rogueChoosing=false;
 function prepareMode(mode){
  globalThis.ExperienceUI?.clearAdvice?.();
  gameMode=mode==='roguelite'?'roguelite':'normal';
  const ordered=standardEnemies.map(copyEnemy);
- if(gameMode==='roguelite'){
-  for(let i=ordered.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ordered[i],ordered[j]]=[ordered[j],ordered[i]];}
- }
+ rogueRun=gameMode==='roguelite'?RogueRun.create(standardEnemies):null;
+ if(rogueRun)ordered[0]=copyEnemy(rogueRun.current.enemy);
  enemies.splice(0,enemies.length,...ordered);
- rogueFloor=0;rewardChoice='heal';
  if(typeof stage!=='undefined'){
   stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;
   shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
@@ -31,31 +29,25 @@ function prepareMode(mode){
  }
  document.body.dataset.gameMode=gameMode;
  const badge=document.getElementById('modeBadge');
- if(badge)badge.textContent=gameMode==='roguelite'?'ROGUELITE · FLOOR 1':'STANDARD';
+ if(badge)badge.textContent=gameMode==='roguelite'?'ROGUELITE · 1 / 8':'STANDARD';
+ renderRogueRun();
+ if(rogueRun)$('start').textContent='機材を選んで出発 ↗';
 }
-function applyRogueReward(){
- if(gameMode!=='roguelite')return;
- if(rewardChoice==='heal')hp=Math.min(100,hp+45);
- else if(rewardChoice==='weaken')enemies[stage].attack=Math.max(1,Math.round(enemies[stage].attack*.8));
- else if(rewardChoice==='break')enemyHp=Math.max(1,Math.round(enemyHp*.82));
- rogueFloor++;
- const badge=document.getElementById('modeBadge');
- if(badge)badge.textContent='ROGUELITE · FLOOR '+(rogueFloor+1);
+function renderRogueRun(){
+ globalThis.RogueUI?.render(rogueRun,{hp,shield});
 }
-function chooseRogueReward(){
- const dialog=document.getElementById('rogueRewardDialog');
- if(!dialog||gameMode!=='roguelite')return Promise.resolve();
- return new Promise(resolve=>{
-  const choose=event=>{
-   const button=event.target.closest('[data-rogue-reward]');
-   if(!button)return;
-   rewardChoice=button.dataset.rogueReward;
-   dialog.removeEventListener('click',choose);
-   dialog.close();resolve();
-  };
-  dialog.addEventListener('click',choose);
-  dialog.showModal();
- });
+async function chooseRogueReward(){
+ if(!rogueRun)return false;
+ const run=rogueRun,oldFloor=run.floor;
+ const advanced=await RogueUI.progress(run,standardEnemies,{hp:()=>hp,heal:amount=>{hp=Math.min(100,hp+amount);update();},refresh:renderRogueRun});
+ if(!advanced||rogueRun!==run)return false;
+ if(run.floor!==oldFloor){
+  stage=run.floor-1;enemies[stage]=copyEnemy(run.current.enemy);enemyHp=enemies[stage].hp;
+  turn=1;shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
+  tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];
+  state='ready';resetGridHazards();$('result').hidden=true;update();ready();
+ }else{state='ready';ready();}
+ renderRogueRun();$('start').focus();return true;
 }
 const elements={earth:['土','重震','#d4f77d'],wind:['風','風裂','#9adfd5'],fire:['火','烈火','#ffa26d'],lightning:['雷','雷走','#c6b0ff']};
 const instruments=[
@@ -274,6 +266,7 @@ let state='ready',stage=0,hp=100,enemyHp=enemies[0].hp,turn=1,notes=[],last=[],s
 const gridHazards=GridHazards.create(32);
 let poisonFlashTimer,poisonToastTimer,gridSkillWave=0;
 function renderGridHazards(){
+ renderRogueRun();
  const hazards=gridHazards.active(turn).filter(h=>h.type==='poison');
  $('hazardBar').hidden=!hazards.length;
  const ended=['over','cleared'].includes(state)||enemyHp<=0||hp<=0;
@@ -614,21 +607,22 @@ globalThis.autoInputDamageChart=mode=>{
  countIn('parts');return true;
 };
 function startTurn(){advanceGridHazards();if(!continuousResume)prepareTracksForTurn();continuousResume=false;return countIn(nextRecordingPhase());}
-let rogueRewardConfirmed=false;
 $('start').addEventListener('click',async event=>{
- if(gameMode!=='roguelite'||state!=='cleared'||rogueRewardConfirmed)return;
+ if(gameMode!=='roguelite')return;
+ if(rogueChoosing){event.stopImmediatePropagation();return;}
+ if(!['ready','cleared','over'].includes(state)||state==='ready'&&rogueRun?.phase==='battle')return;
  event.stopImmediatePropagation();
- await chooseRogueReward();
- rogueRewardConfirmed=true;
- $('start').click();
- rogueRewardConfirmed=false;
+ rogueChoosing=true;
+ try{if(state==='over')prepareMode('roguelite');await chooseRogueReward();}
+ finally{rogueChoosing=false;renderRogueRun();}
 },true);
 $('start').onclick=()=>{
+ if(rogueRun&&rogueRun.phase!=='battle')return;
  if(continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){stopContinuousInput();return;}
  audio();stopReplay();
  if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
  if(state==='over'){if(gameMode==='roguelite')prepareMode('roguelite');else{enemies.splice(0,enemies.length,...standardEnemies.map(copyEnemy));resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}}
- else if(state==='cleared'){resetGridHazards();stage++;enemyHp=enemies[stage].hp;if(gameMode==='roguelite')applyRogueReward();else hp=Math.min(100,hp+28);turn=1;update();}
+ else if(state==='cleared'){if(gameMode==='roguelite')return;resetGridHazards();stage++;enemyHp=enemies[stage].hp;hp=Math.min(100,hp+28);turn=1;update();}
  else if(state!=='ready')return;
  continuousRunning=continuousInput;startTurn();
 };
@@ -702,7 +696,7 @@ async function enemyCounter(a,report,result){
    const healed=PerformanceCombat.enemyAction(enemy,enemyHp,intent,tactic).healed;
    enemyHp+=healed;message='敵がHPを '+healed+' 回復';
   }else if(intent.id==='buff'){
-   const old=enemy.attack;enemy.attack=PerformanceCombat.enemyAction({...enemy,attackCap:Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6)},enemyHp,intent,tactic).attack;
+   const old=enemy.attack;enemy.attack=PerformanceCombat.enemyAction({...enemy,attackCap:enemy.attackCap??Math.round(standardEnemies.find(e=>e.kind===enemy.kind).attack*1.6)},enemyHp,intent,tactic).attack;
    message='敵の攻撃力 '+old+' → '+enemy.attack;
   }
   $('arena').classList.remove('enemy-impact','guard-flash');
@@ -801,9 +795,25 @@ function completeBattle(){
  continuousRunning=false;continuousResume=false;recordingAdvance=null;
  resetGridHazards();shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
  state=hp<=0||stage===enemies.length-1?'over':'cleared';
+ if(rogueRun){if(hp<=0)rogueRun.phase='over';else if(RogueRun.victory(rogueRun)){const before=hp;hp=Math.min(100,hp+18);rogueRun.lastSummary=`勝利回復：HP ＋${hp-before} / `+(rogueRun.lastSummary??'');update();}renderRogueRun();}
  $('status').textContent=hp<=0?'TRY ANOTHER RHYTHM':state==='cleared'?'ENEMY DEFEATED':'ALL ENCOUNTERS CLEAR';
  $('hint').textContent=hp<=0?'力尽きた。次はBassの置き方や長さも変えてみよう。':'撃破。あなたの演奏が道を開いた。';
- $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?'次の敵へ ↗':'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();return true;
+ $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?(rogueRun?'機材と進路を選ぶ ↗':'次の敵へ ↗'):'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();return true;
+}
+function applyRogueEquipment(a){
+ if(!rogueRun||rogueRun.phase!=='battle')return a;
+ const effects=RogueRun.effects(rogueRun.gear,a,cycleBass,cycleLead,cycleEnsemble),beforeHp=hp,beforeShield=shield;
+ hp=Math.min(100,hp+effects.heal);shield=Math.min(90,shield+effects.shield);
+ rogueRun.lastEffects=effects.triggers;
+ const descriptions=[];
+ if(effects.attack)descriptions.push('攻撃 ＋'+Math.round(effects.attack*100)+'%');
+ if(shield>beforeShield)descriptions.push('盾 ＋'+(shield-beforeShield));
+ if(hp>beforeHp)descriptions.push('HP ＋'+(hp-beforeHp));
+ const enhanced=RogueRun.apply(a,effects);
+ if(enhanced.gearPierce)descriptions.push('装甲貫通 ＋'+Math.round(enhanced.gearPierce*100)+'%');
+ const done=RogueRun.checkChallenge(rogueRun,a);
+ rogueRun.lastSummary=(effects.triggers.length?'機材発動：'+effects.triggers.map(t=>t.name).join('・')+' → '+(descriptions.join(' / ')||'HP・盾・貫通は上限'):'今回の演奏：機材の発動条件は未達')+(done?' / セッション課題達成！':'');
+ update();return enhanced;
 }
 function showRoleResult(title,factors,amount,label,a){
  renderEnsemble(null);activeReport=null;$('result').hidden=false;$('moveName').textContent=title;$('element').textContent=label;$('element').style.color='#8edcdd';
@@ -845,11 +855,12 @@ async function finish(continuationAt=null){
   const beforeLeadShield=shield;shield=Math.max(0,Math.min(90,shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');}renderBattlePlan();
   const drums=tracks.get('drums')??[],rendered=Quantize.render(drums,lastBpm,lastDuration);
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
-  const a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
+  let a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
   const bassStyle=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration),leadStyle=Synth.style(synthTracks.get('lead'),tracks.get('lead')??[],lastDuration);const tone={attack:1+((bassStyle.attack-1)+(leadStyle.attack-1))*.5,accuracy:0,weaken:0};
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a.powerSteps=[...(a.powerSteps??[]),{label:'Bass / Lead音色と演奏の相性（各1/2）',value:a.power,multiplier:tone.attack}];
   if(globalThis.PitchCombat)Object.assign(a,PitchCombat.apply(a,cycleBass?.pitch,cycleLead?.pitch));
+  const gearStartHp=hp;a=applyRogueEquipment(a);
    const combatEnemy={...enemies[stage],intentId:enemyIntent().id};
    a.tactics=PerformanceCombat.tactics(a,cycleBass,cycleLead,enemyIntent());
    const result=Rhythm.resolve(a,combatEnemy),report=CombatFeedback.explain(a,result,combatEnemy,'drums');activeReport=report;
@@ -857,6 +868,7 @@ async function finish(continuationAt=null){
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
   const extras=[];
+  if(a.gearEffects?.triggers.length)extras.push({id:'gear',source:'gear',tag:'機材',text:rogueRun.lastSummary,priority:2});
   if(a.tactics.value>.05)extras.push({id:'tactics',source:'rhythm',tag:'妨害',text:a.tactics.label+' '+Math.round(a.tactics.value*100)+'%',priority:2});
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description,priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
@@ -877,7 +889,7 @@ async function finish(continuationAt=null){
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';
   globalThis.PitchUI?.result(cycleBass,cycleLead,a,result);
-  globalThis.ExperienceUI?.begin({enemy:{...enemies[stage],intent:enemyIntent(),intentId:enemyIntent().id},bpm:lastBpm,duration:lastDuration,tracks:Array.from(tracks,([voice,notes])=>({voice,notes,synth:synthTracks.get(voice)})),hats:hatNotes,conditions:{hp,shield:feedbackCarryShield,enemyHp}},{analysis:a,result,shield});
+  globalThis.ExperienceUI?.begin({enemy:{...enemies[stage],intent:enemyIntent(),intentId:enemyIntent().id},bpm:lastBpm,duration:lastDuration,tracks:Array.from(tracks,([voice,notes])=>({voice,notes,synth:synthTracks.get(voice)})),hats:hatNotes,gear:rogueRun?.gear.map(g=>({...g}))??[],conditions:{hp:gearStartHp,shield:feedbackCarryShield,enemyHp}},{analysis:a,result,shield});
   if(globalThis.ExperienceUI)ExperienceUI.waveform=battleWaveform;
   rememberSequence('attack');$('replay').disabled=true;await playbackAttack(result,color,'drums');
   if(hp<=0||enemyHp<=0){globalThis.ExperienceUI?.complete(hp,enemyHp,false);if(completeBattle())return;}

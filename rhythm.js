@@ -161,7 +161,7 @@ function resolve(a,enemy){
  const pitchElementMultiplier=1+.25*clamp(a.pitchElementBoost??0,0,.18);
  if(pitchElementMultiplier!==1){affinity*=pitchElementMultiplier;affinitySteps.push({label:'音程：属性効果（効果増分の25%を相性へ）',multiplier:pitchElementMultiplier});}
  const guard=clamp(enemy.guard??0,0,.65),guardBreak=enemy.intentId==='guard'?clamp(a.tactics?.guardBreak??0):0,pierce=clamp(a.pitchPierce??0,0,.3),guardMultiplier=1-guard*(1-.7*guardBreak)*(1-pierce);
- if(guard)affinitySteps.push({label:'装甲軽減（ガード崩し・Lead貫通適用後）',multiplier:guardMultiplier});
+ if(guard)affinitySteps.push({label:a.gearPierce?'装甲軽減（ガード崩し・Lead・機材の貫通適用後）':'装甲軽減（ガード崩し・Lead貫通適用後）',multiplier:guardMultiplier});
  affinity*=guardMultiplier;
  const breakdown={base:0,form:0,affinity:0,weight:0,charged:0,chain:0,groove:0};
  // Accuracy is attack efficiency, not a chance to miss. Raw rhythmic quality

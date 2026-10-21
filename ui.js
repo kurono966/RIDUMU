@@ -23,6 +23,8 @@
   if(upcoming)el('nextAction').textContent='次の '+upcoming.voice.toUpperCase()+' も先行入力できます';
   if(autoHat&&state==='ready')el('nextAction').textContent='HATは自動 · '+model.instruction;
   if(root.ElementMeterUI?.instruction&&!upcoming)el('nextAction').textContent=root.ElementMeterUI.instruction+(continuousRunning?' / Escで停止':'');
+  const rogueInstruction=root.RogueUI?.instruction(typeof rogueRun==='undefined'?null:rogueRun);
+  if(rogueInstruction)el('nextAction').textContent=rogueInstruction;
   document.querySelector('#partSteps [data-part=hat]').textContent=autoHat?'1 HAT · AUTO':'1 HAT';
   document.querySelectorAll('#partSteps li').forEach(node=>{if(node.dataset.part===model.step)node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');});
   analysis.dataset.panel=el('result').dataset.panel||'summary';
