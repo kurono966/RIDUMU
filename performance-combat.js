@@ -32,7 +32,7 @@
    const gap=raw(n)-(i?raw(notes[i-1])+notes[i-1].duration:0),breath=clamp(gap/(step*4));
    return Math.max(best,Math.max(onset,held)*(.7+.3*breath));
   },0);
-  const shield=Math.round(4+8*Math.min(1,strong/4)+20*sustain+10*locked/Math.max(1,slots.size)+8*repetition+10*anchor);
+  const shield=Math.round(4+8*Math.min(1,strong/4)+16*sustain+8*locked/Math.max(1,slots.size)+6*repetition+20*anchor);
   const pitch=root.PitchCombat?.analyze(notes,'bass',bpm,duration),pitchShield=Math.round(shield*(pitch?.effects.shield??0));
   return {shield:Math.min(72,shield+pitchShield),rhythmShield:shield,pitchShield,pitch,strong,sustain,repetition,locked,zone,prepared:anchor,strikeBeat:attackBeat(intent)};
  }

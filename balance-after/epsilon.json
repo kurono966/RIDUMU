@@ -1,0 +1,32 @@
+[
+  {
+    "epsilon": -1e-10,
+    "element": "wind",
+    "damage": 63,
+    "quality": 1.5999999995714287,
+    "laidBack": 0,
+    "drunk": 0,
+    "snarePushed": 0,
+    "actualMatch": true
+  },
+  {
+    "epsilon": 0,
+    "element": "wind",
+    "damage": 63,
+    "quality": 1.6,
+    "laidBack": 0,
+    "drunk": 0,
+    "snarePushed": 0,
+    "actualMatch": true
+  },
+  {
+    "epsilon": 1e-10,
+    "element": "wind",
+    "damage": 63,
+    "quality": 1.6,
+    "laidBack": 0,
+    "drunk": 0,
+    "snarePushed": 0,
+    "actualMatch": true
+  }
+]

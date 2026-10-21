@@ -40,7 +40,13 @@ function performanceQuality(input,bpm,duration){
   const consistency=errors.length?Math.exp(-mean(errors)/(beat*.045)):0,score=matched/Math.max(1,events.length)*consistency;
   if(score>repetition){repetition=score;timingConsistency=consistency;}
  }
- const score=clamp(Math.max(regularity,repetition)),confidence=clamp((onsets.length-3)/5);
+ // A controlled acceleration is a phrase, even though its intervals are unequal.
+ // Require enough evidence, a clear speed change and precise subdivision timing;
+ // random spacing or merely adding notes cannot earn this alternative score.
+ const precision=Math.exp(-mean(onsets.map(t=>Math.abs(t-Math.round(t/step)*step)))/(beat*.025));
+ const orderly=intervals.slice(1).filter((gap,i)=>gap<=intervals[i]+beat*.025).length/Math.max(1,intervals.length-1);
+ const accelerating=onsets.length>=6&&orderly>=.85&&mean(intervals.slice(-3))<.7*mean(intervals.slice(0,3))?.82*precision:0;
+ const score=clamp(Math.max(regularity,repetition,accelerating)),confidence=clamp((onsets.length-3)/5);
  // Sparse heavy attacks stay neutral: too little evidence is not poor playing.
  // Add a rising reward only above solid consistency; chaotic input keeps its
  // existing penalty instead of receiving the same general damage increase.
@@ -111,8 +117,8 @@ function resolve(a,enemy){
   conductor:{label:'終奏へのモチーフ変化・解放',fit:clamp(.6*(a.structure?.variation??0)+.4*(a.structure?.tensionRelease??0)),straightPenalty:0}
  };
  const motif=motifs[enemy.kind];
- const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:form.repetition;
- const motifMultiplier=motif?clamp(1+.4*motif.fit+.12*(development??0)-motif.straightPenalty*straight,.3,1.5):1;
+ const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:enemy.kind==='furnace'?form.dialogue:enemy.kind==='conductor'?Math.max(form.variation??0,form.tensionRelease??0):form.repetition;
+ const motifMultiplier=motif?clamp(1+(enemy.kind==='conductor'?.8:.4)*motif.fit+.12*(development??0)-motif.straightPenalty*straight,.3,enemy.kind==='conductor'?1.9:1.5):1;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -136,7 +142,9 @@ function resolve(a,enemy){
  const affinitySteps=[{label:'属性・攻撃形態と敵の相性',multiplier:affinity}];
  if(a.groove){
   const choices=enemy.kind==='stone'?[['laidBack',.25],['pocket',.12]]:enemy.kind==='fly'?[['pushed',.25],['snarePushed',.2],['swing',.18]]:enemy.kind==='machine'?[['tight',.2],['drunk',.26]]:enemy.kind==='plant'?[['swing',.18],['laidBack',.12]]:enemy.kind==='ghost'?[['laidBack',.25],['drunk',.25]]:enemy.kind==='crystal'?[['pocket',.2],['tight',.15]]:enemy.kind==='furnace'?[['swing',.18],['pocket',.15]]:enemy.kind==='conductor'?[['tight',.15],['laidBack',.12]]:[];
-  for(const [id,strength] of choices){const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});}
+  // Correlated feels share one affinity reward.
+  const [id,strength]=choices.reduce((best,next)=>next[1]*(a.groove[next[0]]??0)>best[1]*(a.groove[best[0]]??0)?next:best,['tight',0]);
+  const multiplier=1+strength*(a.groove[id]??0);affinity*=multiplier;if(multiplier!==1)affinitySteps.push({label:'敵とのグルーヴ相性：'+id,multiplier});
  }
  // Increase contrast around neutral (1x): rewarding a match and resisting a bad
  // matchup use the same continuous curve. Cap stacked weaknesses and grooves.

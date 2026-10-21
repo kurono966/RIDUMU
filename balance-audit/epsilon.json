@@ -1,0 +1,32 @@
+[
+  {
+    "epsilon": -1e-10,
+    "element": "wind",
+    "damage": 56,
+    "quality": 1.5999999995714287,
+    "laidBack": 0.9999999999999998,
+    "drunk": 5.846340148973971e-10,
+    "snarePushed": 0,
+    "actualMatch": true
+  },
+  {
+    "epsilon": 0,
+    "element": "wind",
+    "damage": 56,
+    "quality": 1.6,
+    "laidBack": 1,
+    "drunk": 0,
+    "snarePushed": 0,
+    "actualMatch": true
+  },
+  {
+    "epsilon": 1e-10,
+    "element": "lightning",
+    "damage": 98,
+    "quality": 1.6,
+    "laidBack": 0,
+    "drunk": 0.4360305411153119,
+    "snarePushed": 0.03466708122213717,
+    "actualMatch": true
+  }
+]
