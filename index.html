@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="grid-hazards.css?v=1">
     <link rel="stylesheet" href="combat.css?v=3">
     <link rel="stylesheet" href="synth.css?v=3">
-    <link rel="stylesheet" href="ui.css?v=11">
+    <link rel="stylesheet" href="ui.css?v=12">
     <link rel="stylesheet" href="pitch.css?v=1">
     <link rel="stylesheet" href="experience.css?v=1">
     <link rel="stylesheet" href="element-meter.css?v=1">
@@ -256,23 +256,8 @@
         <button id="restorePads" type="button" class="restore-pads">
           演奏パッドを表示
         </button>
-        <div id="mobileMoveSlot" class="mobile-move-slot" aria-label="技名と攻撃準備"><div class="mobile-move-placeholder"><strong>攻撃パターンを構築</strong><small>演奏すると技名・効果がここに表示されます</small></div></div>
-        <div class="performance-safety-divider" aria-hidden="true"><span>操作メニュー</span></div>
-        <div class="controls">
-          <p id="hint" class="visually-hidden">SPACEで開始 → Hatを刻む → A / Lを重ねる。</p>
-          <button id="start" class="primary">
-            演奏開始
-            <span>↗</span>
-          </button>
-          <button id="openPlaySettings" type="button" class="utility-button" aria-haspopup="dialog" aria-controls="playSettingsDialog">
-            設定
-          </button>
-          <button id="toggleEffects" type="button" class="utility-button" aria-expanded="false" aria-controls="effectsPanel" aria-label="エフェクトパッドを開く">
-            効果
-          </button>
-        </div>
-      </section>
-      <section class="result" id="result" hidden>
+        <div id="mobileMoveSlot" class="mobile-move-slot" aria-label="技名と攻撃準備"><div class="mobile-move-placeholder"><strong>攻撃パターンを構築</strong><small>演奏すると技名・効果がここに表示されます</small></div>
+<section class="result" id="result" hidden>
         <div class="result-heading">
           <p class="eyebrow">今回 / <span id="lastInstrument">DRUMS</span></p>
           <button id="replay" class="small">
@@ -297,6 +282,23 @@
           解析・内訳を見る
         </button>
       </section>
+        </div>
+        <div class="performance-safety-divider" aria-hidden="true"><span>操作メニュー</span></div>
+        <div class="controls">
+          <p id="hint" class="visually-hidden">SPACEで開始 → Hatを刻む → A / Lを重ねる。</p>
+          <button id="start" class="primary">
+            演奏開始
+            <span>↗</span>
+          </button>
+          <button id="openPlaySettings" type="button" class="utility-button" aria-haspopup="dialog" aria-controls="playSettingsDialog">
+            設定
+          </button>
+          <button id="toggleEffects" type="button" class="utility-button" aria-expanded="false" aria-controls="effectsPanel" aria-label="エフェクトパッドを開く">
+            効果
+          </button>
+        </div>
+      </section>
+
     </main>
     <dialog id="playSettingsDialog" class="workspace-dialog settings-dialog" aria-labelledby="settingsTitle">
       <div class="dialog-heading">
@@ -594,7 +596,7 @@
     <script src="synth-ui.js?v=5"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js?v=2"></script>
-    <script src="ui.js?v=8"></script>
+    <script src="ui.js?v=9"></script>
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=2"></script>
     <script src="element-meter-ui.js?v=2"></script>
