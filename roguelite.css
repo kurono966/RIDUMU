@@ -100,3 +100,28 @@ body[data-game-mode=roguelite] #rogueRack .rogue-proc { margin:3px 0; }
   }
   body[data-game-mode=roguelite] #rogueRack { max-height:38dvh; }
 }
+
+
+/* Reserve a compact rack row rather than covering the enemy. */
+@media(max-width:759px) and (orientation:portrait) {
+ body[data-game-mode=roguelite] #game,
+ body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+   grid-template-rows:minmax(32px,auto) minmax(44px,8fr) minmax(85px,24fr) minmax(0,68fr);
+   grid-template-areas:"header" "rig" "arena" "console";
+ }
+ body[data-game-mode=roguelite] #rogueRack {
+   position:static; grid-area:rig; min-height:0; max-height:none;
+   width:100%; overflow-y:auto; padding:4px 7px;
+ }
+}
+@media(max-width:759px) and (orientation:landscape) {
+ body[data-game-mode=roguelite] #game,
+ body[data-game-mode=roguelite] #game:has(>.result:not([hidden])) {
+   grid-template-rows:minmax(30px,auto) minmax(0,1fr);
+   grid-template-areas:"header header" "arena console";
+ }
+ body[data-game-mode=roguelite] #rogueRack {
+   position:absolute; top:36px; left:5px; right:auto; width:42%;
+   max-height:32dvh; overflow-y:auto;
+ }
+}
