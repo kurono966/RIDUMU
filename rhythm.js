@@ -81,9 +81,13 @@ function analyze(input,duration=4,bpm=120){
  // offbeat eighths and the absence of the following downbeat.
  const offbeatEighths=grid.filter(n=>n.q%4===2).length/Math.max(1,count);
  const syncopatedEighths=grid.filter(n=>n.q%4===2&&!masks[Math.min(slots-1,n.q+2)]).length/Math.max(1,count);
- const lightningAccent=clamp(.55*offbeat+.8*syncopation+.65*offbeatEighths+.55*syncopatedEighths)*clamp((count-3)/5)*(1-.85*rise);
+ // Continuous subdivision is a steady pulse, not an intentional offbeat accent.
+ // Keep lightning for broken beats and irregular phrases while preserving the
+ // instrument identity of steady kicks and the handoff of alternating drums.
+ const lightningIntent=1-.85*regularity*(1-syncopation);
+ const lightningAccent=clamp(.55*offbeat+.8*syncopation+.65*offbeatEighths+.55*syncopatedEighths)*clamp((count-3)/5)*(1-.85*rise)*lightningIntent;
  const competingPenalty=.85*lightningAccent;
- const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged-competingPenalty,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation-competingPenalty,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:.85*syncopation+.65*irregularity+.6*offbeat+1.25*lightningAccent};
+ const scores={earth:1.15*kRatio+.65*low+.45*regularity+.55*charged+.35*kRatio*regularity-competingPenalty,wind:1.15*sRatio+.6*high+.3*bursts+.25*alternation+.85*alternation*regularity-competingPenalty,fire:1.65*rise+.65*bursts+.5*concentration+.2*high,lightning:(.85*syncopation+.6*offbeat)*lightningIntent+.65*irregularity+1.25*lightningAccent};
  const element=Object.keys(scores).reduce((a,b)=>scores[a]>=scores[b]?a:b);
  const weight=clamp(.5*kRatio+.3*low+.45*charged-.2*snareBurst),hits=Math.max(1,Math.min(8,Math.round(1+high*4+bursts*2+snareBurst*2-weight*2)));
  const power=count?24+18*weight+12*charged+3*alternation+8*clamp(count/8):0;

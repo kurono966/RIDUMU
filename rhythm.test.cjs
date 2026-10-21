@@ -1,6 +1,20 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
 
+test('steady kicks stay earth and steady alternation stays wind across tempos, density and small timing errors',()=>{
+ const G=require('./groove.js');
+ for(const bpm of [82,100,108,120,150,180])for(const count of [8,16,32])for(const alternate of [false,true])for(const jitter of [0,.015]){
+  const beat=60/bpm,duration=beat*8,expected=alternate?'wind':'earth';
+  const input=Array.from({length:count},(_,i)=>({t:i*duration/count+(i%2?jitter:0),type:alternate&&i%2?'snare':'kick'}));
+  const a=R.analyze(input,duration,bpm),label=JSON.stringify({bpm,count,alternate,jitter});
+  assert.equal(a.element,expected,label);
+  for(const division of [1,2,4]){
+   const hats=Array.from({length:8*division},(_,i)=>({type:'hat',t:i*beat/division}));
+   assert.equal(G.enrich(a,G.analyzeRelations(input,hats,bpm,duration)).element,expected,label+' Hat '+division);
+  }
+ }
+});
+
 test('intent bonuses stay linear after elemental contrast and respect the shared cap',()=>{
  const a={...R.analyze(notes([0,.375,.75,1.375,2,2.375,2.75,3.375],'kick')),element:'lightning',groove:null};
  for(const kind of ['fly','machine','plant','crystal']){

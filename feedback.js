@@ -19,7 +19,7 @@ function matchups(a,enemy){
 function elementCause(a){
  const choices={
   earth:[[1.15*a.kick/Math.max(1,a.count),'低音側の入力が多い → 土属性','kick'],[.65*(1-Math.min(1,a.count/24)),'間を空けた演奏 → 土属性','heavy'],[.45*a.regularity,'規則的な刻み → 土属性','repeat']],
-  wind:[[1.15*a.snare/Math.max(1,a.count),'高音側の入力が多い → 風属性','snare'],[.6*Math.min(1,a.count/24),'細かな刻み → 風属性','burst']],
+  wind:[[1.15*a.snare/Math.max(1,a.count)+.85*a.alternation*a.regularity,a.alternation>.65?'低音と高音の交互の刻み → 風属性':'高音側の入力が多い → 風属性','snare'],[.6*Math.min(1,a.count/24),'細かな刻み → 風属性','burst']],
   fire:[[1.65*a.densityRise,'後半に詰めた入力 → 火属性','acceleration'],[.65*a.bursts,'短い間隔の連打 → 火属性','burst'],[.5*a.concentration,'一か所に集めた入力 → 火属性','burst']],
   lightning:[[.85*a.syncopation+.6*a.offbeat,'裏拍の入力 → 雷属性','offbeat'],[.65*(1-a.regularity),'不規則な間隔 → 雷属性','irregular']]
  };
