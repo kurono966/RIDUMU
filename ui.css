@@ -1185,3 +1185,16 @@ body.game-ui code {
     padding:5px 0 0; flex:0 0 auto;
   }
 }
+
+
+/* Let the mobile console hug its contents instead of filling its grid track.
+   The remaining viewport stays outside the bordered console, not as a blank panel. */
+@media(max-width:759px) and (orientation:portrait) {
+  #game>.console {
+    align-self:start;
+    height:max-content;
+    max-height:100%;
+    min-height:0;
+    justify-content:flex-start;
+  }
+}
