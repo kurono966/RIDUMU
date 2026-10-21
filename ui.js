@@ -80,11 +80,11 @@
  const game=document.getElementById('game');
  const consolePanel=game?.querySelector(':scope > .console');
  const result=document.getElementById('result');
- const divider=consolePanel?.querySelector('.performance-safety-divider');
- if(!game||!consolePanel||!result||!divider)return;
+ const slot=consolePanel?.querySelector('#mobileMoveSlot');
+ if(!game||!consolePanel||!result||!slot)return;
  const move=()=>{
   const mobile=window.matchMedia('(max-width:759px)').matches;
-  if(mobile&&result.parentElement!==consolePanel)consolePanel.insertBefore(result,divider);
+  if(mobile&&result.parentElement!==slot)slot.appendChild(result);
   else if(!mobile&&result.parentElement!==game)game.appendChild(result);
  };
  window.addEventListener('resize',move,{passive:true});
