@@ -30,6 +30,8 @@
   })};
  }
  function at(snapshot,t){let result={patch:snapshot.patch,pad:pad()};for(const e of snapshot.events){if(e.t>t)break;result=e;}return result;}
+ // Quantization moves the note, not the point in its recorded timbre automation.
+ function noteTime(note){return typeof note==='number'?note:note.inputT??note.time??note.rawT??note.t;}
  const envelopeChanged=(a,b)=>['attack','decay','sustain','curve'].some(k=>a[k]!==b[k]);
  function curveValue(points,time){let prev=points[0];for(const point of points){if(time<point.t){const span=point.t-prev.t;if(!span)return point.v;const f=clamp((time-prev.t)/span);return point.curve==='exponential'&&prev.v>0&&point.v>0?prev.v*Math.pow(point.v/prev.v,f):prev.v+(point.v-prev.v)*f;}prev=point;}return prev.v;}
  function gateEnvelope(snapshot,start,end){
@@ -110,6 +112,6 @@
   ['lead','detuned-saw',{osc2Wave:'square',osc2Mix:.18,osc2Fine:-8,lfoRate:.6,lfoFilter:120,drive:.12}]
  ])Object.assign(factoryPresets[voice].find(p=>p.id===id).patch,value);
  function applyPreset(voice,id){const selected=factoryPresets[voice]?.find(p=>p.id===id);if(!selected)return false;setPatch(voice,selected.patch);return true;}
- const api={voices,waves,ranges,defaults,factoryPresets,applyPreset,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,monoNotes,profile,modifiers,style,combine,describe,percent,combatGuide,combatText,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
+ const api={voices,waves,ranges,defaults,factoryPresets,applyPreset,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,noteTime,monoNotes,profile,modifiers,style,combine,describe,percent,combatGuide,combatText,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
  root.Synth=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

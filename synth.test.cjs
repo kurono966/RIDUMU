@@ -3,6 +3,14 @@ const S=require('./synth.js'),H=require('./sequence-history.js');
 const snapshot=(p=S.patch(),events=[])=>({version:1,patch:p,events});
 const point=(t,p,xy={})=>({t,patch:p,pad:S.pad(xy)});
 
+test('playback timbre follows the original input time when notes are quantized',()=>{
+ assert.equal(S.noteTime({inputT:.09,time:.125,rawT:.125,t:.125}),.09);
+ assert.equal(S.noteTime({time:-.02,t:0}),-.02);
+ assert.equal(S.noteTime({rawT:.1,t:.1}),.1);
+ assert.equal(S.noteTime({t:0}),0);
+ assert.equal(S.noteTime(-.1),-.1);
+});
+
 test('factory presets are complete, distinct and apply independently without changing the catalog',()=>{
  const original=JSON.stringify(S.factoryPresets),lead=S.current('lead').patch;
  for(const voice of S.voices){

@@ -156,14 +156,14 @@ function captureSynth(voice){
  appendSynthPoint(synthRecording,voice,recordAudioAt);
 }
 function appendSynthPoint(snapshot,voice,recordAt){const t=ctx.currentTime-recordAt;if(t<-30||t>timing().duration)return;const point={t:+t.toFixed(6),...Synth.current(voice)},events=snapshot.events,prev=events.at(-1);if(prev&&point.t===prev.t)events[events.length-1]=point;else events.push(point);}
-function recordedSynth(voice,noteTime,mix=lastMix){const snapshot=mix?.find(t=>t.voice===voice)?.synth;return snapshot?{snapshot,noteTime}:undefined;}
+function recordedSynth(voice,note,mix=lastMix){const snapshot=mix?.find(t=>t.voice===voice)?.synth;return snapshot?{snapshot,noteTime:Synth.noteTime(note)}:undefined;}
 function soundTimeline(mix,voice,damages,duration){
  const playable=mix.map(track=>Synth.voices.includes(track.voice)?{...track,notes:Synth.monoNotes(track.notes)}:track);
  const timeline=Rhythm.mixTimeline(playable,voice,damages,duration);
  for(let i=0;i<timeline.events.length;i++){
   const e=timeline.events[i],snapshot=mix.find(t=>t.voice===e.voice)?.synth;if(!snapshot)continue;
   const next=timeline.events.slice(i+1).find(n=>n.voice===e.voice);
-  const tail=e.at+(e.duration??.17)+Synth.at(snapshot,e.time+(e.duration??.17)).patch.release+.025;
+  const tail=e.at+(e.duration??.17)+Synth.at(snapshot,Synth.noteTime(e)+(e.duration??.17)).patch.release+.025;
   timeline.duration=Math.max(timeline.duration,Math.min(tail,next?.at??Infinity));
  }
  return timeline;
@@ -388,7 +388,7 @@ async function countIn(nextPhase='hat',continuationAt=null){
   if(now>=recordAt+duration){enemyMusic?.stop();releaseAllInputs(recordAt+duration,pendingTrackInput);}
   while(backingIndex<backing.length&&recordAt+backing[backingIndex].time<now+.1){
    const event=backing[backingIndex++],at=recordAt+event.time;
-   if(at>=now||(continuousRunning&&at>=now-.1))sound(event.type,Math.max(at,now),event.voice,event.voice==='hat'?.85:.6,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
+   if(at>=now||(continuousRunning&&at>=now-.1))sound(event.type,Math.max(at,now),event.voice,backingVolume(event.voice),event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event));
   }
   // Keep the opening four beats and a beat guide throughout manual Hat input.
   // Continuous part-to-part handoffs still have no added count-in.
@@ -433,7 +433,13 @@ function stopContinuousInput(){
  notes=[];synthRecording=null;filterAutomation=[];recordAudioAt=null;visualBeat=-1;
  document.querySelector('.console').classList.remove('recording');ready();
 }
-function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=ctx.createDynamicsCompressor();masterOutput.threshold.value=-12;masterOutput.ratio.value=6;drumOutput=performanceFilter.connect(ctx,masterOutput);let monitored=masterOutput;if(globalThis.RogueAudio){rogueAudio=RogueAudio.create(ctx,masterOutput);masterOutput.connect(rogueAudio.masterInput);Synth.engine(ctx,masterOutput).setPartOutputs(rogueAudio.parts);monitored=rogueAudio.output;}if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,monitored,$('battleWaveform'),{output:ctx.destination});battleWaveform.setVoice(instrumentForTurn(turn).id);}else monitored.connect(ctx.destination);}if(ctx.state==='suspended')ctx.resume();syncRunAudio();syncEnemyMusic();}
+function createMasterOutput(context){
+ // Peak protection, rather than continuous mix compression. A broad knee here
+ // made backing hits reshape the lead even below the old -12 dB threshold.
+ const output=context.createDynamicsCompressor();output.threshold.value=-3;output.knee.value=0;output.ratio.value=12;output.attack.value=.003;output.release.value=.12;return output;
+}
+const backingVolume=voice=>voice==='hat'?.85:.6;
+function audio(){if(!ctx){ctx=new(window.AudioContext||window.webkitAudioContext)();masterOutput=createMasterOutput(ctx);drumOutput=performanceFilter.connect(ctx,masterOutput);let monitored=masterOutput;if(globalThis.RogueAudio){rogueAudio=RogueAudio.create(ctx,masterOutput);masterOutput.connect(rogueAudio.masterInput);Synth.engine(ctx,masterOutput).setPartOutputs(rogueAudio.parts);monitored=rogueAudio.output;}if(globalThis.BattleWaveform){battleWaveform=BattleWaveform.connect(ctx,monitored,$('battleWaveform'),{output:ctx.destination});battleWaveform.setVoice(instrumentForTurn(turn).id);}else monitored.connect(ctx.destination);}if(ctx.state==='suspended')ctx.resume();syncRunAudio();syncEnemyMusic();}
 const heldInputs=new Map(), pitchedVoices=new Set();
 function pitchedSound(type,t,voice,volume=1,duration,pitch,midi,recorded){
  const bass=voice==='bass',frequency=Number.isInteger(midi)?440*2**((midi-69)/12):Number.isInteger(pitch)&&pitch>=0&&pitch<melodyScale.length?(bass?65.406:261.626)*2**(melodyScale[pitch]/12):bass?(type==='kick'?65.406:97.999):(type==='kick'?261.626:311.127);
@@ -803,7 +809,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
    attackPlayhead=Math.max(0,elapsed+timeline.offset);visualBeat=Math.floor(attackPlayhead/(60/lastBpm))%4;
    while(scheduled<timeline.events.length&&timeline.events[scheduled].at<=elapsed+.1){
     const event=timeline.events[scheduled++];
-    const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice===lastInstrument?1:.65,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
+    const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice===lastInstrument?1:backingVolume(event.voice),event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event));
     globalThis.ExperienceUI?.playback(event,handle,Math.max(ctx.currentTime,origin+event.at));
    }
    while(shown<timeline.events.length&&timeline.events[shown].at<=elapsed){
@@ -952,7 +958,7 @@ $('replay').onclick=()=>{
  globalThis.startSavedAudio(lastAudioGear,lastBpm,ctx.currentTime-timeline.offset,'result');
  startSavedMusic(lastAccompaniment,ctx.currentTime-timeline.offset,ctx.currentTime-timeline.offset+lastDuration,'result');
  timeline.events.forEach(event=>replayTimers.push(setTimeout(()=>{
-  sound(event.type,undefined,event.voice,.8,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event.time));
+  sound(event.type,undefined,event.voice,.8,event.duration,event.pitch,event.midi,undefined,recordedSynth(event.voice,event));
   if(event.voice===lastInstrument)flash(event.type);
  },event.at*1000)));
  replayTimers.push(setTimeout(stopReplay,(timeline.duration+(globalThis.RogueAudio?.tailSeconds(lastAudioGear,lastBpm)??0))*1000));

@@ -32,7 +32,7 @@ async function playHistory(entry){
   const elapsed=ctx.currentTime-origin;
   while(index<timeline.events.length&&timeline.events[index].at<=elapsed+.1){
    const event=timeline.events[index++];
-   const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice==='chord'?.9:.8,event.duration,event.pitch,event.midi,event.pitches,entry.tracks.find(t=>t.voice===event.voice)?.synth?{snapshot:entry.tracks.find(t=>t.voice===event.voice).synth,noteTime:event.time}:undefined);
+   const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice==='chord'?.9:.8,event.duration,event.pitch,event.midi,event.pitches,entry.tracks.find(t=>t.voice===event.voice)?.synth?{snapshot:entry.tracks.find(t=>t.voice===event.voice).synth,noteTime:Synth.noteTime(event)}:undefined);
    if(handle?.release)historyHandles.push(handle);
   }
   if(elapsed>=end+(globalThis.RogueAudio?.tailSeconds(entry.audioGear??[],entry.bpm)??0))stopHistoryPlayback();

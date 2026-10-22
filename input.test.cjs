@@ -219,11 +219,11 @@ test('restarting stopped Drums keeps the already recorded Hat instead of resetti
  await g.run('startTurn()');assert.equal(g.run('phase'),'parts');assert.equal(g.run('hatNotes.length'),1);
 });
 
-test('audio keeps the existing compressor and inserts the waveform analyser path once',()=>{
+test('audio uses peak protection without a broad compression knee and inserts the analyser once',()=>{
  const g=game();g.run(`ctx=null;let waveformConnections=0,voices=[];
- window={AudioContext:class{constructor(){this.state='running';this.destination={};this.currentTime=0;}createBiquadFilter(){return {Q:{},frequency:{setTargetAtTime(){}},connect(){}}}createGain(){return {gain:{setTargetAtTime(){}},connect(){}}}createDynamicsCompressor(){return {threshold:{},ratio:{},connect(){throw Error('direct output must be replaced by analyser route')}}}}};
+ window={AudioContext:class{constructor(){this.state='running';this.destination={};this.currentTime=0;}createBiquadFilter(){return {Q:{},frequency:{setTargetAtTime(){}},connect(){}}}createGain(){return {gain:{setTargetAtTime(){}},connect(){}}}createDynamicsCompressor(){return {threshold:{},ratio:{},knee:{},attack:{},release:{},connect(){throw Error('direct output must be replaced by analyser route')}}}}};
  BattleWaveform={connect:(context,master,canvas)=>{waveformConnections++;return {setVoice:v=>voices.push(v)}}};audio();audio();`);
- assert.equal(g.run('waveformConnections'),1);assert.equal(g.run('masterOutput.threshold.value'),-12);assert.equal(g.run('masterOutput.ratio.value'),6);assert.equal(g.run('voices[0]'),'drums');
+ assert.equal(g.run('waveformConnections'),1);assert.equal(g.run('masterOutput.threshold.value'),-3);assert.equal(g.run('masterOutput.ratio.value'),12);assert.equal(g.run('masterOutput.knee.value'),0);assert.equal(g.run('voices[0]'),'drums');
 });
 test('anticipated downbeat is recorded during count-in with raw timing preserved',()=>{
  const g=game();g.run("ctx.currentTime=9.9;input('kick')");
