@@ -25,6 +25,8 @@ test('accuracy is visible for evaluated groove and clears for insufficient input
  assert.equal(x.$('partTimingAccuracy').hidden,false);
  assert.match(x.$('partTimingAccuracy').textContent,/Bass 90.0%/);
  assert.match(x.$('partTimingSummary').textContent,/drumsとの間隔 88.0%.*盾・支援 ×1.16/);
+ x.run(`renderReport({...testReport,partTiming:{bass:{score:100,own:{score:100},relations:[],multiplier:1.2,placement:{style:'behind',delayMs:30,errorMs:0}}}});`);
+ assert.match(x.$('partTimingAccuracy').textContent,/後ノリ/);assert.match(x.$('partTimingSummary').textContent,/Kickより平均30.0ms後ろ/);
  x.run('renderReport(testReport)');assert.equal(x.$('timingAccuracy').textContent,'正確さ — 判定待ち');
  assert.equal(x.$('partTimingAccuracy').hidden,true);assert.equal(x.$('partTimingSummary').textContent,'');
 });

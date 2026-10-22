@@ -2,6 +2,31 @@
 (function(root){
  const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
  const raw=n=>n.inputT??n.rawT??n.t;
+ // Match actual onsets, not global-grid offsets: a Bass at +60ms may be only
+ // 25ms behind an already laid-back Kick. Each onset may participate once.
+ function bassPlacement(drums,bass,bpm=120,duration=480/bpm){
+  const step=60/bpm/4,window=Math.min(.075,60/bpm*.15),mean=a=>a.reduce((s,v)=>s+v,0)/Math.max(1,a.length);
+  const clean=(ns,kicks=false)=>{
+   const cells=new Map();
+   for(const n of [...ns].sort((a,b)=>raw(a)-raw(b))){const t=raw(n);if(!Number.isFinite(t)||t<0||t>=duration||kicks&&n.type!=='kick')continue;
+    const q=Math.round(t/step);if(!cells.has(q))cells.set(q,{...n,q,time:t,voice:kicks?'drums':'bass'});
+   }return [...cells.values()];
+  };
+  const kicks=clean(drums,true),notes=clean(bass),used=new Set(),pairs=[];
+  for(const k of kicks){const b=notes.filter(n=>!used.has(n)&&Math.abs(n.time-k.time)<=window).sort((a,b)=>Math.abs(a.time-k.time)-Math.abs(b.time-k.time))[0];
+   if(b){used.add(b);pairs.push({kick:k,bass:b,lag:b.time-k.time});}
+  }
+  const groups=new Map();
+  for(const p of pairs){const slot=((p.kick.q%16)+16)%16;if(!groups.has(slot))groups.set(slot,[]);groups.get(slot).push(p);}
+  const observed=[];
+  for(const group of groups.values())for(const p of group){const peers=group.filter(n=>Math.floor(n.kick.q/16)!==Math.floor(p.kick.q/16));if(peers.length)observed.push({...p,error:Math.abs(p.lag-mean(peers.map(n=>n.lag)))});}
+  const late=observed.filter(p=>p.lag>.008),coverage=late.length/Math.max(1,kicks.length,notes.length);
+  const error=mean(observed.map(p=>p.error)),control=clamp(1-error/(step*.2));
+  const observedCoverage=observed.length/Math.max(1,kicks.length,notes.length);
+  const ready=observed.length>=3&&observedCoverage>=.6&&late.length>=2;
+  const score=ready?control*observedCoverage:0,delay=mean(late.map(p=>p.lag))*1000;
+  return {style:ready&&score>=.32?'behind':'other',selective:late.length<observed.length,score,delayMs:delay,errorMs:error*1000,coverage:observedCoverage,lateCoverage:coverage,count:late.length,groups:observed.map(p=>[p.kick,p.bass])};
+ }
  function analyze(tracks,bpm=120,duration=480/bpm,disabled=null){
   const step=60/bpm/4,slots=Math.round(duration/step),tolerance=Math.min(.055,step*.4);
   const source=tracks&&typeof tracks.get==='function'?{drums:tracks.get('drums'),bass:tracks.get('bass'),lead:tracks.get('lead')}:Array.isArray(tracks)?Object.fromEntries(tracks.map(t=>[t.voice,t.notes])):tracks;
@@ -23,6 +48,8 @@
   }
   const locked=pairs(kick,bass,(a,b)=>Math.abs(a.time-b.time)<=tolerance);
   add('grooveLock','GROOVE LOCK',Math.min(1,locked.length/3)*locked.length/Math.max(1,kick.length,bass.length),locked,`Kick + Bassが${locked.length}か所で同期`);
+  const placement=bassPlacement(source?.drums??[],source?.bass??[],bpm,duration);
+  add('bassLaidBack','BASS LAID-BACK',placement.score,placement.groups,`${placement.selective?'Bassを拍ごとに置き分け、遅らせた音を':'Bassを'}Kickより平均${Math.round(placement.delayMs)}ms後ろに保った`);
   const accents=drums.filter(n=>n.type==='snare'||n.q%4===0);
   const responses=pairs(accents,lead,(a,b)=>b.time-a.time>=step*.6&&b.time-a.time<=step*2.5);
   add('response','RESPONSE',Math.min(1,responses.length/3)*responses.length/Math.max(1,lead.length),responses,'Drumsのアクセントの後にLeadが応答');
@@ -52,19 +79,22 @@
    }
   }
   add('callResponse','CALL & RESPONSE',Math.min(1,.6+motifs.length*.15)*(motifs.length?1:0),motifs.slice(0,2),'短いリズムの形を別パートが返した');
-  const selected=candidates.sort((a,b)=>b.score-a.score).slice(0,2);
+  // Synchronizing and sitting behind are alternative ways to link the same
+  // pair of instruments. Never award both for the same performance.
+  const selected=candidates.filter(s=>s.id!=='grooveLock'||!candidates.some(c=>c.id==='bassLaidBack')).sort((a,b)=>b.score-a.score).slice(0,2);
   const bonus={attack:0,shield:0,support:0,accuracy:0,shieldEfficiency:0,element:0,resistance:0,break:0};
   selected.forEach((s,i)=>{if(s.id===disabled)return;const strength=s.score*(i?.6:1),pct=n=>Math.round(n*100);
    if(s.id==='grooveLock'){const attack=.1*strength,shield=4*strength;bonus.attack+=attack;bonus.shield+=shield;s.effect=`攻撃 +${pct(attack)}% / 盾 +${Math.round(shield)}`;}
+   if(s.id==='bassLaidBack'){bonus.attack+=.1*strength;bonus.shield+=4*strength;s.effect=`後ノリの連携：攻撃 +${pct(.1*strength)}% / 盾 +${Math.round(4*strength)}`;}
    if(s.id==='response'){bonus.support+=.18*strength;s.effect=`Lead支援 +${pct(.18*strength)}%`;}
    if(s.id==='interlock'){bonus.accuracy+=.05*strength;bonus.shieldEfficiency+=.1*strength;s.effect=`命中効率 +${pct(.05*strength)}% / 盾効率 +${pct(.1*strength)}%`;}
    if(s.id==='unison'){bonus.attack+=.12*strength;bonus.break+=.08*strength;s.effect=`攻撃 +${pct(.12*strength)}% / ブレイク強化`;}
    if(s.id==='callResponse'){bonus.element+=.12*strength;bonus.resistance+=.08*strength;s.effect=`属性効果 +${pct(.12*strength)}% / 敵攻撃 −${pct(.08*strength)}%`;}
   });
   bonus.attack=Math.min(.18,bonus.attack);bonus.shield=Math.min(6,Math.round(bonus.shield));
-  return {scores:{grooveLock:0,response:0,interlock:0,unison:0,callResponse:0,...Object.fromEntries(candidates.map(s=>[s.id,s.score]))},selected:selected.filter(s=>s.id!==disabled),bonus};
+  return {scores:{grooveLock:0,bassLaidBack:0,response:0,interlock:0,unison:0,callResponse:0,...Object.fromEntries(candidates.map(s=>[s.id,s.score]))},bassPlacement:placement,selected:selected.filter(s=>s.id!==disabled),bonus};
  }
  function support(base,ensemble){const next={...base},b=ensemble.bonus;for(const k of ['attack','expose','accuracy','element','shieldEfficiency','weaken'])next[k]=(base[k]??0)*(1+b.support);return next;}
  function attack(base,ensemble){const b=ensemble.bonus,multiplier=1+Math.min(.2,b.attack+b.break*.25),power=base.power*multiplier;return {...base,power,powerSteps:[...(base.powerSteps??[{label:'Drums',value:base.power,multiplier:1}]),{label:'シナジー（ブレイク込み）',value:power,multiplier}],accuracy:clamp(base.accuracy+b.accuracy,0,.99),effect:clamp(base.effect*(1+b.element)),breakPower:clamp((base.breakPower??0)+b.break)};}
- const api={analyze,support,attack};root.Ensemble=api;if(typeof module!=='undefined')module.exports=api;
+ const api={analyze,support,attack,bassPlacement};root.Ensemble=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

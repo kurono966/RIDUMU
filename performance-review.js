@@ -46,7 +46,7 @@
   if(id==='timing')return 'Bass・Leadのリズムと他パートからの間隔を再現';
   if(id==='gear')return (a.gearEffects?.triggers??[]).filter(t=>t.value>0).map(t=>t.name).join('・')+'の演奏条件を達成';
   if(id==='drums')return a.charged>.3?'間の後のKickで重い一撃':a.alternation>.5?'KickとSnareの交互打ちで攻撃':'Drumsのリズムで攻撃';
-  if(id==='bass')return b.locked?'Kickに重ねたBassで盾':b.sustain>.35?'Bassの長押しで厚い盾':'Bassの配置で盾';
+  if(id==='bass')return b.placement?.style==='behind'?`Kickより${Math.round(b.placement.delayMs)}ms後ろに保つBassで盾`:b.locked?'Kickに重ねたBassで盾':b.sustain>.35?'Bassの長押しで厚い盾':'Bassの配置で盾';
   if(id==='lead')return l.shieldEfficiency>.15?'Leadの長音で盾を支援':'Leadの裏拍と配置で攻撃を支援';
   if(id==='pitch')return [b.pitch,l.pitch].flatMap(r=>r?.causes??[]).filter(c=>c.value>0).sort((x,y)=>y.value-x.value).slice(0,2).map(c=>c.label.split('（')[0]).join('・')||'音程の動きで支援';
   if(id==='ensemble')return value.ensemble.selected.map(s=>s.id==='grooveLock'?'KickとBassの同期':s.id==='response'?'DrumsにLeadが応答':s.reason).join('・')||'複数パートの支援が重なった';
@@ -92,7 +92,7 @@
   const selected=new Set(value.ensemble.selected.map(s=>s.id)),p=value.lead.pitch?.effects??{},candidates=[];
   const add=(id,when,text,priority=1)=>{if(when)candidates.push({id,text,priority});};
   add('armor',(enemy.guard??0)>0&&(p.pierce??0)<.08,'Leadで大きく跳躍して、敵の装甲シールド貫通を試そう。',3);
-  add('lock',!selected.has('grooveLock')&&value.bass.shield>0&&value.shield<90,'KickとBassを重ね、同期による攻撃と盾の強化を狙おう。',2);
+  add('lock',!selected.has('grooveLock')&&!selected.has('bassLaidBack')&&value.bass.shield>0&&value.shield<90,'KickとBassを揃えるか、Bassを少し後ろに置いて間隔を保つ連携を試そう。',2);
   add('response',!selected.has('response'),'Drumsのアクセントの少し後にLeadを返し、掛け合いを試そう。');
   add('rise',(p.attack??0)<.07,'Leadを少しずつ上げ、攻撃支援を試そう。');
   add('fall',value.received.damage>0&&(p.weaken??0)<.06&&value.reduction.total<.55,'Leadを下降させ、次の反撃を弱めてみよう。',2);
@@ -106,7 +106,7 @@
  function live(tracks,hats,voice,note,bpm,duration,enemy=null){
   const now=raw(note),source=new Map(['drums','bass','lead'].map(v=>[v,(tracks.get(v)??[]).filter(n=>raw(n)<=now+1e-7)])),ensemble=E.analyze(source,bpm,duration),q=Math.max(0,Math.min(31,Math.round(now/(60/bpm/4))));
   const events=[];
-  for(const s of ensemble.selected)if(['grooveLock','response'].includes(s.id)&&s.cells.some(c=>c.voice===voice&&c.q===q))events.push({kind:s.id==='grooveLock'?'lock':'response',strength:s.score,label:s.id==='grooveLock'?'◎ Kick + Bass 同期':'↔ Drums → Lead 応答',provisional:true,q});
+  for(const s of ensemble.selected)if(['grooveLock','bassLaidBack','response'].includes(s.id)&&s.cells.some(c=>c.voice===voice&&c.q===q))events.push({kind:s.id==='response'?'response':'lock',strength:s.score,label:s.id==='grooveLock'?'◎ Kick + Bass 同期':s.id==='bassLaidBack'?'◎ BassはKickより後ろ：間隔を再現':'↔ Drums → Lead 応答',provisional:true,q});
   const pitch=P.analyze(source.get(voice)??[],voice,bpm,duration),edge=pitch.edges.at(-1);
   if(voice==='lead'&&edge){const field=edge.kind==='up'?'attack':edge.kind==='down'?'weaken':edge.kind==='same'?'accuracy':'pierce',strength=pitch.effects[field];if(strength>0)events.push({kind:edge.kind,strength:Math.min(1,strength*4),label:({up:'↑ 上昇 → 攻撃の形',down:'↓ 下降 → 弱体化の形',same:'＝ 反復 → 安定の形',leap:enemy&&!enemy.guard?'↯ 跳躍：この敵は装甲なし':'↯ 跳躍 → 貫通の形'})[edge.kind],provisional:true,q});}
   if(voice==='bass'){if(pitch.effects.shield>0)events.push({kind:'low',strength:Math.min(1,pitch.effects.shield*4),label:'▰ '+(pitch.causes.some(c=>c.id==='low'&&c.value>0)?'低音':'反復')+' → 盾の形',provisional:true,q});if(pitch.effects.attack>0)events.push({kind:'high',strength:Math.min(1,pitch.effects.attack*6),label:'↗ 高音 → 攻撃の形',provisional:true,q});}

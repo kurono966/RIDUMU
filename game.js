@@ -129,7 +129,8 @@ function syncEnemyMusic(){
  enemyMusic.setMuted(muted);
  if(document.hidden||(!performing&&!replay))enemyMusic.stop();else enemyMusic.start(replay?replay.start:recordAudioAt,replay?replay.end:recordAudioAt+timing().duration);
  $('enemyBpm').textContent='BPM '+(snapshot?.bpm??timing().bpm)+' · '+enemyMusic.state.chord;
- $('enemyBpm').title=snapshot?snapshot.chords.map(c=>c.name).join(' → '):EnemyMusic.progression(enemies[stage].kind).chords.map(id=>EnemyMusic.chords[id].name).join(' → ');
+ const chordNames=snapshot?snapshot.chords.map(c=>c.name).join(' → '):EnemyMusic.progression(enemies[stage].kind).chords.map(id=>EnemyMusic.chords[id].name).join(' → '),chordRhythm=snapshot?.rhythm??(!snapshot?EnemyMusic.rhythm?.(enemies[stage].kind):null);
+ $('enemyBpm').title=chordNames+(chordRhythm?' / '+chordRhythm.name+'：'+chordRhythm.description:'');
 }
 const performanceFilter=globalThis.PerformanceFilter;
 let filterAutomation=[],filterTracks=new Map(),filterLastMix=[];
@@ -849,7 +850,8 @@ async function finish(continuationAt=null){
   cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent(),{references:{hat:hatNotes}});
   cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(90,shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(90,before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
-  if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
+  if(cycleBass.placement?.style==='behind')causes.push(`Kickより平均${Math.round(cycleBass.placement.delayMs)}ms後ろを保った → 後ノリの防壁`);
+  else if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
   if(cycleBass.prepared>.4)causes.push(`${cycleBass.strikeBeat}拍目をBassで支えた → 防御準備`);
   if(cycleBass.repetition>.3)causes.push('同じBassの反復 → シールド効率上昇');
   showRoleResult('低音の防壁',causes,shield,'SHIELD',preview);showToneResult(['bass']);globalThis.PitchUI?.result(cycleBass,null,null,null);globalThis.ExperienceUI?.shield(shield-before);rememberSequence('attack');

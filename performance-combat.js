@@ -2,6 +2,7 @@
  if(!root.GridEffects&&typeof require==='function')root.GridEffects=require('./grid-effects.js');
  if(!root.PitchCombat&&typeof require==='function')root.PitchCombat=require('./pitch-combat.js');
  if(!root.Rhythm&&typeof require==='function')root.Rhythm=require('./rhythm.js');
+ if(!root.Ensemble&&typeof require==='function')root.Ensemble=require('./ensemble.js');
  const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
  const raw=n=>n.inputT??n.rawT??n.t;
  const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
@@ -63,8 +64,10 @@
  function bass(notes,kicks,bpm,duration,zones,intent={},context={}){
   notes=phrase(notes,bpm,duration);
   if(!notes.length)return {shield:0,strong:0,sustain:0,repetition:0,locked:0,zone:0};
+  const placement=root.Ensemble.bassPlacement(kicks,notes,bpm,duration);
   const slots=new Set(notes.map(n=>root.GridEffects.slot(n,bpm)));
-  const strong=[...slots].filter(q=>q%4===0).length;
+  const placedSlots=placement.style==='behind'?new Set(notes.map(n=>placement.groups.find(([,b])=>Math.abs(b.time-raw(n))<1e-8)?.[0].q??root.GridEffects.slot(n,bpm))):slots;
+  const strong=[...placedSlots].filter(q=>q%4===0).length;
   const locked=[...slots].filter(q=>kicks.some(n=>n.type==='kick'&&root.GridEffects.slot(n,bpm)===q)).length;
   // Union coverage rewards held notes without rewarding stacked key spam.
   const spans=notes.map(n=>[clamp(raw(n),0,duration),clamp(raw(n)+Math.max(0,n.duration??.12),0,duration)]).sort((a,b)=>a[0]-b[0]);
@@ -80,9 +83,10 @@
    return Math.max(best,Math.max(onset,held)*(.7+.3*breath));
   },0);
   const quality=timing(notes,{drums:kicks,...context.references},bpm,duration,context.enabled!==false);
-  const shield=Math.round((4+8*Math.min(1,strong/4)+16*sustain+8*locked/Math.max(1,slots.size)+6*repetition+20*anchor)*quality.multiplier);
+  const linked=placement.style==='behind'?Math.max(locked/Math.max(1,slots.size),placement.score):locked/Math.max(1,slots.size);
+  const shield=Math.round((4+8*Math.min(1,strong/4)+16*sustain+8*linked+6*repetition+20*anchor)*quality.multiplier);
   const pitch=scalePitch(root.PitchCombat?.analyze(notes,'bass',bpm,duration),quality.multiplier,['shield']),pitchShield=Math.round(shield*(pitch?.effects.shield??0));
-  return {shield:Math.min(72,shield+pitchShield),rhythmShield:shield,pitchShield,pitch,timing:quality,strong,sustain,repetition,locked,zone,prepared:anchor,strikeBeat:attackBeat(intent)};
+  return {shield:Math.min(72,shield+pitchShield),rhythmShield:shield,pitchShield,pitch,timing:{...quality,placement},placement,strong,sustain,repetition,locked,zone,prepared:anchor,strikeBeat:attackBeat(intent)};
  }
  function lead(notes,bpm,duration,zones,context={}){
   notes=phrase(notes,bpm,duration);

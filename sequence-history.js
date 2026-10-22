@@ -55,7 +55,7 @@ function midi(value){
  const tracks=[chunk('MTrk',conductor)];
  const settings={drums:[9,null,100],hat:[9,null,58],bass:[0,33,90],lead:[1,80,80],chord:[2,4,70]},scale=[0,2,3,5,7,8,10,12,14];
  const exportTracks=[...entry.tracks];
- if(entry.accompaniment){const music=entry.accompaniment,step=music.chordBeats*60/entry.bpm,notes=[];for(let t=0,i=0;t<entry.duration;t+=step,i++)notes.push({type:'kick',t,rawT:t,duration:Math.min(step,entry.duration-t),pitches:music.chords[i%4].notes});exportTracks.push({voice:'chord',notes,accompaniment:true});}
+ if(entry.accompaniment)exportTracks.push({voice:'chord',notes:root.EnemyMusic.timeline(entry.accompaniment,entry.duration),accompaniment:true});
  for(const track of exportTracks){
   if(!track.notes.length)continue;
   const [channel,program,velocity]=track.accompaniment?[3,89,80]:settings[track.voice],name=text(track.accompaniment?'ACCOMPANIMENT':track.voice.toUpperCase()),events=[];
@@ -63,13 +63,13 @@ function midi(value){
   for(const note of track.notes){
    const at=note.rawT??note.t,start=tick(at),gate=note.duration??(track.voice==='bass'?.15:track.voice==='lead'?.17:track.voice==='chord'?.32:.07);
    const pitches=track.voice==='drums'?[note.type==='kick'?36:38]:track.voice==='hat'?[42]:track.voice==='chord'?(note.pitches??(note.type==='kick'?[60,63,67,70]:[65,68,72,75])):[note.midi??((track.voice==='bass'?36:60)+(note.pitch!==undefined?scale[note.pitch]:note.type==='kick'?0:track.voice==='bass'?7:3))];
-   for(const pitch of pitches){const id=start+':'+pitch,end=Math.max(start+1,tick(at+gate)),old=merged.get(id);merged.set(id,{start,pitch,end:Math.max(end,old?.end??0)});}
+   for(const pitch of pitches){const id=start+':'+pitch,end=Math.max(start+1,tick(at+gate)),old=merged.get(id);merged.set(id,{start,pitch,end:Math.max(end,old?.end??0),velocity:note.velocity??velocity});}
   }
   const notes=[...merged.values()].sort((a,b)=>a.start-b.start);
   for(let i=0;i<notes.length;i++){
    const n=notes[i],next=notes.slice(i+1).find(other=>other.pitch===n.pitch);
    const end=next?Math.min(n.end,next.start):n.end;
-   events.push({at:n.start,order:1,data:[144|channel,n.pitch,velocity]},{at:end,order:0,data:[128|channel,n.pitch,0]});
+   events.push({at:n.start,order:1,data:[144|channel,n.pitch,n.velocity]},{at:end,order:0,data:[128|channel,n.pitch,0]});
   }
   events.sort((a,b)=>a.at-b.at||a.order-b.order);
   const data=[0,255,3,...vlq(name.length),...name];if(program!==null)data.push(0,192|channel,program);

@@ -27,7 +27,18 @@ test('recorded accompaniment survives JSON/storage without aliasing current enem
 test('MIDI exports saved chord pitches on a dedicated channel at the original tempo',()=>{
  const M=require('./enemy-music.js'),e=H.snapshot({...entry(),accompaniment:M.snapshot('stone',120)}),parsed=parse(H.midi(e));
  assert.equal(parsed.tracks.length,7);const chords=parsed.tracks.at(-1).filter(n=>n.status===147);
- assert.deepEqual(chords.slice(0,4).map(n=>n.data[0]),[48,51,55,58]);assert.equal(chords[4].tick-chords[0].tick,1920);
+ assert.deepEqual(chords.slice(0,4).map(n=>n.data[0]),[48,51,55,58]);assert.equal(chords[4].tick-chords[0].tick,Math.round((1+.03+.03)*1920)-Math.round(.03*1920));
+});
+
+test('MIDI and stored accompaniment retain offbeats, microtiming, gates and dynamic accents',()=>{
+ const M=require('./enemy-music.js');
+ for(const kind of ['machine','ghost','conductor']){
+  const saved=M.snapshot(kind,120),e=H.snapshot({...entry(),accompaniment:saved}),roundtrip=H.validate(JSON.parse(JSON.stringify(e)));
+  assert.deepEqual(roundtrip.accompaniment.rhythm,saved.rhythm);
+  const events=parse(H.midi(roundtrip)).tracks.at(-1),on=events.filter(e=>e.status===147),expected=M.timeline(saved,4);
+  assert.deepEqual(on.map(e=>[e.tick,e.data[0],e.data[1]]),expected.flatMap(n=>n.pitches.map(pitch=>[Math.round((n.t+.03)*1920),pitch,n.velocity])));
+  for(const n of expected){const start=Math.round((n.t+.03)*1920),end=Math.round((n.t+n.duration+.03)*1920);assert(events.some(e=>e.status===131&&e.tick===end&&e.data[0]===n.pitches[0]));assert(end>start);}
+ }
 });
 test('history retains the latest 50 and removal persists without modifying returned snapshots',()=>{
  let data;const store=H.createStore({getItem:()=>null,setItem:(k,v)=>data=v});for(let i=0;i<55;i++)store.add({...entry(),id:String(i)});assert.equal(store.list().length,50);assert.equal(store.list()[0].id,'54');

@@ -16,8 +16,10 @@ test('all enemy progressions loop on the same eight-beat boundary as a recorded 
  for(const kind of Object.keys(Music.progressions))for(const bpm of [72,82,100,120,138,150,240]){
   const f=setup();f.music.setEnemy(kind,bpm);f.music.start(.06);
   assert.equal(f.music.state.loopDuration,480/bpm);assert.equal(f.music.state.chordDuration,120/bpm);
-  for(let i=1;i<=4;i++)f.tick(.06+i*120/bpm-.03);
-  const end=.06+480/bpm;assert(f.starts.some(t=>Math.abs(t-end)<1e-8));
+  const expected=Music.timeline(Music.snapshot(kind,bpm),960/bpm);
+  for(const n of expected)f.tick(.06+n.t-.03);
+  for(const n of expected)assert(f.starts.some(t=>Math.abs(t-(.06+n.t))<1e-8),kind+' / '+bpm+' / '+n.t);
+  const end=.06+480/bpm;
   f.tick(end+.001);assert.equal(f.music.state.chord,Music.chords[Music.progressions[kind].chords[0]].name);
  }
 });
@@ -37,18 +39,18 @@ test('enemy timbres differ in waveform, envelope or harmonic layer rather than o
 test('chords are polyphonic and scheduled from the audio clock at the enemy BPM',()=>{
  const f=setup();f.music.setEnemy('stone',120);f.music.start(.06);assert.equal(f.starts.length,4);
  assert(f.starts.every(t=>t===.06));assert.equal(new Set(f.frequencies).size,4);
- f.tick(.96);assert.equal(f.starts.length,8);assert(f.starts.slice(4).every(t=>t===1.06));
+ f.tick(1);assert.equal(f.starts.length,8);assert(f.starts.slice(4).every(t=>Math.abs(t-1.09)<1e-8));
  f.music.start();assert.equal(f.timers.size,1);f.tick(4.02);assert.equal(f.music.state.chord,'Gm7');f.tick(4.07);assert.equal(f.music.state.chord,'Cm7');
 });
 test('aligning a future input downbeat works even between the old chord boundaries',()=>{
  const f=setup();f.music.setEnemy('stone',120);f.music.start(.06);f.music.align(1);
  f.tick(.9);assert(f.starts.some(t=>t===1));assert.equal(f.music.state.origin,1);
  f.tick(1.01);assert.equal(f.music.state.chord,'Abmaj7','alignment advances the progression instead of repeating its first chord');
- f.tick(1.9);assert(f.starts.some(t=>t===2));assert.equal(f.timers.size,1);
+ f.tick(1.94);assert(f.starts.some(t=>Math.abs(t-2.03)<1e-8));assert.equal(f.timers.size,1);
 });
 test('mute prevents new voices and unmute resumes the current chord without resetting the clock',()=>{
  const f=setup();f.music.start(.06);f.music.setMuted(true);const count=f.starts.length,origin=f.music.state.origin;
- f.tick(4);assert.equal(f.starts.length,count);f.music.setMuted(false);assert(f.starts.length>count);assert.equal(f.music.state.origin,origin);
+ f.tick(3.2);assert.equal(f.starts.length,count);f.music.setMuted(false);assert(f.starts.length>count);assert.equal(f.music.state.origin,origin);
 });
 test('changing enemy replaces the progression and timer; stop and suspended contexts schedule nothing',()=>{
  const f=setup();f.music.start();f.music.setEnemy('fly',150);assert.equal(f.timers.size,1);assert.equal(f.music.state.chord,'Ebmaj7');
@@ -65,4 +67,36 @@ test('a saved progression and tone play independently of the current enemy prese
  f.music.start(.06);assert.equal(f.music.state.bpm,138);assert.equal(f.music.state.chord,'Abmaj7');assert.equal(f.starts.length,8);
  assert.equal(f.frequencies[0],440*2**((48-69)/12));
  f.music.stop();f.music.setEnemy('stone',82);assert.equal(f.music.state.kind,'stone');assert.equal(f.music.state.chord,'Cm7');
+});
+
+test('rhythm patterns demonstrate enemy-specific placement, space and development',()=>{
+ const r=Music.rhythms;
+ assert.equal(new Set(Object.values(r).map(p=>JSON.stringify(p.events))).size,8);
+ assert.ok(r.stone.events.some(e=>e.delay>0));assert.ok(r.stone.events.every(e=>e.duration>=1));
+ assert.ok(r.machine.events.every(e=>e.beat%1===.5&&e.duration<.5));
+ assert.ok(r.fly.events.every((e,i)=>e.beat===i));
+ assert.ok(r.plant.events.filter(e=>e.beat>=4).length>r.plant.events.filter(e=>e.beat<4).length);
+ assert.ok(r.plant.events.some(e=>Math.abs(e.beat%1-2/3)<1e-8));
+ assert.deepEqual(r.ghost.events.slice(0,4).map(e=>e.delay),r.ghost.events.slice(4).map(e=>e.delay));
+ assert.ok(r.ghost.events.some(e=>e.delay<0)&&r.ghost.events.some(e=>e.delay>0));
+ assert.deepEqual(r.crystal.events.slice(0,4).map(e=>e.velocity),r.crystal.events.slice(4).map(e=>e.velocity));
+ assert.ok(r.furnace.events.some((e,i)=>i&&e.beat-r.furnace.events[i-1].beat>1));
+ assert.ok(r.conductor.events.at(-1).beat+r.conductor.events.at(-1).duration<7);
+ assert.ok(r.conductor.events.filter(e=>e.beat>=4).length>r.conductor.events.filter(e=>e.beat<4).length);
+});
+
+test('unmuting inside a rest preserves the rest, and upcoming notes are not lost',()=>{
+ const early=setup();early.music.setEnemy('stone',120);early.music.setMuted(true);early.music.start(.06);early.music.setMuted(false);assert(early.starts.some(t=>Math.abs(t-.06)<1e-8));
+ const f=setup();f.music.setEnemy('stone',120);f.music.start(.06);f.music.setMuted(true);f.tick(.85);
+ const count=f.starts.length;f.music.setMuted(false);assert.equal(f.starts.length,count);
+ f.tick(1);assert(f.starts.some(t=>Math.abs(t-1.09)<1e-8));
+ const m=setup();m.music.setEnemy('machine',120);m.music.start(.06);m.music.setMuted(true);m.tick(.1);m.music.setMuted(false);assert.equal(m.starts.length,0);m.tick(.25);assert(m.starts.some(t=>Math.abs(t-.31)<1e-8));
+});
+
+test('saved rhythm survives preset changes and malformed articulation is rejected',()=>{
+ const saved=Music.snapshot('ghost',120),clean=Music.cleanSnapshot(JSON.parse(JSON.stringify(saved)));
+ saved.rhythm.events[1].delay=.1;assert.equal(clean.rhythm.events[1].delay,.025);
+ for(const event of [{beat:1,duration:1,velocity:2,delay:0},{beat:0,duration:1,velocity:1,delay:-.01},{beat:8,duration:1,velocity:1,delay:0}])assert.throws(()=>Music.cleanSnapshot({...clean,rhythm:{...clean.rhythm,events:[event]}}));
+ assert.throws(()=>Music.cleanSnapshot({...clean,rhythm:{...clean.rhythm,events:[]}}));
+ const legacy=Music.snapshot('stone',120);delete legacy.rhythm;const f=setup();f.music.setSnapshot(legacy);f.music.start(.06);f.tick(.96);assert(f.starts.slice(4).every(t=>t===1.06));assert.equal(Music.timeline(legacy,4).length,4);
 });
