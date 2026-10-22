@@ -39,6 +39,7 @@ function renderRogueRun(){
  globalThis.RogueUI?.render(rogueRun,{hp,shield});
  syncRunAudio();
 }
+function playerShieldCapacity(){return rogueRun?(globalThis.RogueRun?.shieldCapacity?.(rogueRun.gear)??90):90;}
 async function chooseRogueReward(){
  if(!rogueRun)return false;
  const run=rogueRun,oldFloor=run.floor;
@@ -853,7 +854,7 @@ function completeBattle(){
 function applyRogueEquipment(a){
  if(!rogueRun||rogueRun.phase!=='battle')return a;
  const effects=RogueRun.effects(rogueRun.gear,a,cycleBass,cycleLead,cycleEnsemble),beforeHp=hp,beforeShield=shield;
- hp=Math.min(100,hp+effects.heal);shield=Math.min(90,shield+effects.shield);
+ hp=Math.min(100,hp+effects.heal);shield=Math.min(playerShieldCapacity(),shield+effects.shield);
  rogueRun.lastEffects=effects.triggers;
  const descriptions=[];
  if(effects.attack)descriptions.push('攻撃 ＋'+Math.round(effects.attack*100)+'%');
@@ -886,7 +887,7 @@ async function finish(continuationAt=null){
  if(lastInstrument==='bass'){
   feedbackCarryShield=shield;
   cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent(),{references:{hat:hatNotes}});
-  cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(90,shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(90,before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
+  cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(playerShieldCapacity(),shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(playerShieldCapacity(),before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.placement?.style==='behind')causes.push(`Kickより平均${Math.round(cycleBass.placement.delayMs)}ms後ろを保った → 後ノリの防壁`);
   else if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
@@ -903,7 +904,7 @@ async function finish(continuationAt=null){
   cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones,{references:{hat:hatNotes,drums:tracks.get('drums')??[],bass:tracks.get('bass')??[]}}),cycleEnsemble);
   const toneShield=Math.round((cycleBass?.rawShield??0)*(Synth.style(synthTracks.get('lead'),tracks.get('lead')??[],lastDuration).shield-1)*.5);
   const bonus=toneShield+Math.round((cycleBass?.shield??0)*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield;
-  const beforeLeadShield=shield;shield=Math.max(0,Math.min(90,shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');}renderBattlePlan();
+  const beforeLeadShield=shield;shield=Math.max(0,Math.min(playerShieldCapacity(),shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');}renderBattlePlan();
   const drums=tracks.get('drums')??[],rendered=Quantize.render(drums,lastBpm,lastDuration);
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
   let a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);

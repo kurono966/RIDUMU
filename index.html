@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="roguelite.css?v=4">
     <link rel="stylesheet" href="enemies.css?v=3">
     <link rel="stylesheet" href="enemy-state.css?v=1">
+    <link rel="stylesheet" href="layout.css?v=1">
   </head>
   <body class="game-ui">
     <section id="titleScreen" class="title-screen" aria-labelledby="titleHeading">
@@ -50,7 +51,7 @@
         </button>
       </header>
       <section id="rogueRack" class="rogue-rack" aria-label="今回の周回と機材" hidden>
-        <div class="rogue-rack-head"><strong id="rogueRigCount">機材 0 / 4</strong><div id="rogueProgress" class="rogue-progress" aria-label="全8戦の進行"></div><small id="rogueResources"></small></div>
+        <div class="rogue-rack-head"><strong id="rogueRigCount">機材 0個</strong><div id="rogueProgress" class="rogue-progress" aria-label="全8戦の進行"></div><small id="rogueResources"></small></div>
         <p id="rogueRunStatus" class="rogue-run-status"></p>
         <div id="rogueGear" class="rogue-gear"></div>
         <p id="rogueChallenge" class="rogue-challenge" hidden></p>
@@ -300,6 +301,7 @@
           閉じる
         </button>
       </div>
+      <fieldset><legend>画面</legend><button id="openLayout" type="button" aria-haspopup="dialog">画面をカスタマイズ</button><p class="setting-help">表示する情報と配置を変更できます。変更はこのブラウザに保存されます。</p></fieldset>
       <fieldset>
         <legend>タイミング</legend>
         <label for="continuousInput"><span>連続入力</span><input id="continuousInput" type="checkbox" aria-describedby="continuousHelp"></label>
@@ -465,7 +467,7 @@
             <table class="synth-combat-table"><thead><tr><th>演奏例</th><th>攻撃への寄与</th><th id="synthShieldHeading">Bass盾生成</th></tr></thead><tbody id="synthCombatRows"></tbody></table>
             <details><summary>補正に関わる項目・計算ルール</summary>
               <p class="synth-guide">速いAttackで短く刻むと攻撃寄り、長音とReleaseは盾寄り。両者には小さなトレードオフがあります。OSC・Sub・Detune・Filter・LFO・Driveは音の質感を作る項目です。属性・敵の弱点・命中率への直接の倍率はありません。</p>
-              <p class="synth-guide">攻撃はBass・Leadを各1/2で合算。盾はBassの生成量に適用し、LeadはBass元盾の増減率を1/2で支援します。丸め処理・盾上限90があります。</p>
+              <p class="synth-guide">攻撃はBass・Leadを各1/2で合算。盾はBassの生成量に適用し、LeadはBass元盾の増減率を1/2で支援します。丸め処理があります。盾容量は通常90、ローグライトでは盾機材の成長分だけ増えます。</p>
             </details>
           </section>
           <p class="eyebrow">TIMBRE / 音色の個性</p>
@@ -584,7 +586,7 @@
       <details id="element-help-fire"><summary>▲ 火</summary><p>後半に向かって音を増やす。短い連打や密度の集中も火につながります。</p></details>
       <details id="element-help-lightning"><summary>ϟ 雷</summary><p>裏拍やシンコペーションを使う。間隔の変化や再現された揺れも雷につながります。</p></details>
     </dialog>
-    <script src="rhythm.js?v=10"></script>
+    <script src="rhythm.js?v=11"></script>
     <script src="quantize.js?v=2"></script>
     <script src="groove.js?v=4"></script>
     <script src="feedback.js?v=6"></script>
@@ -599,29 +601,30 @@
     <script src="bass-audio.js"></script>
     <script src="synth.js?v=5"></script>
     <script src="synth-audio.js?v=7"></script>
-    <script src="roguelite.js?v=3"></script>
-    <script src="rogue-audio.js?v=1"></script>
+    <script src="roguelite.js?v=4"></script>
+    <script src="rogue-audio.js?v=2"></script>
     <script src="sequence-history.js?v=7"></script>
     <script src="grid-hazards.js"></script>
     <script src="evaluation-debug.js?v=9"></script>
     <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
     <script src="enemy-music.js?v=13"></script>
-    <script src="roguelite-ui.js?v=3"></script>
-    <script src="performance-review.js?v=8"></script>
+    <script src="roguelite-ui.js?v=4"></script>
+    <script src="performance-review.js?v=9"></script>
     <script src="feedback-audio.js?v=1"></script>
     <script src="enemy-art.js?v=3"></script>
     <script src="enemy-state.js?v=1"></script>
-    <script src="game.js?v=42"></script>
+    <script src="game.js?v=43"></script>
     <script src="drum-ui.js?v=1"></script>
     <script src="synth-ui.js?v=7"></script>
-    <script src="history-ui.js?v=6"></script>
+    <script src="history-ui.js?v=7"></script>
     <script src="evaluation-debug-ui.js?v=3"></script>
-    <script src="ui.js?v=9"></script>
+    <script src="ui.js?v=10"></script>
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=3"></script>
     <script src="element-meter-ui.js?v=2"></script>
     <script src="title-screen.js?v=2"></script>
+    <script src="layout-ui.js?v=1"></script>
     <link rel="stylesheet" href="title-screen.css?v=1">
   </body>
 </html>

@@ -84,6 +84,7 @@
  const slot=consolePanel?.querySelector('#mobileMoveSlot');
  if(!game||!consolePanel||!result||!slot)return;
  const move=()=>{
+  if(globalThis.RidumuLayout)return globalThis.RidumuLayout.placeResult();
   const mobile=window.matchMedia('(max-width:759px)').matches;
   if(mobile&&result.parentElement!==slot)slot.appendChild(result);
   else if(!mobile&&result.parentElement!==game)game.appendChild(result);

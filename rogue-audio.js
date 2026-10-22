@@ -4,10 +4,11 @@
  const R=root.RogueRun??(typeof require==='function'?require('./roguelite.js'):null);
  function snapshot(items=[]){return items.filter(item=>R.byId(item.id)?.audio).map(item=>({id:item.id,rank:item.rank}));}
  function cleanInventory(items){
-  if(!Array.isArray(items)||items.length>4)throw Error('音響機材の設定が不正です。');
-  const seen=new Set();return items.map(item=>{if(!item||!R.byId(item.id)?.audio||![1,2].includes(item.rank)||seen.has(item.id))throw Error('音響機材が不正です。');seen.add(item.id);return {id:item.id,rank:item.rank};});
+  if(!Array.isArray(items)||items.length>R.gear.filter(g=>g.audio).length)throw Error('音響機材の設定が不正です。');
+  const seen=new Set();return items.map(item=>{if(!item||!R.byId(item.id)?.audio||!R.validRank(item.rank)||seen.has(item.id))throw Error('音響機材が不正です。');seen.add(item.id);return {id:item.id,rank:item.rank};});
  }
- function tailSeconds(items=[],bpm=120){return Math.min(6,items.reduce((sum,item)=>{const type=R.byId(item.id)?.audio?.type;return sum+(type==='reverb'?(item.rank===2?2.8:2):type==='delay'?60/bpm*.75*5:['chorus','flanger'].includes(type)?.08:0);},0));}
+ const audioGrowth=rank=>2*(rank-1)/rank;
+ function tailSeconds(items=[],bpm=120){return Math.min(6,items.reduce((sum,item)=>{const type=R.byId(item.id)?.audio?.type;return sum+(type==='reverb'?2+.8*audioGrowth(item.rank):type==='delay'?60/bpm*.75*5:['chorus','flanger'].includes(type)?.08:0);},0));}
  function create(ctx,partsOutput){
   const masterInput=ctx.createGain(),output=ctx.createGain(),parts={bass:ctx.createGain(),lead:ctx.createGain()};
   const inputs={master:masterInput,...parts};let nodes=[],lfos=[],key=null,inventory=[],tempo=120,isMuted=false;
@@ -15,27 +16,27 @@
   function track(n){nodes.push(n);return n;}
   function oscillator(rate,depth,param,at){const osc=ctx.createOscillator(),amount=gain(depth);osc.type='sine';osc.frequency.value=rate;osc.connect(amount);amount.connect(param);osc.start(at);lfos.push(osc);return osc;}
   function effect(input,item,bpm,at){
-   const {type}=R.byId(item.id).audio,strong=item.rank===2,exit=gain(),wet=gain(),dry=gain();input.connect(dry);dry.connect(exit);wet.connect(exit);
+   const {type}=R.byId(item.id).audio,growth=audioGrowth(item.rank),scale=(base,up)=>base+(up-base)*growth,exit=gain(),wet=gain(),dry=gain();input.connect(dry);dry.connect(exit);wet.connect(exit);
    let mix=0;
    if(type==='distortion'){
-    mix=strong?.3:.2;const shape=track(ctx.createWaveShaper()),drive=strong?5:3;
+    mix=scale(.2,.3);const shape=track(ctx.createWaveShaper()),drive=scale(3,5);
     shape.curve=Float32Array.from({length:4096},(_,i)=>Math.tanh(drive*(2*i/4095-1))/Math.tanh(drive));shape.oversample='2x';input.connect(shape);shape.connect(wet);wet.gain.value=mix*.65;
    }else if(type==='reverb'){
-    mix=strong?.22:.14;const convolver=track(ctx.createConvolver()),seconds=strong?2.8:2,buffer=ctx.createBuffer(2,Math.ceil(ctx.sampleRate*seconds),ctx.sampleRate);
+    mix=scale(.14,.22);const convolver=track(ctx.createConvolver()),seconds=scale(2,2.8),buffer=ctx.createBuffer(2,Math.ceil(ctx.sampleRate*seconds),ctx.sampleRate);
     for(let ch=0;ch<2;ch++){const data=buffer.getChannelData(ch);let seed=9187+ch*3761;for(let i=0;i<data.length;i++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;data[i]=((seed/4294967296)*2-1)*Math.exp(-7*i/data.length);}}
     convolver.buffer=buffer;const low=track(ctx.createBiquadFilter()),high=track(ctx.createBiquadFilter());low.type='lowpass';low.frequency.value=5500;high.type='highpass';high.frequency.value=180;input.connect(high);high.connect(low);low.connect(convolver);convolver.connect(wet);
    }else if(['chorus','flanger','delay'].includes(type)){
-    const delay=track(ctx.createDelay(2)),feedback=gain(type==='delay'?(strong?.36:.28):type==='flanger'?(strong?.38:.25):0);
-    mix=type==='delay'?(strong?.24:.18):type==='chorus'?(strong?.32:.24):(strong?.38:.3);
+    const delay=track(ctx.createDelay(2)),feedback=gain(type==='delay'?scale(.28,.36):type==='flanger'?scale(.25,.38):0);
+    mix=type==='delay'?scale(.18,.24):type==='chorus'?scale(.24,.32):scale(.3,.38);
     delay.delayTime.value=type==='delay'?60/bpm*.75:type==='chorus'?.02:.004;
     input.connect(delay);delay.connect(wet);delay.connect(feedback);feedback.connect(delay);
-    if(type!=='delay')oscillator(type==='chorus'?(strong?.45:.3):.19,type==='chorus'?(strong?.006:.004):(strong?.003:.002),delay.delayTime,at);
+    if(type!=='delay')oscillator(type==='chorus'?scale(.3,.45):.19,type==='chorus'?scale(.004,.006):scale(.002,.003),delay.delayTime,at);
    }else if(type==='wah'){
-    mix=strong?.55:.4;const filter=track(ctx.createBiquadFilter());filter.type='bandpass';filter.frequency.value=600;filter.Q.value=strong?2.2:1.5;input.connect(filter);filter.connect(wet);oscillator(bpm/60*2,strong?1600:1100,filter.detune,at);
+    mix=scale(.4,.55);const filter=track(ctx.createBiquadFilter());filter.type='bandpass';filter.frequency.value=600;filter.Q.value=scale(1.5,2.2);input.connect(filter);filter.connect(wet);oscillator(bpm/60*2,scale(1100,1600),filter.detune,at);
    }else if(type==='phaser'){
-    mix=strong?.46:.33;let from=input;for(const frequency of [350,900,1600]){const filter=track(ctx.createBiquadFilter());filter.type='allpass';filter.frequency.value=frequency;filter.Q.value=.7;from.connect(filter);from=filter;oscillator(.16,strong?1000:650,filter.detune,at);}from.connect(wet);
+    mix=scale(.33,.46);let from=input;for(const frequency of [350,900,1600]){const filter=track(ctx.createBiquadFilter());filter.type='allpass';filter.frequency.value=frequency;filter.Q.value=.7;from.connect(filter);from=filter;oscillator(.16,scale(650,1000),filter.detune,at);}from.connect(wet);
    }else if(type==='tremolo'){
-    mix=1;const amp=gain(1-(strong?.65:.45)/2);input.connect(amp);amp.connect(wet);oscillator(bpm/60*2,(strong?.65:.45)/2,amp.gain,at);
+    mix=1;const amp=gain(1-scale(.45,.65)/2);input.connect(amp);amp.connect(wet);oscillator(bpm/60*2,scale(.45,.65)/2,amp.gain,at);
    }
    dry.gain.value=1-mix;if(type!=='distortion')wet.gain.value=mix;return exit;
   }

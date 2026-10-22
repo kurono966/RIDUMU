@@ -56,7 +56,7 @@ function renderHistory(){
   const names={hat:'Hat',drums:'Drums',bass:'Bass',lead:'Lead',chord:'Chords'};
   meta.textContent=`${when} · ${entry.enemy} · ${entry.bpm} BPM · TURN ${entry.turn} / `+entry.tracks.filter(t=>t.notes.length).map(t=>names[t.voice]).join(' + ');
   meta.textContent+=entry.accompaniment?' / コード：'+entry.accompaniment.chords.map(c=>c.name).join(' → '):' / コード情報なし';
-  if(entry.audioGear?.length)meta.textContent+=' / 音響機材：'+entry.audioGear.map(item=>RogueRun.byId(item.id).name+(item.rank===2?'＋':'')).join('・');
+  if(entry.audioGear?.length)meta.textContent+=' / 音響機材：'+entry.audioGear.map(item=>RogueRun.byId(item.id).name+' Lv.'+item.rank).join('・');
   for(const [label,action] of [[historyPlaying===entry.id?'■ 停止':'▶ 再生',()=>playHistory(entry)],['MIDI保存',()=>downloadSequence(entry,'mid')],['JSON保存',()=>downloadSequence(entry,'json')],['削除',()=>{if(historyPlaying===entry.id)stopHistoryPlayback();sequenceStore.remove(entry.id);renderHistory();}]]){
    const button=document.createElement('button');button.type='button';button.className='small';button.textContent=label;button.onclick=action;actions.append(button);
   }

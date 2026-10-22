@@ -33,11 +33,15 @@
   {id:'space',name:'余白のセッション',text:'4打以上で音の間の4分の1以上に休符を置く（16分3〜8個分）'}
  ];
  const byId=id=>gear.find(item=>item.id===id);
+ const validRank=rank=>Number.isSafeInteger(rank)&&rank>=1;
+ function valueAt(item){const g=byId(item.id);return g&&validRank(item.rank)?g.values[0]+(item.rank-1)*(g.values[1]-g.values[0]):0;}
+ function effectText(item){const g=byId(item.id),value=valueAt(item),label={attack:'攻撃',shield:'盾',heal:'HP',pierce:'貫通強度'}[g.kind];return label+' +'+(['attack','pierce'].includes(g.kind)?(Math.round(value*1000)/10)+'%':Math.round(value))+(g.kind==='shield'?'（所持中の盾容量 +'+Math.round(value)+'）':'');}
+ const shieldCapacity=inventory=>90+Math.round((inventory??[]).filter(item=>byId(item.id)?.kind==='shield').reduce((sum,item)=>sum+valueAt(item),0));
  function shuffle(values,rng=Math.random){const out=[...values];for(let i=out.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
- function encounter(enemy,kind='normal'){
-  const out=copy(enemy),hp=kind==='elite'?1.2:kind==='session'?1.1:1,attack=kind==='elite'?1.12:1;
+ function encounter(enemy,kind='normal',floor=1){
+  const out=copy(enemy),growth=Math.max(0,floor-1),hp=(kind==='elite'?1.2:kind==='session'?1.1:1)*(1+.1*growth),attack=(kind==='elite'?1.12:1)*(1+.035*growth);
   out.hp=Math.round(out.hp*hp);out.attack=Math.round(out.attack*attack);out.baseAttack=out.attack;out.attackCap=Math.round(out.attack*1.6);
-  out.routeKind=kind;return out;
+  out.routeKind=kind;out.floor=floor;return out;
  }
  function create(roster,rng=Math.random){
   const first=shuffle(roster.filter(e=>['stone','plant','machine'].includes(e.kind)),rng)[0]??roster[0];
@@ -45,38 +49,37 @@
  }
  function routes(run,roster,rng=Math.random){
   if(run.offers)return run.offers;
-  if(run.floor===run.total-1){run.offers=[{id:'boss',kind:'boss',enemy:encounter(roster.find(e=>e.kind==='conductor'),'boss')}];return run.offers;}
+  if(run.floor===run.total-1){run.offers=[{id:'boss',kind:'boss',enemy:encounter(roster.find(e=>e.kind==='conductor'),'boss',run.floor+1)}];return run.offers;}
   const available=shuffle(roster.filter(e=>e.kind!=='conductor'&&!run.used.includes(e.kind)),rng);
   if(!available.length)throw Error('No encounter remains');
-  run.offers=[{id:'normal',kind:'normal',enemy:encounter(available[0])},{id:'elite',kind:'elite',enemy:encounter(available[1]??available[0],'elite')}];
+  run.offers=[{id:'normal',kind:'normal',enemy:encounter(available[0],'normal',run.floor+1)},{id:'elite',kind:'elite',enemy:encounter(available[1]??available[0],'elite',run.floor+1)}];
   if([2,5].includes(run.floor))run.offers.push({id:'rest',kind:'rest'});
-  if([3,6].includes(run.floor))run.offers.push({id:'session',kind:'session',enemy:encounter(available[0],'session')});
+  if([3,6].includes(run.floor))run.offers.push({id:'session',kind:'session',enemy:encounter(available[0],'session',run.floor+1)});
   return run.offers;
  }
  function rewardOffers(run,rng=Math.random){
   if(run.rewards)return run.rewards;
   const rank=run.current.kind==='elite'?2:1;
-  const pool=shuffle(gear.filter(g=>!run.gear.some(item=>item.id===g.id&&item.rank===2)),rng),choices=pool.slice(0,3);
+  const pool=shuffle(gear,rng),choices=pool.slice(0,3);
   // Keep both sound-changing and rhythm-only equipment discoverable.
   for(const audio of [true,false])if(!choices.some(g=>!!g.audio===audio)){const extra=pool.find(g=>!!g.audio===audio&&!choices.includes(g));if(extra)choices[choices.length-1]=extra;}
-  run.rewards=choices.map(g=>({id:g.id,rank:run.gear.some(item=>item.id===g.id)?2:rank}));
+  run.rewards=choices.map(g=>({id:g.id,rank:(run.gear.find(item=>item.id===g.id)?.rank??0)+rank}));
   return run.rewards;
  }
- function equip(run,offer,replaceId=null){
-  if(!byId(offer.id)||![1,2].includes(offer.rank))return false;
+ function equip(run,offer){
+  if(!byId(offer.id)||!validRank(offer.rank))return false;
   const owned=run.gear.find(g=>g.id===offer.id);
-  if(owned){if(owned.rank===2)return false;owned.rank=2;return true;}
-  if(run.gear.length>=4){const index=run.gear.findIndex(g=>g.id===replaceId);if(index<0)return false;run.gear.splice(index,1);}
+  if(owned){if(offer.rank<=owned.rank)return false;owned.rank=offer.rank;return true;}
   run.gear.push({...offer});return true;
  }
- function claim(run,id,replaceId=null){
+ function claim(run,id){
   if(!['starter','reward'].includes(run.phase))return false;
-  const offer=run.rewards?.find(g=>g.id===id);if(!offer||!equip(run,offer,replaceId))return false;
+  const offer=run.rewards?.find(g=>g.id===id);if(!offer||!equip(run,offer))return false;
   run.log.push({floor:run.floor,type:'gear',id,rank:run.gear.find(g=>g.id===id).rank});run.rewards=null;
   run.phase=run.phase==='starter'?'battle':'route';return true;
  }
  function skip(run){if(!['starter','reward'].includes(run.phase))return false;run.rewards=null;run.phase=run.phase==='starter'?'battle':'route';return true;}
- function upgrade(run,id){const item=run.gear.find(g=>g.id===id&&g.rank===1);if(!item)return false;item.rank=2;return true;}
+ function upgrade(run,id){const item=run.gear.find(g=>g.id===id);if(!item||!validRank(item.rank+1))return false;item.rank++;return true;}
  function rest(run,id){
   if(run.phase!=='route'||!run.offers?.some(o=>o.kind==='rest'))return null;
   if(id!=='heal'&&!upgrade(run,id))return null;
@@ -99,7 +102,7 @@
  }
  function bonus(run,id){
   if(run.phase!=='bonus')return null;
-  const hasUpgrade=run.gear.some(g=>g.rank===1);
+  const hasUpgrade=run.gear.length>0;
   if(hasUpgrade&&!upgrade(run,id))return null;
   run.bonusPending=false;run.phase=run.skipReward?'route':'reward';run.skipReward=false;return {heal:hasUpgrade?0:15};
  }
@@ -131,21 +134,21 @@
   };
  }
  function effects(inventory,a,bass,lead,ensemble){
-  const active=conditions(a,bass,lead,ensemble),totals={attack:0,shield:0,heal:0,pierce:0},caps={attack:.25,shield:18,heal:6,pierce:.24},triggers=[];
+  const active=conditions(a,bass,lead,ensemble),totals={attack:0,shield:0,heal:0,pierce:0},triggers=[];
   for(const item of inventory??[]){const g=byId(item.id);if(!g||!active[g.id])continue;
-   const value=Math.min(g.values[clamp(item.rank??1,1,2)-1],caps[g.kind]-totals[g.kind]);
+   const value=valueAt(item);
    totals[g.kind]+=value;triggers.push({id:g.id,name:g.name,kind:g.kind,value});
   }
   return {...totals,triggers};
  }
  function apply(a,effects){
-  const multiplier=1+effects.attack,power=a.power*multiplier,pierce=Math.min(.3,(a.pitchPierce??0)+effects.pierce);
+  const multiplier=1+effects.attack,power=a.power*multiplier,base=clamp(a.pitchPierce??0,0,.3),pierce=effects.pierce>0?1-(1-base)/(1+effects.pierce):base;
   return {...a,power,pitchPierce:pierce,gearPierce:pierce-(a.pitchPierce??0),gearEffects:copy(effects),powerSteps:[...(a.powerSteps??[{label:'Drums',value:a.power,multiplier:1}]),...(effects.attack?[{label:'機材：'+effects.triggers.filter(t=>t.kind==='attack'&&t.value>0).map(t=>t.name).join('・'),value:power,multiplier}]:[])]};
  }
  function checkChallenge(run,a){
   if(!run?.challenge||run.phase!=='battle'||run.challenge.done)return false;
   const active=conditions(a);run.challenge.done=!!(run.challenge.id==='repeat'?active.echo:active.break);return run.challenge.done;
  }
- const api={gear,challenges,byId,create,encounter,routes,rewardOffers,equip,claim,skip,upgrade,rest,enter,victory,bonus,conditions,effects,apply,checkChallenge};
+ const api={gear,challenges,byId,validRank,valueAt,effectText,shieldCapacity,create,encounter,routes,rewardOffers,equip,claim,skip,upgrade,rest,enter,victory,bonus,conditions,effects,apply,checkChallenge};
  root.RogueRun=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

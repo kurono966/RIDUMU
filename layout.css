@@ -1,0 +1,49 @@
+/* Loaded after the original screen styles; keep all engine-owned nodes intact. */
+.layout-hidden { display:none!important; }
+body.custom-layout #game #enemyDesc:not(.layout-hidden) { display:block; font-size:12px; line-height:1.5; margin-top:8px; }
+body.custom-layout #game #partSteps:not(.layout-hidden) { display:flex; }
+body.custom-layout #game #discoveries:not(.layout-hidden) { display:block; }
+.layout-dialog { width:min(560px,calc(100vw - 24px)); max-height:88dvh; overflow:auto; box-sizing:border-box; }
+.layout-dialog label { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0; }
+.layout-dialog select { max-width:60%; padding:9px; }
+.layout-dialog input { width:20px; height:20px; accent-color:#d4f77d; }
+.layout-dialog p { font-size:12px; line-height:1.7; color:#abb7bc; }
+.layout-actions { display:flex; flex-wrap:wrap; gap:8px; }
+body.custom-layout #game { grid-template-rows:44px auto minmax(0,1fr)!important; grid-template-areas:"header header" "rig rig" "arena console"!important; }
+body.custom-layout[data-layout-side="enemy-right"] #game { grid-template-areas:"header header" "rig rig" "console arena"!important; }
+body.custom-layout #game>.console { display:flex; flex-direction:column; overflow-y:auto; min-height:0; gap:10px; }
+body.custom-layout #game>.console>.performance-heading { order:10; }
+body.custom-layout #game>.console>#nextAction { order:15; }
+body.custom-layout #game>.console>#partSteps { order:20; }
+body.custom-layout #game>.console>#elementMeter { order:25; }
+body.custom-layout #game>.console>.console-top { order:30; }
+body.custom-layout #game>.console>#hazardBar { order:35; }
+body.custom-layout #game>.console>#hat { order:45; }
+body.custom-layout #game>.console>.performance-input-slot { order:50; }
+body.custom-layout #game>.console>#restorePads { order:55; }
+body.custom-layout #game>.console>.controls { order:80; flex-shrink:0; margin-top:auto; }
+body.custom-layout #game #mobileMoveSlot { display:block; height:auto; min-height:0; max-height:none; flex:0 0 auto; overflow:visible; }
+body.custom-layout #game>.console>#mobileMoveSlot .mobile-move-placeholder { display:none; }
+body.custom-layout #game>.console.hat-phase>.performance-input-slot { display:none; }
+body.custom-layout #mobileMoveSlot>#result { position:static; width:auto; height:auto; min-height:0; max-height:none; margin:0; padding:12px; overflow:visible; }
+body.custom-layout #mobileMoveSlot>#result[hidden] { display:none!important; }
+body.custom-layout #rogueRack { grid-area:rig; position:static; width:auto; max-height:22dvh; overflow:auto; padding:8px 12px; }
+body.custom-layout #rogueRack:not(.gear-expanded) :is(#rogueGear,#rogueRunStatus,#rogueProc) { display:none; }
+body.custom-layout #rogueRack .rogue-rack-head { flex-wrap:wrap; gap:8px; }
+body.custom-layout #toggleGearDetails { margin-left:auto; }
+body.custom-layout #game .console>.timeline { flex:0 0 110px; min-height:44px; }
+@media(max-width:759px) {
+ html:has(body.custom-layout),body.custom-layout { height:auto; min-height:100%; overflow:auto; }
+ body.custom-layout #game,body.custom-layout[data-layout-side="enemy-right"] #game { height:auto; min-height:100dvh; overflow:visible; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto auto!important; grid-template-areas:"header" "rig" "arena" "console"!important; }
+ body.custom-layout #game>.arena { min-height:170px; height:auto; }
+ body.custom-layout #game .battlefield { min-height:60px; height:clamp(60px,12dvh,105px); flex:0 0 auto; }
+ body.custom-layout #game>.console { height:auto; max-height:none; overflow:visible; gap:7px; }
+ body.custom-layout #game>.console>.controls { position:sticky; bottom:0; padding-bottom:max(7px,env(safe-area-inset-bottom)); }
+ body.custom-layout #game #nextAction { height:auto; max-height:none; min-height:24px; }
+ body.custom-layout #game>.console>.performance-input-slot { flex-basis:80px; height:80px; min-height:80px; }
+ body.custom-layout #game>.console>.performance-input-slot>:is(.pads,.melody-pads) { height:80px!important; min-height:80px!important; max-height:80px; }
+ body.custom-layout #game .console-top { font-size:10px; }
+ body.custom-layout #game .console>.timeline { flex-basis:44px; }
+ body.custom-layout #game .section-label { display:none; }
+ body.custom-layout #game header .brand { display:none; }
+}

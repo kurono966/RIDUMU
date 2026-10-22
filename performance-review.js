@@ -24,17 +24,18 @@
   const style=voice=>{const track=packet.tracks.find(t=>t.voice===voice);return omit==='timbre'?{attack:1,shield:1}:S.style(track?.synth,track?.notes??[],duration);};
   const bassStyle=style('bass'),leadStyle=style('lead'),tone={attack:1+((bassStyle.attack-1)+(leadStyle.attack-1))*.5,accuracy:0,weaken:0};
   const carry=options.neutral?{hp:100,shield:0,enemyHp:enemy.hp}:packet.conditions??{hp:100,shield:0,enemyHp:enemy.hp};
-  const initialShield=carry.shield??0,bassRaw=bass.shield,bassShield=Math.round(bassRaw*bassStyle.shield),afterBass=Math.min(90,initialShield+bassShield);
+  const inventory=options.gear??packet.gear??[],appliedInventory=omit==='gear'?[]:inventory,shieldCap=Gear.shieldCapacity(appliedInventory);
+  const initialShield=carry.shield??0,bassRaw=bass.shield,bassShield=Math.round(bassRaw*bassStyle.shield),afterBass=Math.min(shieldCap,initialShield+bassShield);
   const toneShield=Math.round(bassRaw*(leadStyle.shield-1)*.5),bonus=toneShield+Math.round(bassShield*(lead.shieldEfficiency+ensemble.bonus.shieldEfficiency))+ensemble.bonus.shield;
-  let shield=Math.max(0,Math.min(90,afterBass+bonus));
+  let shield=Math.max(0,Math.min(shieldCap,afterBass+bonus));
   const groove=G.analyzeRelations(drums,hats,bpm,duration);
   let a=R.analyze(Q.render(drums,bpm,duration),duration,bpm);if(omit==='rhythm')a={...a,performanceQuality:{...a.performanceQuality,multiplier:1}};
   a=omit==='groove'?a:G.enrich(a,groove);
   a=E.attack(C.enhance(a,drums,bpm,[],lead),ensemble);
   a.power*=tone.attack;a.accuracy=Math.max(0,Math.min(.99,a.accuracy+tone.accuracy));a.timbreWeaken=tone.weaken;
   a=P.apply(a,bass.pitch,lead.pitch);
-  const inventory=options.gear??packet.gear??[],gearEffects=Gear.effects(omit==='gear'?[]:inventory,a,bass,lead,ensemble);
-  if(inventory.length){a=Gear.apply(a,gearEffects);shield=Math.min(90,shield+gearEffects.shield);}
+  const gearEffects=Gear.effects(appliedInventory,a,bass,lead,ensemble);
+  if(inventory.length){a=Gear.apply(a,gearEffects);shield=Math.min(shieldCap,shield+gearEffects.shield);}
   const healedHp=Math.min(100,(carry.hp??100)+gearEffects.heal);
   a.tactics=C.tactics(a,bass,lead,intent??{});
   const result=R.resolve(a,omit==='affinity'?{...enemy,kind:'neutral'}:enemy),reduction=C.reduction(lead,bass,ensemble,a),counter=!!options.neutral||(carry.enemyHp??enemy.hp)>result.total;
