@@ -14,7 +14,38 @@ function structure(input,duration=4,bpm=120){
  const tensionRelease=clamp((Math.max(windows[1],windows[2])-windows[0])/4)*clamp((windows[2]-windows[3])/3)*confidence;
  const lane=part=>{const k=part.filter(m=>m&1).length,s=part.filter(m=>m&2).length;return (k-s)/Math.max(1,k+s);};
  const dialogue=clamp(-lane(masks.slice(0,half))*lane(masks.slice(half)))*confidence;
- return {repetition,variation,rest,tensionRelease,dialogue,confidence,development:Math.max(variation,tensionRelease,dialogue)};
+ // Keep each drum's identity: a steady backbeat can anchor a changing Kick.
+ // Use onset positions rather than pitch or density, and deduplicate key spam.
+ const cells=new Map();
+ for(const n of input)for(const t of n.inputTimes??[n.inputT??n.rawT??n.t])if(Number.isFinite(t)&&t>=0&&t<duration&&['kick','snare'].includes(n.type)){
+  const q=Math.round(t/step);if(q<slots)cells.set(n.type+':'+q,{q,type:n.type,offset:t-q*step});
+ }
+ const events=[...cells.values()],lanes={};
+ for(const type of ['kick','snare']){
+  const a=new Set(events.filter(e=>e.type===type&&e.q<half).map(e=>e.q)),b=new Set(events.filter(e=>e.type===type&&e.q>=half).map(e=>e.q-half));
+  const same=[...a].filter(q=>b.has(q)).length,union=a.size+b.size-same,changes=union-same;
+  lanes[type]={same,changes,repeat:same/Math.max(1,union),retained:same/Math.max(1,Math.min(a.size,b.size)),change:(Math.max(a.size,b.size)-same)/Math.max(1,a.size,b.size)};
+ }
+ const anchored=(anchor,moving)=>anchor.same>=2&&moving.same>=1?anchor.repeat*clamp(moving.retained/.5)*clamp(moving.change/.25)*clamp((.75-moving.change)/.25):0;
+ // Also hear the two-beat call/answer inside a repeated one-bar hip-hop beat.
+ const shortLanes={};
+ for(const type of ['kick','snare']){
+  let same=0,union=0,retained=0,extent=0;
+  for(let start=0;start+16<=slots;start+=16){
+   const a=new Set(events.filter(e=>e.type===type&&e.q>=start&&e.q<start+8).map(e=>e.q-start)),b=new Set(events.filter(e=>e.type===type&&e.q>=start+8&&e.q<start+16).map(e=>e.q-start-8));
+   const common=[...a].filter(q=>b.has(q)).length;same+=common;union+=a.size+b.size-common;retained+=Math.min(a.size,b.size);extent+=Math.max(a.size,b.size);
+  }
+  shortLanes[type]={same,repeat:same/Math.max(1,union),retained:same/Math.max(1,retained),change:(extent-same)/Math.max(1,extent)};
+ }
+ const kickVariation=Math.max(anchored(lanes.snare,lanes.kick),anchored(shortLanes.snare,shortLanes.kick)),snareVariation=Math.max(anchored(lanes.kick,lanes.snare),anchored(shortLanes.kick,shortLanes.snare));
+ const anchoredVariation=Math.max(kickVariation,snareVariation)*confidence;
+ // Timing is independent of placement: a new syncopated note is not a mistake.
+ const average=a=>a.reduce((s,v)=>s+v,0)/Math.max(1,a.length),errors=[];
+ for(const e of events){const sameType=events.filter(n=>n.type===e.type),phase=sameType.filter(n=>n.q%4===e.q%4&&n.q!==e.q),reference=phase.length?phase:sameType.filter(n=>n.q!==e.q);
+  if(reference.length)errors.push(Math.abs(e.offset-average(reference.map(n=>n.offset))));
+ }
+ const phrasePrecision=errors.length?Math.exp(-average(errors)/(step*.16)):0;
+ return {repetition,variation,rest,tensionRelease,dialogue,confidence,lanes,kickVariation,snareVariation,anchoredVariation,phrasePrecision,development:Math.max(variation,anchoredVariation,tensionRelease,dialogue)};
 }
 function performanceQuality(input,bpm,duration){
  const beat=60/bpm,step=beat/4;
@@ -46,13 +77,14 @@ function performanceQuality(input,bpm,duration){
  const precision=Math.exp(-mean(onsets.map(t=>Math.abs(t-Math.round(t/step)*step)))/(beat*.025));
  const orderly=intervals.slice(1).filter((gap,i)=>gap<=intervals[i]+beat*.025).length/Math.max(1,intervals.length-1);
  const accelerating=onsets.length>=6&&orderly>=.85&&mean(intervals.slice(-3))<.7*mean(intervals.slice(0,3))?.82*precision:0;
- const score=clamp(Math.max(regularity,repetition,accelerating)),confidence=clamp((onsets.length-3)/5);
+ const form=structure(input,duration,bpm),evolving=form.anchoredVariation*form.phrasePrecision;
+ const score=clamp(Math.max(regularity,repetition,accelerating,evolving)),confidence=clamp((onsets.length-3)/5);
  // Sparse heavy attacks stay neutral: too little evidence is not poor playing.
  // Add a rising reward only above solid consistency; chaotic input keeps its
  // existing penalty instead of receiving the same general damage increase.
  const skillBonus=.4*Math.pow(clamp((score-.65)/.35),2);
  const multiplier=clamp(1+confidence*(.4+.8*score+skillBonus-1),.4,2.2);
- return {count:events.length,regularity,repetition,timingConsistency,score,confidence,multiplier};
+ return {count:events.length,regularity,repetition,timingConsistency,evolving,score,confidence,multiplier};
 }
 function analyze(input,duration=4,bpm=120){
  const notes=input.filter(n=>Number.isFinite(n.t)&&n.t>=0&&n.t<duration&&['kick','snare'].includes(n.type)).sort((a,b)=>a.t-b.t);
@@ -122,7 +154,9 @@ function resolve(a,enemy){
  };
  const motif=motifs[enemy.kind];
  const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:enemy.kind==='furnace'?form.dialogue:enemy.kind==='conductor'?Math.max(form.variation??0,form.tensionRelease??0):form.repetition;
- const motifMultiplier=motif?clamp(1+(enemy.kind==='conductor'?.8:.4)*motif.fit+.12*(development??0)-motif.straightPenalty*straight,.3,enemy.kind==='conductor'?1.9:1.5):1;
+ const evolution=(a.structure?.anchoredVariation??0)*(a.structure?.phrasePrecision??0);
+ const evolutionBonus=['fly','crystal'].includes(enemy.kind)?0:(enemy.kind==='conductor'?.3:.18)*evolution;
+ const motifMultiplier=motif?clamp(1+(enemy.kind==='conductor'?.8:.4)*motif.fit+.12*(development??0)+evolutionBonus-motif.straightPenalty*straight,.3,enemy.kind==='conductor'?1.9:1.5):1+evolutionBonus;
  // Defensive intent creates a reason to change the beat instead of repeating
  // the same alternating kick/snare loop every battle.
  const intent=enemy.intentId;
@@ -186,9 +220,9 @@ function resolve(a,enemy){
   return damage;
  });
  const total=damages.reduce((x,y)=>x+y,0);
- const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:3*a.alternation,grooveBonus:a.groovePower??0}};
+ const calculation={powerSteps:a.powerSteps??[{label:'Drums（重さ・溜め・ノリ込み）',value:a.power,multiplier:1}],affinitySteps,power:a.power,affinity,accuracyMultiplier,rhythmMultiplier,performanceMultiplier:rawRhythmMultiplier,efficiency,hits:a.count?a.hits:0,divisor:Math.pow(a.hits,.85),hitDetails,total,drums:{count:a.count,kick:a.kick,snare:a.snare,weightBonus:18*a.weight,chargeBonus:12*a.charged,alternationBonus:3*a.alternation,grooveBonus:a.groovePower??0}};
  calculation.guard={rate:guard,pierce,guardBreak,multiplier:guardMultiplier};
- calculation.rhythmStyle={label:motif?.label??'基本リズム',multiplier:motifMultiplier,straightAlternation:straight};
+ calculation.rhythmStyle={label:(motif?.label??'基本リズム')+(evolutionBonus>0?'＋軸を保った変化':''),multiplier:motifMultiplier,straightAlternation:straight,anchoredDevelopment:evolution,evolutionBonus};
  return {damages,total,affinity,accuracy:accuracyMultiplier,accuracyMultiplier,efficiency,breakdown,calculation};
 }
 function attackTimeline(notes,damages,duration=4){

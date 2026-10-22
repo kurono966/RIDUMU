@@ -34,13 +34,18 @@ test('musical maximum charts establish the pulse, develop both bars and resolve 
   assert.notDeepEqual(bass.map(n=>n.t),lead.map(n=>n.t),'accompaniment and reply have distinct rhythms');
  }
 });
-test('weaknesses remain valuable while guard admits tactical elemental alternatives',()=>{
+test('weaknesses remain valuable while controlled development and guard admit elemental alternatives',()=>{
  const roster=[['stone',82,.2,'earth'],['fly',150,0,'wind'],['machine',120,.25,'lightning'],['plant',100,0,'fire'],['ghost',72,0,'lightning'],['crystal',138,.3,'earth'],['furnace',108,.15,'wind'],['conductor',126,.18,'fire']];
  for(const intentId of [undefined,'guard','buff'])for(const [kind,bpm,guard,weakness] of roster){
   const enemy={kind,guard,intentId},charts=['earth','wind','fire','lightning'].map(element=>D.damageChart('max',bpm,480/bpm,[],enemy,{element}));
   const best=charts.reduce((a,b)=>a.total>=b.total?a:b);
-  if(!intentId)assert.equal(best.element,weakness,kind+' / normal');
-  else assert.ok(charts.find(chart=>chart.element===weakness).total>=best.total*.65,'weakness remains viable: '+kind);
+  const weak=charts.find(chart=>chart.element===weakness);
+  assert.ok(weak.total>=best.total*(!intentId ? .9 : .65),'weakness remains viable: '+kind);
+  if(!intentId&&best.element!==weakness){
+   const evaluated=D.compare(best.parts,best.hats,bpm,480/bpm,[],enemy).normal;
+   assert.ok(evaluated.analysis.structure.anchoredVariation>.45,'normal elemental alternatives must preserve an anchor: '+kind);
+   assert.ok(evaluated.result.calculation.rhythmStyle.evolutionBonus>0,'the new rhythmic benefit must actually apply: '+kind);
+  }
   if(!intentId){const auto=D.damageChart('max',bpm,480/bpm,[],enemy);assert.equal(auto.total,best.total,'auto input must compare fully supported elemental finalists');}
  }
 });

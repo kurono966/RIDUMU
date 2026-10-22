@@ -51,7 +51,7 @@
   if(id==='pitch')return [b.pitch,l.pitch].flatMap(r=>r?.causes??[]).filter(c=>c.value>0).sort((x,y)=>y.value-x.value).slice(0,2).map(c=>c.label.split('（')[0]).join('・')||'音程の動きで支援';
   if(id==='ensemble')return value.ensemble.selected.map(s=>s.id==='grooveLock'?'KickとBassの同期':s.id==='response'?'DrumsにLeadが応答':s.reason).join('・')||'複数パートの支援が重なった';
   if(id==='groove'){const id=Object.keys(grooveNames).sort((x,y)=>(value.groove[y]??0)-(value.groove[x]??0))[0];return grooveNames[id]+'が敵に作用';}
-  if(id==='rhythm')return '狙ったタイミングを繰り返せた';
+  if(id==='rhythm')return a.performanceQuality?.evolving>.45?(a.structure.kickVariation>=a.structure.snareVariation?'Snareを軸にKickを変化させた':'Kickを軸にSnareを変化させた'):'狙ったタイミングを繰り返せた';
   if(id==='affinity')return ({earth:'土',wind:'風',fire:'炎',lightning:'雷'})[a.element]+'属性・攻撃の形が敵に合った';
   return '短音・長音に合う音色の輪郭';
  }
@@ -74,7 +74,7 @@
   if(id==='timing')return 'Bass・Leadのリズム精度とパート間の間隔の再現性が変わった';
   if(id==='gear')return '同じ機材で、演奏条件の成立と発動効果が変わった';
   if(id==='drums')return b.analysis.count<a.analysis.count?'Drumsの音を減らし、間が広がった':b.analysis.count>a.analysis.count?'Drumsを細かく刻むようになった':'Drumsの間隔やアクセントが変わった';
-  if(id==='rhythm')return b.analysis.performanceQuality.multiplier>a.analysis.performanceQuality.multiplier?'同じタイミングを前回より再現できた':'タイミングの形が前回より揺れた';
+  if(id==='rhythm')return (b.analysis.performanceQuality.evolving??0)>(a.analysis.performanceQuality.evolving??0)+.1?'軸を保ちながら、リズムに小さな変化を入れられた':b.analysis.performanceQuality.multiplier>a.analysis.performanceQuality.multiplier?'狙ったタイミングを前回より正確に演奏できた':'タイミングの形が前回より揺れた';
   if(id==='bass')return b.bass.sustain>a.bass.sustain?'Bassを前回より長く伸ばした':b.bass.locked>a.bass.locked?'Kickに重なるBassが増えた':'Bassの長さ・Kickとの重なりが変わった';
   if(id==='lead')return b.lead.shieldEfficiency>a.lead.shieldEfficiency?'Leadを長く伸ばし、盾の支援が増えた':'Leadの長さや裏拍の使い方が変わった';
   if(id==='pitch'){
@@ -97,7 +97,8 @@
   add('rise',(p.attack??0)<.07,'Leadを少しずつ上げ、攻撃支援を試そう。');
   add('fall',value.received.damage>0&&(p.weaken??0)<.06&&value.reduction.total<.55,'Leadを下降させ、次の反撃を弱めてみよう。',2);
   add('repeat',(p.accuracy??0)<0,'Leadに同じ音の反復を混ぜ、跳躍の命中低下を補ってみよう。',2);
-  add('quality',value.analysis.performanceQuality?.multiplier<1.05,'同じタイミングの形をもう一度繰り返し、演奏の再現性を試そう。');
+  add('quality',value.analysis.performanceQuality?.multiplier<1.05,'Snareなどの軸を安定させ、Kickの配置を少し変える演奏も試そう。');
+  add('kickVariation',!['fly','crystal'].includes(enemy.kind)&&(value.analysis.structure?.anchoredVariation??0)<.35,'Snareを一定に保ち、後半のKickを一音足す・動かす変化を試そう。',2);
   const target={stone:'laidBack',fly:'snarePushed',machine:'tight',plant:'swing',ghost:'drunk',crystal:'pocket',furnace:'swing',conductor:'tight'}[enemy.kind];
   add('groove-'+target,(value.groove[target]??0)<.35,({laidBack:'少し後ろに置くリズム',snarePushed:'スネアの前ノリ',tight:'Hatとそろえたタイトな刻み',swing:'跳ねるリズム',drunk:'同じ揺れ方の繰り返し',pocket:'KickとSnareの間を生かすノリ'})[target]+'を、この敵に試してみよう。',2);
   return candidates.sort((a,b)=>(recent.includes(a.id)?1:0)-(recent.includes(b.id)?1:0)||b.priority-a.priority||a.id.localeCompare(b.id))[0]??{id:'space',text:'音を少し減らし、音の間を生かす演奏も試してみよう。'};

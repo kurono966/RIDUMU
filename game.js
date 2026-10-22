@@ -856,7 +856,7 @@ async function finish(continuationAt=null){
  }else if(lastInstrument==='drums'){
   globalThis.ElementMeterUI?.finalize(tracks.get('drums')??[],hatNotes,lastBpm,lastDuration);
   feedbackCarryShield=shield;
-  const form=preview.structure,development=form.tensionRelease>.3?'緊張から解放する展開':form.variation>.3?'モチーフを繰り返して変化':form.dialogue>.3?'KickとSnareの掛け合い':form.rest>.3?'休符を活かすフレーズ':'安定したビート';
+  const form=preview.structure,development=form.anchoredVariation>.45?(form.kickVariation>=form.snareVariation?'Snareを軸にKickを変化':'Kickを軸にSnareを変化'):form.tensionRelease>.3?'緊張から解放する展開':form.variation>.3?'モチーフを繰り返して変化':form.dialogue>.3?'KickとSnareの掛け合い':form.rest>.3?'休符を活かすフレーズ':'安定したビート';
   showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,development+'。次はBassで防御準備。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
  }else{
   cycleEnsemble=Ensemble.analyze(tracks,lastBpm,lastDuration);
