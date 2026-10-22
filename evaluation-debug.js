@@ -79,6 +79,7 @@
   const feels=[
    {id:'straight',offset:()=>0},
    ...[.025,.045,.055].map(delay=>({id:'laidBack',offset:(q,type)=>type==='snare'?Math.min(delay,step*.44):0})),
+   ...[.025,.045,.055].map(delay=>({id:'laidBack',offset:(q,type)=>type==='snare'?Math.min(delay,step*.44):type==='kick'&&q%16!==0?Math.min(delay,step*.44)*.75:0})),
    ...[[0,-.028,.035,-.012,-.025,.027,-.018,.04],[0,-.018,.012,.037,-.022,.006,.034,-.014],[0,.018,-.035,.03,.012,-.028,.04,-.012]].flatMap(pattern=>[0,.02].map(delay=>({id:'drunk',offset:(q,type)=>q%16===0?0:Math.max(-step*.44,Math.min(step*.44,pattern[q%pattern.length]+(type==='snare'?delay:0)))})))
   ];
   let best=empty,candidates=0;

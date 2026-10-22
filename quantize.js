@@ -3,7 +3,8 @@
 const modes=[
  {id:'off',name:'生演奏',description:'再生も叩いたタイミングのまま。'},
  {id:'just',name:'ジャスト',description:'再生時に最寄りの16分へ揃える。ライブ音はそのまま。'},
- {id:'laidBack',name:'レイドバック',description:'再生時に16分へ揃え、高音側を35ms後ろへ。'},
+ {id:'laidBack',name:'レイドバック（Snare）',description:'再生時に16分へ揃え、Snare（高音側）を最大35ms後ろへ。'},
+ {id:'laidBackFlow',name:'レイドバック（Kickも後ろ）',description:'再生時に16分へ揃え、Snareと後続Kickを後ろへ。各小節の頭のKickとHatは基準に残す。'},
  {id:'snarePushed',name:'前ノリスネア',description:'再生時にSnareだけ16分へ揃え、テンポに合わせて少し前へ。KickとHatは生演奏のまま。'},
  {id:'drunk',name:'ドランク',description:'再生時に、小節ごとに同じ不均等な揺れを加える。'},
  {id:'swing',name:'スウィング',description:'再生時に8分裏拍を遅らせ、長短のノリを作る。'}
@@ -13,6 +14,7 @@ const mod=(n,m)=>(n%m+m)%m;
 function offset(type,slot,step,mode){
  if(mode==='snarePushed')return type==='snare'?-Math.min(.04,step*.24):0;
  if(mode==='laidBack')return type==='snare'?Math.min(.035,step*.4):0;
+ if(mode==='laidBackFlow'){const delay=Math.min(.035,step*.4);return type==='snare'?delay:type==='kick'&&mod(slot,16)!==0?delay*.75:0;}
  if(mode==='swing')return mod(slot,4)===2?step*2/3:0;
  if(mode==='drunk')return Math.max(-step*.35,Math.min(step*.35,pattern[mod(slot,16)]+(type==='kick'?-.006:type==='snare'?.012:0)));
  return 0;

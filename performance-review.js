@@ -100,7 +100,7 @@
   add('quality',value.analysis.performanceQuality?.multiplier<1.05,'Snareなどの軸を安定させ、Kickの配置を少し変える演奏も試そう。');
   add('kickVariation',!['fly','crystal'].includes(enemy.kind)&&(value.analysis.structure?.anchoredVariation??0)<.35,'Snareを一定に保ち、後半のKickを一音足す・動かす変化を試そう。',2);
   const target={stone:'laidBack',fly:'snarePushed',machine:'tight',plant:'swing',ghost:'drunk',crystal:'pocket',furnace:'swing',conductor:'tight'}[enemy.kind];
-  add('groove-'+target,(value.groove[target]??0)<.35,({laidBack:'少し後ろに置くリズム',snarePushed:'スネアの前ノリ',tight:'Hatとそろえたタイトな刻み',swing:'跳ねるリズム',drunk:'同じ揺れ方の繰り返し',pocket:'KickとSnareの間を生かすノリ'})[target]+'を、この敵に試してみよう。',2);
+  add('groove-'+target,(value.groove[target]??0)<.35,({laidBack:'Snareや後続のKickを、Hatより少し後ろに置くノリ',snarePushed:'スネアの前ノリ',tight:'Hatとそろえたタイトな刻み',swing:'跳ねるリズム',drunk:'同じ揺れ方の繰り返し',pocket:'KickとSnareの間を生かすノリ'})[target]+'を、この敵に試してみよう。',2);
   return candidates.sort((a,b)=>(recent.includes(a.id)?1:0)-(recent.includes(b.id)?1:0)||b.priority-a.priority||a.id.localeCompare(b.id))[0]??{id:'space',text:'音を少し減らし、音の間を生かす演奏も試してみよう。'};
  }
  function live(tracks,hats,voice,note,bpm,duration,enemy=null){

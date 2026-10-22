@@ -69,10 +69,28 @@ function analyzeRelations(input,hats,bpm=120,duration=8*60/bpm){
  const kicks=events.filter(e=>e.type==='kick').map(e=>e.offset),snares=events.filter(e=>e.type==='snare').map(e=>e.offset);
  const consistency=values=>values.length<2?0:Math.exp(-sd(values)/.018)*clamp(values.length/3);
  const kickMean=mean(kicks),snareMean=mean(snares),kickConsistency=consistency(kicks),snareConsistency=consistency(snares);
+ // A late second Kick need not share the first Kick's phase. Learn each
+ // instrument's position separately across bars; a single late hit is no proof.
+ const positions=[];
+ for(const type of ['kick','snare'])for(let slot=0;slot<16;slot++){
+  const grouped=new Map();
+  for(const e of events.filter(e=>e.type===type&&mod(e.q,16)===slot)){
+   const cycle=Math.floor(e.q/16);if(!grouped.has(cycle))grouped.set(cycle,[]);grouped.get(cycle).push(e.offset);
+  }
+  const values=[...grouped.values()].map(mean);if(values.length<2)continue;
+  const offset=mean(values),control=Math.exp(-sd(values)/.018);
+  positions.push({type,slot,offset,control,late:clamp(offset/.045)*control});
+ }
+ const lateKicks=positions.filter(p=>p.type==='kick'&&p.offset>.008&&p.late>.2),lateSnares=positions.filter(p=>p.type==='snare'&&p.offset>.008&&p.late>.2);
+ const kickLaidBack=Math.max(clamp(kickMean/.045)*kickConsistency,mean(lateKicks.map(p=>p.late)));
+ const snareLaidBack=Math.max(clamp(snareMean/.045)*snareConsistency,mean(lateSnares.map(p=>p.late)));
+ const selective=lateKicks.length>0&&positions.some(p=>p.type==='kick'&&p.offset<=.008&&p.control>.7);
+ const coordination=lateKicks.length&&lateSnares.length?Math.sqrt(mean(lateKicks.map(p=>p.late))*mean(lateSnares.map(p=>p.late))):0;
+ const laidBackProfile={variant:kickLaidBack>.2?(selective?'selective':snareLaidBack>.2?'shared':'kick'):'snare',positions,coordination,kickLaidBack,snareLaidBack};
  const micro=repeated(events,8,.023),bars=repeated(events,16,.023),repeat=Math.max(micro.score,bars.score);
  const confidence=clamp(events.length/6)*clamp(hatTimes.length/4);
  const tightRelative=Math.exp(-Math.sqrt(mean(events.map(e=>e.offset**2)))/.018)*confidence;
- const laidBack=Math.max(clamp(snareMean/.045)*snareConsistency,hat.laidBack*.65)*confidence;
+ const laidBack=Math.max(snareLaidBack,kickLaidBack,hat.laidBack*.65)*confidence;
  const pushed=Math.max(clamp(-kickMean/.035)*kickConsistency,hat.pushed*.65)*confidence;
  // A consistent leading Snare is its own intention, independent of leading Kick.
  const snarePushed=clamp((-snareMean-.008)/Math.min(.04,beat*.08))*snareConsistency*confidence;
@@ -86,7 +104,7 @@ function analyzeRelations(input,hats,bpm=120,duration=8*60/bpm){
  const offbeats=events.filter(e=>mod(e.q,4)>=2).map(e=>e.offset);
  const swing=Math.max(hat.swing,clamp(mean(offbeats)/.05)*consistency(offbeats)*repeat);
  const tight=Math.sqrt(hat.tight*tightRelative);
- return {pocket,laidBack,pushed,snarePushed,swing,drunk,tight,unstable,confidence,hat,kickMean,snareMean,kickConsistency,snareConsistency,barReproducibility:bars.score,microTimingRepetition:micro.score,repetitions:Math.max(hat.repetitions,micro.repeats,bars.repeats),matched:events.length,events};
+ return {pocket,laidBack,laidBackProfile,kickLaidBack,pushed,snarePushed,swing,drunk,tight,unstable,confidence,hat,kickMean,snareMean,kickConsistency,snareConsistency,barReproducibility:bars.score,microTimingRepetition:micro.score,repetitions:Math.max(hat.repetitions,micro.repeats,bars.repeats),matched:events.length,events};
 }
 function enrich(analysis,groove){
  const a={...analysis,scores:{...analysis.scores},groove};
@@ -94,7 +112,7 @@ function enrich(analysis,groove){
  const oldWeight=a.weight;
  const intentional=Math.max(groove.laidBack,groove.drunk,groove.pocket,groove.swing,groove.snarePushed??0);
  a.weight=clamp(a.weight+.12*groove.laidBack*(1-groove.swing));
- a.groovePower=Math.max(6*groove.laidBack*(1-groove.swing),4*groove.pocket,3*groove.pushed,3*(groove.snarePushed??0));
+ a.groovePower=Math.max((6*groove.laidBack+1.5*(groove.laidBackProfile?.coordination??0)*groove.confidence)*(1-groove.swing),4*groove.pocket,3*groove.pushed,3*(groove.snarePushed??0));
  a.power+=18*(a.weight-oldWeight)+a.groovePower;
  a.hits=Math.min(8,Math.max(1,a.hits+Math.round(groove.pushed)));
  a.accuracy=Math.min(.98,Math.max(.5,a.accuracy+Math.max(.12*groove.tight,.08*groove.pocket,.08*intentional)));
@@ -117,7 +135,7 @@ function classify(g){
  if(g.drunk>.35&&g.drunk>Math.max(g.laidBack,g.pushed,g.pocket,g.swing)*1.15)return 'drunk';
  if(g.swing>.6&&g.swing>=Math.max(g.laidBack,g.pushed,g.pocket,g.drunk)*.9)return 'swing';
  if(g.pocket>.25)return 'pocket';
- if(g.laidBack>.2&&g.snareMean>.008)return 'laidBack';
+ if(g.laidBack>.2&&(g.snareMean>.008||(g.kickLaidBack??0)>.2))return 'laidBack';
  if(g.pushed>.2&&g.kickMean<-.008)return 'pushed';
  if(g.swing>.6)return 'swing';
  if(g.drunk>.2)return 'drunk';
@@ -134,7 +152,17 @@ function describe(g){
  if(id==='drunk')return `同じズレ方を${Math.max(2,g.repetitions)}回再現 → ドランク。`;
  if(id==='swing')return '裏拍を繰り返し遅らせた → スウィング。';
  if(id==='pocket')return `KickがHatより${millis(g.kickMean)}ms前、Snareが${millis(g.snareMean)}ms後ろ → ポケット。`;
- if(id==='laidBack')return `SnareがHatより平均${millis(g.snareMean)}ms後ろ → レイドバック。`;
+ if(id==='laidBack'){
+  const p=g.laidBackProfile;
+  if(p?.variant==='selective'){
+   const late=p.positions.filter(p=>p.type==='kick'&&p.offset>.008&&p.late>.2),beats=late.map(p=>`${1+p.slot/4}拍目`).join('・');
+   const head=p.positions.some(p=>p.type==='kick'&&p.slot===0&&Math.abs(p.offset)<=.008);
+   return `${head?'頭のKickを残し、':'Kickを拍ごとに置き分け、'}${beats}のKickを平均${millis(mean(late.map(p=>p.offset)))}ms後ろ${p.snareLaidBack>.2?'、Snareも後ろ':''} → レイドバック。`;
+  }
+  if(p?.variant==='shared')return `KickがHatより平均${millis(g.kickMean)}ms、Snareが平均${millis(g.snareMean)}ms後ろ → レイドバック。`;
+  if(p?.variant==='kick')return `KickがHatより平均${millis(g.kickMean)}ms後ろ → レイドバック。`;
+  return `SnareがHatより平均${millis(g.snareMean)}ms後ろ → レイドバック。`;
+ }
  if(id==='pushed')return `KickがHatより平均${millis(g.kickMean)}ms前 → 前ノリ。`;
  if(id==='hatLaidBack')return `Hatを平均${millis(g.hat.meanOffset)}ms後ろに配置 → レイドバック。`;
  if(id==='hatPushed')return `Hatを平均${millis(g.hat.meanOffset)}ms前に配置 → 前ノリ。`;
@@ -150,7 +178,7 @@ function precision(g){
   total+=events.length;
   if(id==='tight'){errors.push(...events.map(e=>Math.abs(e.offset)));return;}
   // Swing alternates eighths; drunk repeats its unequal offsets each bar.
-  const period=['drunk','unstable','other'].includes(id)?16:id==='swing'?4:1;
+  const period=['drunk','unstable','other','laidBack'].includes(id)?16:id==='swing'?4:1;
   const groups=new Map();
   for(const e of events){const q=hat&&id==='swing'?2*Math.round(e.t/(step*2)):e.q;
    const key=(e.type??'hat')+':'+mod(q,period);
@@ -162,10 +190,11 @@ function precision(g){
    if(peers.length)errors.push(Math.abs(e.value-mean(peers.map(p=>p.value))));
   }
  };
- measure(g?.hat?.events??[],true);measure(g?.events??[]);
- const coverage=total?errors.length/total:0,ready=id!=='none'&&errors.length>=6&&coverage>=.5&&(g?.matched??0)>=4;
+ measure(g?.hat?.events??[],true);const hatErrors=errors.length;measure(g?.events??[]);
+ const coverage=total?errors.length/total:0,ready=id!=='none'&&errors.length>=6&&errors.length-hatErrors>=4&&coverage>=.5&&(g?.matched??0)>=4;
  const error=mean(errors);
- return {id,label:names[id],score:ready?100*clamp(1-error/tolerance):null,errorMs:ready?error*1000:null,coverage,count:errors.length};
+ const variant=g?.laidBackProfile?.variant,label=names[id]+(id==='laidBack'?({selective:'・Kick置き分け',shared:'・Kick＋Snare',kick:'・Kick'})[variant]??'':'');
+ return {id,label,score:ready?100*clamp(1-error/tolerance):null,errorMs:ready?error*1000:null,coverage,count:errors.length};
 }
 root.Groove={analyzeHat,analyzeRelations,enrich,affinity,classify,describe,precision};
 if(typeof module!=='undefined')module.exports=root.Groove;

@@ -69,7 +69,7 @@ test('automatic charts are deterministic, playable and reproduce their evaluated
 test('development selector provides all seven well-formed preset options',()=>{
  const select=fs.readFileSync('index.html','utf8').match(/<select id="debugPreset">(.*?)<\/select>/s)[1];
  const values=[...select.matchAll(/<option value="([^"]+)">[^<]+<\/option>/g)].map(m=>m[1]);
- assert.deepEqual(values,['recorded','off','just','laidBack','snarePushed','drunk','swing']);
+ assert.deepEqual(values,['recorded','off','just','laidBack','laidBackFlow','snarePushed','drunk','swing']);
 });
 function fixture(){
  const offsets=[.04,-.03,.05,-.01,-.045,.025,-.015,.045];
