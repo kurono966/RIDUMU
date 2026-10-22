@@ -57,6 +57,20 @@ function renderBreakdown(report,burn=0){
 }
 let damageCalculation=null;
 function renderReport(report){
+ const groove=report.timingGroove;
+ const p=groove?Groove.precision(groove):null;
+ $('timingAccuracy').textContent=p?.score!=null?`正確さ ${p.score.toFixed(1)}% · ${p.label}`:'正確さ — 判定待ち';
+ $('timingAccuracy').title=p?.score!=null?`入力補正前のDrumsとHatを評価。${p.label}の基準からの平均誤差 ${p.errorMs.toFixed(1)}ms。拍への一致、または別小節での同じズレ方の再現を評価。`:'DrumsとHatの入力・反復が揃うと評価します。';
+ $('performanceSummary').textContent=p?.score!=null?`正確さ ${p.score.toFixed(1)}% / ${p.label} / 平均誤差 ${p.errorMs.toFixed(1)}ms`:'正確さ — 判定待ち（DrumsとHatの入力・反復が必要）';
+ const parts=Object.entries(report.partTiming??{}).filter(([,t])=>t);
+ $('partTimingAccuracy').hidden=parts.length===0;
+ $('partTimingAccuracy').textContent=parts.map(([voice,t])=>`${voice==='bass'?'Bass':'Lead'} ${t.score==null?'判定待ち':t.score.toFixed(1)+'%'}`).join(' / ');
+ $('partTimingSummary').textContent=parts.map(([voice,t])=>{
+  const name=voice==='bass'?'Bass':'Lead',own=t.own?`自身 ${t.own.score.toFixed(1)}%`:'自身 判定待ち';
+  const relations=t.relations.map(r=>`${r.voice}との間隔 ${r.score.toFixed(1)}%（平均${r.offsetMs>=0?'+':''}${r.offsetMs.toFixed(1)}ms）`).join(' / ');
+  return `${name}: ${own}${relations?' / '+relations:''} / ${voice==='bass'?'盾・支援':'支援'} ×${t.multiplier.toFixed(2)}`;
+ }).join(' ｜ ');
+ $('partTimingSummary').title='平均ズレは、音符間の16分音符単位の間隔を除いた時間差です。裏拍や応答の間隔そのものを0に揃える必要はありません。';
  damageCalculation=report.calculation??null;$('damageLabel').disabled=!damageCalculation;
  if(damageCalculation)$('damageLabel').textContent='DAMAGE · 計算詳細 ↗';
  const list=$('factors');list.replaceChildren();

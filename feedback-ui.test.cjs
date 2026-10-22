@@ -14,11 +14,25 @@ test('damage details render real calculation and clear after non-attack results'
  assert.equal(table.children.length,x.run('testReport.calculation.hitDetails.length')+1);
  x.run('renderReport({...testReport,calculation:null})');assert.equal(x.$('damageLabel').disabled,true);assert.equal(x.run('damageCalculation'),null);
 });
+test('accuracy is visible for evaluated groove and clears for insufficient input',()=>{
+ const x=ui({getItem:()=>null,setItem(){}});
+ x.run(`const h=Array.from({length:16},(_,i)=>({type:'hat',t:i*.25}));
+ const d=Array.from({length:8},(_,i)=>({type:i%2?'snare':'kick',inputT:i*.5+(i%2?-.03:0)}));
+ renderReport({...testReport,timingGroove:Groove.analyzeRelations(d,h,120,4)});`);
+ assert.match(x.$('timingAccuracy').textContent,/正確さ 100.0% · 前ノリスネア/);
+ assert.match(x.$('performanceSummary').textContent,/平均誤差 0.0ms/);
+ x.run(`renderReport({...testReport,partTiming:{bass:{score:90,own:{score:95},relations:[{voice:'drums',score:88,offsetMs:20}],multiplier:1.16}}});`);
+ assert.equal(x.$('partTimingAccuracy').hidden,false);
+ assert.match(x.$('partTimingAccuracy').textContent,/Bass 90.0%/);
+ assert.match(x.$('partTimingSummary').textContent,/drumsとの間隔 88.0%.*盾・支援 ×1.16/);
+ x.run('renderReport(testReport)');assert.equal(x.$('timingAccuracy').textContent,'正確さ — 判定待ち');
+ assert.equal(x.$('partTimingAccuracy').hidden,true);assert.equal(x.$('partTimingSummary').textContent,'');
+});
 function ui(storage){
  const elements=new Map();
  function el(){const classes=new Set();return {textContent:'',dataset:{},children:[],classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),toggle:(n,on)=>on?classes.add(n):classes.delete(n),contains:n=>classes.has(n)},setAttribute(){},replaceChildren(){this.children=[]},append(...kids){this.children.push(...kids)}};}
  const $=id=>{if(!elements.has(id))elements.set(id,el());return elements.get(id);};
- const sandbox=vm.createContext({$,document:{getElementById:$,createElement:el},localStorage:storage,GridEffects:require('./grid-effects.js'),CombatFeedback:F,enemies:[{kind:'stone',name:'岩',description:'分厚い体。'}],stage:0,setTimeout(){},clearTimeout(){}});
+ const sandbox=vm.createContext({$,document:{getElementById:$,createElement:el},localStorage:storage,Groove:require('./groove.js'),GridEffects:require('./grid-effects.js'),CombatFeedback:F,enemies:[{kind:'stone',name:'岩',description:'分厚い体。'}],stage:0,setTimeout(){},clearTimeout(){}});
  vm.runInContext(fs.readFileSync('feedback-ui.js','utf8'),sandbox);
  const a=R.analyze([{t:1.3,type:'kick'},{t:3.2,type:'kick'}]);sandbox.testReport=F.explain(a,R.resolve(a,{kind:'stone'},()=>0),{kind:'stone'});
  return {run:code=>vm.runInContext(code,sandbox),$};

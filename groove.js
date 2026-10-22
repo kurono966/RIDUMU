@@ -140,6 +140,33 @@ function describe(g){
  if(id==='hatPushed')return `Hatを平均${millis(g.hat.meanOffset)}ms前に配置 → 前ノリ。`;
  return id==='tight'?'Hatと低音・高音がほぼ同時 → タイト。':'Hatとの間隔を変えて、自分のノリを試そう。';
 }
-root.Groove={analyzeHat,analyzeRelations,enrich,affinity,classify,describe};
+// Compare separate cycles, so a single hit cannot define its own perfect target.
+// Intentional feel is measured against its recurring phase, not straight-grid error.
+function precision(g){
+ const id=classify(g),names={tight:'タイト／ジャスト',swing:'スウィング',drunk:'ドランク',laidBack:'レイドバック',pushed:'前ノリ',snarePushed:'前ノリスネア',pocket:'ポケット',hatLaidBack:'Hat後ノリ',hatPushed:'Hat前ノリ',unstable:'不安定',other:'ノリ探索中',none:'判定待ち'};
+ const step=60/(g?.hat?.bpm??120)/4,tolerance=step*.2;
+ const errors=[];let total=0;
+ const measure=(events,hat=false)=>{
+  total+=events.length;
+  if(id==='tight'){errors.push(...events.map(e=>Math.abs(e.offset)));return;}
+  // Swing alternates eighths; drunk repeats its unequal offsets each bar.
+  const period=['drunk','unstable','other'].includes(id)?16:id==='swing'?4:1;
+  const groups=new Map();
+  for(const e of events){const q=hat&&id==='swing'?2*Math.round(e.t/(step*2)):e.q;
+   const key=(e.type??'hat')+':'+mod(q,period);
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push({...e,q,cycle:Math.floor(q/Math.max(period,16)),value:hat&&id==='swing'?e.t-q*step:e.offset});
+  }
+  for(const group of groups.values())for(const e of group){
+   const peers=group.filter(p=>p.cycle!==e.cycle);
+   if(peers.length)errors.push(Math.abs(e.value-mean(peers.map(p=>p.value))));
+  }
+ };
+ measure(g?.hat?.events??[],true);measure(g?.events??[]);
+ const coverage=total?errors.length/total:0,ready=id!=='none'&&errors.length>=6&&coverage>=.5&&(g?.matched??0)>=4;
+ const error=mean(errors);
+ return {id,label:names[id],score:ready?100*clamp(1-error/tolerance):null,errorMs:ready?error*1000:null,coverage,count:errors.length};
+}
+root.Groove={analyzeHat,analyzeRelations,enrich,affinity,classify,describe,precision};
 if(typeof module!=='undefined')module.exports=root.Groove;
 })(typeof window!=='undefined'?window:globalThis);

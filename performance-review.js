@@ -7,13 +7,15 @@
  const copy=value=>JSON.parse(JSON.stringify(value)),raw=n=>n.inputT??n.rawT??n.t;
  const labels={drums:'● Drumsの刻み',bass:'▰ Bassの配置・長押し',lead:'↗ Leadの支援',affinity:'◇ 属性・敵との相性',rhythm:'＝ タイミングの再現',groove:'～ グルーヴ',ensemble:'◎ パートの掛け合い',pitch:'↕ 音程の使い分け',timbre:'◇ 音色の性格'};
  labels.gear='◈ 機材';
+ labels.timing='＝ Bass・Leadのリズム精度とパート間の間隔';
  const grooveNames={pocket:'ポケット',laidBack:'後ろに置くノリ',pushed:'前に押すノリ',snarePushed:'スネアの前ノリ',swing:'跳ねるリズム',drunk:'同じ揺れの再現',tight:'タイトな重なり'};
  function evaluate(packet,options={}){
   const omit=options.omit,bpm=packet.bpm,duration=packet.duration,enemy=options.enemy??packet.enemy,parts=new Map(packet.tracks.map(t=>[t.voice,t.notes])),hats=packet.hats??[];
   const drums=omit==='drums'?[]:parts.get('drums')??[],bassNotes=parts.get('bass')??[],leadNotes=parts.get('lead')??[];
   let ensemble=E.analyze(parts,bpm,duration,options.omitSynergy);if(omit==='ensemble')ensemble={...ensemble,selected:[],bonus:Object.fromEntries(Object.keys(ensemble.bonus).map(k=>[k,0]))};
   const intent=enemy.intent??(enemy.intentId?{id:enemy.intentId,power:['guard','heal','buff'].includes(enemy.intentId)?0:enemy.intentId==='heavy'?1.2:enemy.intentId==='pierce'?.86:1.06,pierce:enemy.intentId==='pierce'?.4:0}:null);
-  let bass=C.bass(bassNotes,drums,bpm,duration,[],intent??{}),lead=E.support(C.lead(leadNotes,bpm,duration,[]),ensemble);
+  const timingEnabled=omit!=='timing';
+  let bass=C.bass(bassNotes,drums,bpm,duration,[],intent??{},{enabled:timingEnabled,references:{hat:hats}}),lead=E.support(C.lead(leadNotes,bpm,duration,[],{enabled:timingEnabled,references:{hat:hats,drums,bass:bassNotes}}),ensemble);
   if(omit==='bass')bass={...bass,shield:0,rhythmShield:0,pitchShield:0,prepared:0};
   if(omit==='pitch'){bass={...bass,shield:bass.rhythmShield??bass.shield,pitch:null};lead={...lead,pitch:null};}
   if(omit==='lead')lead={...lead,...C.lead([],bpm,duration,[]),pitch:lead.pitch};
@@ -41,6 +43,7 @@
   return {analysis:a,result,bass,lead,ensemble,groove,profiles:{bass:bassProfile,lead:leadProfile},shield,shieldGenerated:shield-initialShield,healed:healedHp-(carry.hp??100),damage:options.neutral?result.total:Math.min(carry.enemyHp??enemy.hp,result.total),received,counter,reduction,conditions:{...carry}};
  }
  function description(id,value){const a=value.analysis,b=value.bass,l=value.lead;
+  if(id==='timing')return 'Bass・Leadのリズムと他パートからの間隔を再現';
   if(id==='gear')return (a.gearEffects?.triggers??[]).filter(t=>t.value>0).map(t=>t.name).join('・')+'の演奏条件を達成';
   if(id==='drums')return a.charged>.3?'間の後のKickで重い一撃':a.alternation>.5?'KickとSnareの交互打ちで攻撃':'Drumsのリズムで攻撃';
   if(id==='bass')return b.locked?'Kickに重ねたBassで盾':b.sustain>.35?'Bassの長押しで厚い盾':'Bassの配置で盾';
@@ -68,6 +71,7 @@
   return {before:a,after:b,damage:b.damage-a.damage,shield:b.shieldGenerated-a.shieldGenerated,received:b.received.damage-a.received.damage,changes,conditions:'今回の敵性能・HP100・持ち越し盾0で再計算。敵が生存し反撃する想定。実戦の撃破・オーバーキル・残HPの影響は除外。'};
  }
  function changeDescription(id,a,b){
+  if(id==='timing')return 'Bass・Leadのリズム精度とパート間の間隔の再現性が変わった';
   if(id==='gear')return '同じ機材で、演奏条件の成立と発動効果が変わった';
   if(id==='drums')return b.analysis.count<a.analysis.count?'Drumsの音を減らし、間が広がった':b.analysis.count>a.analysis.count?'Drumsを細かく刻むようになった':'Drumsの間隔やアクセントが変わった';
   if(id==='rhythm')return b.analysis.performanceQuality.multiplier>a.analysis.performanceQuality.multiplier?'同じタイミングを前回より再現できた':'タイミングの形が前回より揺れた';

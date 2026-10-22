@@ -11,8 +11,8 @@
   function evaluate(after){
    const parts=after?Object.fromEntries(Object.entries(source).map(([voice,notes])=>[voice,performed(notes)])):source;
    const hat=after?performed(hats):hats,drums=parts.drums;
-   const ensemble=E.analyze(parts,bpm,duration),bass=C.bass(parts.bass,drums,bpm,duration,zones,enemy);
-   const lead=E.support(C.lead(parts.lead,bpm,duration,zones),ensemble);
+   const ensemble=E.analyze(parts,bpm,duration),bass=C.bass(parts.bass,drums,bpm,duration,zones,enemy,{references:{hat}});
+   const lead=E.support(C.lead(parts.lead,bpm,duration,zones,{references:{hat,drums,bass:parts.bass}}),ensemble);
    const groove=G.analyzeRelations(drums,hat,bpm,duration);
    let analysis=E.attack(C.enhance(G.enrich(R.analyze(after?drums:Q.render(drums,bpm,duration),duration,bpm),groove),drums,bpm,zones,lead),ensemble);
    const P=typeof module!=='undefined'?require('./pitch-combat.js'):root.PitchCombat;if(P)analysis=P.apply(analysis,bass.pitch,lead.pitch);

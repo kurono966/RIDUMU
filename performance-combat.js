@@ -4,6 +4,53 @@
  if(!root.Rhythm&&typeof require==='function')root.Rhythm=require('./rhythm.js');
  const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
  const raw=n=>n.inputT??n.rawT??n.t;
+ const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
+ // Learn a recurring feel from other cycles, never from the hit being scored.
+ // Constant phase, swing and unequal repeating motifs are all valid targets.
+ function timing(notes,references,bpm=120,duration=4,enabled=true){
+  const step=60/bpm/4,mod=(n,m)=>(n%m+m)%m;
+  const clean=ns=>{
+   const cells=new Map();
+   for(const n of [...ns].filter(n=>Number.isFinite(raw(n))&&raw(n)>=-step*4&&raw(n)<duration).sort((a,b)=>raw(a)-raw(b))){
+    const q=Math.round(raw(n)/step),key=q+':'+(n.type??'note');
+    if(!cells.has(key))cells.set(key,{q,t:raw(n),type:n.type??'note'});
+   }return [...cells.values()];
+  };
+  const source=clean(notes).map(e=>({...e,type:'note'}));
+  const fit=events=>{
+   let best=null;
+   for(const period of [1,4,8,16]){
+    const groups=new Map();
+    for(const e of events){const key=e.type+':'+mod(e.q,period);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(e);}
+    const errors=[];
+    for(const group of groups.values())for(const e of group){const peers=group.filter(p=>Math.floor(p.q/16)!==Math.floor(e.q/16));if(peers.length)errors.push(Math.abs(e.offset-mean(peers.map(p=>p.offset))));}
+    const coverage=errors.length/Math.max(1,source.length);
+    if(errors.length<4||coverage<.6)continue;
+    const error=mean(errors),score=clamp(1-error/(step*.2));
+    // Unobserved notes cannot disappear from the score by choosing a complex model.
+    const adjusted=score*coverage;
+    if(!best||adjusted>best.score)best={score:adjusted,errorMs:error*1000,coverage,count:errors.length,period};
+   }return best;
+  };
+  const own=fit(source.map(e=>({...e,offset:e.t-e.q*step}))),relations=[];
+  for(const [voice,notes] of Object.entries(references??{})){
+   const clock=clean(notes),events=[];
+   for(const e of source){
+    const ref=clock.filter(r=>Math.abs(r.q-e.q)<=4).sort((a,b)=>Math.abs(a.q-e.q)-Math.abs(b.q-e.q)||Math.abs(a.t-e.t)-Math.abs(b.t-e.t))[0];
+    if(ref)events.push({...e,type:ref.type,offset:e.t-ref.t-(e.q-ref.q)*step});
+   }
+   const result=fit(events);if(result)relations.push({voice,...result,offsetMs:mean(events.map(e=>e.offset))*1000});
+  }
+  const relative=relations.length?mean(relations.map(r=>r.score)):null;
+  const score=own&&relative!==null?.35*own.score+.65*relative:own?.score??relative;
+  const confidence=score==null?0:clamp((source.length-4)/4);
+  const multiplier=enabled&&score!=null?1+confidence*(.4*score-.2):1;
+  return {score:score==null?null:100*score,own:own?{...own,score:100*own.score}:null,relations:relations.map(r=>({...r,score:100*r.score})),confidence,multiplier};
+ }
+ function scalePitch(pitch,multiplier,skip=[]){
+  if(!pitch)return pitch;
+  return {...pitch,effects:Object.fromEntries(Object.entries(pitch.effects).map(([k,v])=>[k,v>0&&!skip.includes(k)?v*multiplier:v])),causes:pitch.causes.map(c=>({...c,value:c.value>0&&!skip.includes(c.field)?c.value*multiplier:c.value}))};
+ }
  // Combat copies follow the monophonic voice and observe at most one onset
  // per sixteenth. Recording/audio retain the complete original performance.
  function phrase(notes,bpm,duration){
@@ -13,7 +60,7 @@
   return out.map((n,i)=>({...n,duration:Math.max(0,Math.min(Number.isFinite(n.duration)?n.duration:.12,(out[i+1]?.t??duration)-n.t))}));
  }
  function attackBeat(intent={}){return intent.strikeBeat??({heavy:8,pierce:6,special:7}[intent.id??intent.intentId]??7);}
- function bass(notes,kicks,bpm,duration,zones,intent={}){
+ function bass(notes,kicks,bpm,duration,zones,intent={},context={}){
   notes=phrase(notes,bpm,duration);
   if(!notes.length)return {shield:0,strong:0,sustain:0,repetition:0,locked:0,zone:0};
   const slots=new Set(notes.map(n=>root.GridEffects.slot(n,bpm)));
@@ -32,11 +79,12 @@
    const gap=raw(n)-(i?raw(notes[i-1])+notes[i-1].duration:0),breath=clamp(gap/(step*4));
    return Math.max(best,Math.max(onset,held)*(.7+.3*breath));
   },0);
-  const shield=Math.round(4+8*Math.min(1,strong/4)+16*sustain+8*locked/Math.max(1,slots.size)+6*repetition+20*anchor);
-  const pitch=root.PitchCombat?.analyze(notes,'bass',bpm,duration),pitchShield=Math.round(shield*(pitch?.effects.shield??0));
-  return {shield:Math.min(72,shield+pitchShield),rhythmShield:shield,pitchShield,pitch,strong,sustain,repetition,locked,zone,prepared:anchor,strikeBeat:attackBeat(intent)};
+  const quality=timing(notes,{drums:kicks,...context.references},bpm,duration,context.enabled!==false);
+  const shield=Math.round((4+8*Math.min(1,strong/4)+16*sustain+8*locked/Math.max(1,slots.size)+6*repetition+20*anchor)*quality.multiplier);
+  const pitch=scalePitch(root.PitchCombat?.analyze(notes,'bass',bpm,duration),quality.multiplier,['shield']),pitchShield=Math.round(shield*(pitch?.effects.shield??0));
+  return {shield:Math.min(72,shield+pitchShield),rhythmShield:shield,pitchShield,pitch,timing:quality,strong,sustain,repetition,locked,zone,prepared:anchor,strikeBeat:attackBeat(intent)};
  }
- function lead(notes,bpm,duration,zones){
+ function lead(notes,bpm,duration,zones,context={}){
   notes=phrase(notes,bpm,duration);
   const empty={attack:0,expose:0,accuracy:0,element:0,shieldEfficiency:0,weaken:0,zone:0,description:'Leadなし：支援効果なし。'};
   if(!notes.length)return empty;
@@ -46,7 +94,9 @@
   const zone=0;
   const form=root.Rhythm.structure(notes,duration,bpm),confidence=clamp((notes.length-1)/3);
   const strong=sorted.filter(n=>root.GridEffects.slot(n,bpm)%4===0).length/sorted.length;
-  const result={attack:(.06*strong+.04*form.variation)*confidence,expose:.12*off*confidence,accuracy:.04*form.repetition*confidence,element:.06*form.development*confidence,shieldEfficiency:.2*held*confidence,weaken:.06*form.rest*confidence,pierce:.12*off*confidence,zone,pitch:root.PitchCombat?.analyze(notes,'lead',bpm,duration)};
+  const quality=timing(notes,context.references,bpm,duration,context.enabled!==false);
+  const result={attack:(.06*strong+.04*form.variation)*confidence,expose:.12*off*confidence,accuracy:.04*form.repetition*confidence,element:.06*form.development*confidence,shieldEfficiency:.2*held*confidence,weaken:.06*form.rest*confidence,pierce:.12*off*confidence,zone,pitch:scalePitch(root.PitchCombat?.analyze(notes,'lead',bpm,duration),quality.multiplier),timing:quality};
+  for(const key of ['attack','expose','accuracy','element','shieldEfficiency','weaken','pierce'])result[key]*=quality.multiplier;
   // Pitch effects are applied once, after timbre and ensemble modifiers.
   const placement=confidence?off>.5?'裏拍で弱点露出・貫通':strong>.5?'表拍で攻撃支援':held>.4?'長音で盾を支援':'フレーズの間で弱体化':'短い旋律：効果を探る';
   result.description=[placement,...(result.pitch?.causes.slice(0,1).map(c=>c.label)??[])].join(' / ');
@@ -94,5 +144,5 @@
   const pitch=(lead?.pitch?.effects.weaken??0)+(bass?.pitch?.effects.resistance??0),total=Math.min(.55,base+pitch);
   return {base,total,pitch:total-base};
  }
- root.PerformanceCombat={bass,lead,enhance,receive,reduction,phrase,attackBeat,tactics,enemyAction,counterAttack};if(typeof module!=='undefined')module.exports=root.PerformanceCombat;
+ root.PerformanceCombat={bass,lead,enhance,receive,reduction,phrase,attackBeat,tactics,enemyAction,counterAttack,timing};if(typeof module!=='undefined')module.exports=root.PerformanceCombat;
 })(typeof window!=='undefined'?window:globalThis);

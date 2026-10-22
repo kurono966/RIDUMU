@@ -2,6 +2,29 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const G=require('./groove.js'),R=require('./rhythm.js'),F=require('./feedback.js');
 function hats(bpm,offset=()=>0){const step=60/bpm/2;return Array.from({length:16},(_,i)=>({type:'hat',t:i*step+offset(i),rawT:i*step+offset(i)}));}
 function parts(bpm,kick=-.018,snare=.035){const beat=60/bpm;return Array.from({length:8},(_,i)=>{const rawT=i*beat+(i%2?snare:kick);return {type:i%2?'snare':'kick',t:Math.max(0,rawT),rawT};});}
+
+test('precision rewards every recognized feel without forcing intentional offsets onto the grid',()=>{
+ for(const bpm of [82,120,150]){
+  for(const [id,k,s] of [['tight',0,0],['pocket',-.018,.035],['laidBack',0,.035],['pushed',-.03,0],['snarePushed',0,-.03]]){
+   const g=G.analyzeRelations(parts(bpm,k,s),hats(bpm),bpm,480/bpm),p=G.precision(g);
+   assert.equal(p.id,id);assert.ok(p.score>99.9,id);assert.ok(p.errorMs<.001);
+  }
+  for(const id of ['swing','drunk']){
+   const h=hats(bpm,i=>id==='swing'?(i%2?60/bpm/6:0):[0,.025,-.02,.035][i%4]);
+   const d=h.map((n,i)=>({...n,type:i%2?'snare':'kick'}));
+   const p=G.precision(G.analyzeRelations(d,h,bpm,480/bpm));
+   assert.equal(p.id,id);assert.ok(p.score>99.9,id);
+  }
+ }
+});
+test('precision falls with changing timing and stays pending without sufficient evidence',()=>{
+ const h=hats(120),clean=parts(120,0,-.03),noisy=clean.map((n,i)=>({...n,rawT:n.rawT+(i>=4?.012:0)}));
+ const evaluate=d=>G.precision(G.analyzeRelations(d,h,120,4));
+ assert.ok(evaluate(clean).score>evaluate(noisy).score);
+ assert.equal(evaluate([]).score,null);assert.equal(evaluate(clean.slice(0,2)).score,null);
+ const Q=require('./quantize');
+ assert.deepEqual(evaluate(Q.render(noisy.map(n=>({...n,inputT:n.rawT,quantize:'just'})),120,4)),evaluate(noisy));
+});
 test('enemy tempo determines two-bar duration and the analysis grid',()=>{
  for(const bpm of [82,120,150]){
   const duration=480/bpm,a=R.analyze(parts(bpm,0,0),duration,bpm);

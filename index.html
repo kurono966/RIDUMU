@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="grid-hazards.css?v=1">
     <link rel="stylesheet" href="combat.css?v=3">
     <link rel="stylesheet" href="synth.css?v=3">
-    <link rel="stylesheet" href="ui.css?v=16">
+    <link rel="stylesheet" href="ui.css?v=18">
     <link rel="stylesheet" href="pitch.css?v=1">
     <link rel="stylesheet" href="experience.css?v=1">
     <link rel="stylesheet" href="element-meter.css?v=1">
@@ -259,6 +259,8 @@
           <div>
             <span id="element" class="element"></span>
             <h2 id="moveName"></h2>
+            <p id="timingAccuracy" class="timing-accuracy" aria-live="polite">正確さ — 判定待ち</p>
+            <p id="partTimingAccuracy" class="timing-accuracy" hidden></p>
             <p id="pitchOutcome" class="pitch-outcome" hidden></p>
           </div>
           <div class="damage">
@@ -387,6 +389,9 @@
         <span id="lastQuantize" class="quantize-badge"></span>
         <p id="feedback"></p>
         <p id="performanceSummary" class="performance-summary"></p>
+        <p id="partTimingSummary" class="performance-summary"></p>
+        <small>正確さ：補正前のDrumsとHatを評価。タイトは拍への一致、各種ノリは別小節でのズレ方の再現を測ります。100%は平均誤差0、16分音符の20%の誤差で0%。入力・反復が不足すると判定待ち。</small>
+        <small>Bass・Lead：自身のリズム35%＋他パートとの間隔の再現65%。揃える・一定の間隔でずらす・同じ跳ねや揺れを繰り返す演奏を評価。盾・支援効果は精度に応じて最大±20%。音が少ない場合は補正なし。BassはHat・Drums、LeadはHat・Drums・Bassとの関係を評価します。</small>
         <p id="grooveSummary" class="groove-summary"></p>
         <p id="reaction" class="reaction"></p>
         <small id="hitInfo"></small>
@@ -560,14 +565,14 @@
     </dialog>
     <script src="rhythm.js?v=8"></script>
     <script src="quantize.js"></script>
-    <script src="groove.js?v=2"></script>
+    <script src="groove.js?v=3"></script>
     <script src="feedback.js?v=4"></script>
     <script src="element-meter.js?v=2"></script>
-    <script src="feedback-ui.js?v=3"></script>
+    <script src="feedback-ui.js?v=5"></script>
     <script src="grid-effects.js?v=2"></script>
     <script src="ensemble.js?v=2"></script>
     <script src="pitch-combat.js?v=3"></script>
-    <script src="performance-combat.js?v=4"></script>
+    <script src="performance-combat.js?v=5"></script>
     <script src="assets/drum-samples.js"></script>
     <script src="drum-audio.js"></script>
     <script src="bass-audio.js"></script>
@@ -575,17 +580,17 @@
     <script src="synth-audio.js?v=4"></script>
     <script src="sequence-history.js?v=5"></script>
     <script src="grid-hazards.js"></script>
-    <script src="evaluation-debug.js?v=7"></script>
+    <script src="evaluation-debug.js?v=8"></script>
     <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
     <script src="enemy-music.js?v=7"></script>
     <script src="roguelite.js?v=2"></script>
     <script src="roguelite-ui.js?v=1"></script>
-    <script src="performance-review.js?v=4"></script>
+    <script src="performance-review.js?v=5"></script>
     <script src="feedback-audio.js?v=1"></script>
     <script src="enemy-art.js?v=2"></script>
     <script src="enemy-state.js?v=1"></script>
-    <script src="game.js?v=33"></script>
+    <script src="game.js?v=35"></script>
     <script src="synth-ui.js?v=5"></script>
     <script src="history-ui.js?v=5"></script>
     <script src="evaluation-debug-ui.js?v=2"></script>

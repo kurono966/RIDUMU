@@ -829,7 +829,7 @@ function applyRogueEquipment(a){
 function showRoleResult(title,factors,amount,label,a){
  renderEnsemble(null);activeReport=null;$('result').hidden=false;$('moveName').textContent=title;$('element').textContent=label;$('element').style.color='#8edcdd';
  $('damage').textContent=amount;$('damageLabel').textContent=label;$('hitInfo').textContent='';
- const report={factors:factors.slice(0,3).map(text=>({text})),hint:'3パートの演奏後、Drumsの攻撃と敵の反撃をまとめて再生。',breakdown:{},grooveText:''};
+ const report={factors:factors.slice(0,3).map(text=>({text})),hint:'3パートの演奏後、Drumsの攻撃と敵の反撃をまとめて再生。',breakdown:{},grooveText:'',timingGroove:Groove.analyzeRelations(tracks.get('drums')??[],hatNotes,lastBpm,lastDuration),partTiming:{bass:cycleBass?.timing}};
  renderReport(report);sequence(a);$('causeTracks').replaceChildren();$('breakdown').replaceChildren();
 }
 async function finish(continuationAt=null){
@@ -846,7 +846,7 @@ async function finish(continuationAt=null){
  const zones=currentZones(),preview=Rhythm.analyze(last,lastDuration,lastBpm);
  if(lastInstrument==='bass'){
   feedbackCarryShield=shield;
-  cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent());
+  cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent(),{references:{hat:hatNotes}});
   cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(90,shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(90,before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
@@ -860,7 +860,7 @@ async function finish(continuationAt=null){
   showRoleResult('攻撃パターンを構築',[`${preview.count}音のDrums → ${preview.count?preview.hits:0}段の攻撃を準備`,development+'。次はBassで防御準備。'],0,'ATTACK READY',preview);showToneResult([]);rememberSequence('attack');
  }else{
   cycleEnsemble=Ensemble.analyze(tracks,lastBpm,lastDuration);
-  cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones),cycleEnsemble);
+  cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones,{references:{hat:hatNotes,drums:tracks.get('drums')??[],bass:tracks.get('bass')??[]}}),cycleEnsemble);
   const toneShield=Math.round((cycleBass?.rawShield??0)*(Synth.style(synthTracks.get('lead'),tracks.get('lead')??[],lastDuration).shield-1)*.5);
   const bonus=toneShield+Math.round((cycleBass?.shield??0)*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield;
   const beforeLeadShield=shield;shield=Math.max(0,Math.min(90,shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');}renderBattlePlan();
@@ -874,7 +874,7 @@ async function finish(continuationAt=null){
   const gearStartHp=hp;a=applyRogueEquipment(a);
    const combatEnemy={...enemies[stage],intentId:enemyIntent().id};
    a.tactics=PerformanceCombat.tactics(a,cycleBass,cycleLead,enemyIntent());
-   const result=Rhythm.resolve(a,combatEnemy),report=CombatFeedback.explain(a,result,combatEnemy,'drums');activeReport=report;
+   const result=Rhythm.resolve(a,combatEnemy),report=CombatFeedback.explain(a,result,combatEnemy,'drums');report.timingGroove=groove;report.partTiming={bass:cycleBass?.timing,lead:cycleLead?.timing};activeReport=report;
   const [name,prefix,color]=elements[a.element];$('result').hidden=false;$('element').textContent=a.count?name+' / DRUMS':'静寂';$('element').style.color=color;
   $('moveName').textContent=a.count?prefix+(a.hits>=4?'連打':a.weight>.65?'重撃':'撃'):'静寂の防陣';$('damage').textContent='0';$('damageLabel').textContent='TOTAL DAMAGE';$('hitInfo').textContent=`${report.hitCount} HIT / ${a.count?a.hits:0} STRIKE`;
   // Retain weak-point priority, then show the strongest chosen performance bonuses.
@@ -884,19 +884,6 @@ async function finish(continuationAt=null){
   if(notes.length)extras.push({id:'leadSupport',source:'lead-support',tag:'支援！',text:cycleLead.description,priority:3});
   report.factors=[...report.factors.filter(f=>f.priority===1),...report.factors.filter(f=>f.id==='rhythm-quality'),...extras,...report.factors.filter(f=>f.priority!==1&&f.id!=='rhythm-quality')].slice(0,3);
   report.hasSupport=notes.length>0;renderReport(report);showToneResult(['bass','lead']);renderEnsemble(cycleEnsemble,tracks,lastBpm);$('detailHint').textContent+=` / ${cycleLead.description} / Bassの盾 ${shield}（Lead追加 ${bonus>=0?'+':''}${bonus}、音色分 ${toneShield>=0?'+':''}${toneShield}）`;
-  if(lastInstrument==='drums'){
-    const pq=a.performanceQuality??{multiplier:1};
-    $('performanceSummary').textContent=`PERFORMANCE 再現性 ${Math.round(pq.multiplier*100)}%`;
-    if(groove&&groove.confidence>.15){
-      const g=groove;
-      const id=['pocket','laidBack','pushed','snarePushed','swing','drunk','tight'].sort((x,y)=>(g[y]??0)-(g[x]??0))[0];
-      const labels={pocket:'ポケット',laidBack:'レイドバック',pushed:'前ノリ',snarePushed:'前ノリスネア',swing:'スウィング',drunk:'再現する揺れ',tight:'タイト'};
-      if(g[id]>.15)$('grooveSummary').textContent=`GROOVE ${labels[id]}`;
-      else $('grooveSummary').textContent='';
-    } else {
-      $('grooveSummary').textContent='';
-    }
-  }
   // Show the actual attacking drum cells, while keeping all three recorded voices for replay.
   const leadLast=last;last=rendered;lastInstrument='drums';sequence(a);annotateSequence(a,report);last=leadLast;lastInstrument='lead';
   globalThis.PitchUI?.result(cycleBass,cycleLead,a,result);

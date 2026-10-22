@@ -1394,3 +1394,6 @@ body.game-ui code {
  #game>.console>.performance-input-slot>.pads>.pad .key { flex:0 0 auto; }
  #game>.console>.performance-input-slot>.pads>.pad b { white-space:nowrap; }
 }
+#game .result .timing-accuracy{margin:3px 0;color:#d4f77d;font-size:11px;line-height:1.35;font-variant-numeric:tabular-nums;}
+#game .result #pitchOutcome{position:static;}
+#game .result .result-content:has(.pitch-outcome:not([hidden])){padding-bottom:4px;}
