@@ -99,7 +99,8 @@ test('merged quantized notes are evaluated once and original timing provenance s
 });
 function ui(search){
  const nodes=new Map(),$=id=>{if(!nodes.has(id))nodes.set(id,{children:[],replaceChildren(){this.children=[]},append(...n){this.children.push(...n)},showModal(){this.open=true},close(){this.open=false},value:'recorded'});return nodes.get(id);};
- const sandbox=vm.createContext({location:{search,hash:''},URLSearchParams,document:{getElementById:$,createElement:()=>({children:[],append(...n){this.children.push(...n)}})},$,EvaluationDebug:D,GridEffects:require('./grid-effects.js'),elements:{earth:['土'],wind:['風'],fire:['火'],lightning:['雷']}});
+ const roster=[{kind:'stone',name:'岩',bpm:120}];
+ const sandbox=vm.createContext({standardEnemies:roster,enemies:roster,stage:0,location:{search,hash:''},URLSearchParams,document:{getElementById:$,createElement:()=>({children:[],append(...n){this.children.push(...n)}})},$,EvaluationDebug:D,GridEffects:require('./grid-effects.js'),elements:{earth:['土'],wind:['風'],fire:['火'],lightning:['雷']}});
  vm.runInContext(fs.readFileSync('evaluation-debug-ui.js','utf8'),sandbox);return {$,sandbox};
 }
 test('normal play hides development controls and installs no evaluation hook',()=>{

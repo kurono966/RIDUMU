@@ -11,7 +11,7 @@
  const chordBeats=2,loopBeats=8;
  const progressions={
   stone:{chords:['Cm7','Abmaj7','Fm7','Gm7'],wave:'triangle',cutoff:1100,resonance:.7,detune:1,attack:.025,decay:.08,sustain:.86,release:.16,level:1},
-  fly:{chords:['Ebmaj7','Bbadd9','Cm7','Abmaj7'],wave:'sine',cutoff:3600,resonance:.5,detune:4,attack:.075,decay:.12,sustain:.82,release:.24,level:.85},
+  fly:{chords:['Ebmaj7','Bbadd9','Cm7','Abmaj7'],wave:'triangle',harmonic:.25,cutoff:3600,resonance:.5,detune:4,attack:.008,decay:.025,sustain:.92,release:.035,level:1.15},
   machine:{chords:['Cmadd9','Gm7','Abmaj7','Bbsus2'],wave:'sawtooth',cutoff:1400,resonance:1.8,detune:0,attack:.008,decay:.055,sustain:.7,release:.09,level:1.3},
   plant:{chords:['Fm7','Cm7','Abmaj7','Gm7'],wave:'square',cutoff:950,resonance:1.2,detune:2,attack:.02,decay:.11,sustain:.73,release:.13,level:.72},
   ghost:{chords:['Cm9','Abmaj7','Ebmaj7','Gm7'],wave:'sine',harmonic:.3,cutoff:2000,resonance:.4,detune:7,attack:.09,decay:.18,sustain:.9,release:.32,level:1.05},
@@ -19,6 +19,8 @@
   furnace:{chords:['Fm7','Abmaj7','Cmadd9','Gm7'],wave:'triangle',harmonic:.2,cutoff:1700,resonance:1,detune:2,attack:.02,decay:.12,sustain:.7,release:.18,level:1.05},
   conductor:{chords:['Cm9','Fm7','Bbsus2','Gm7'],wave:'sine',harmonic:.35,cutoff:2800,resonance:.5,detune:4,attack:.035,decay:.15,sustain:.8,release:.25,level:1.1}
  };
+ progressions.pulse={chords:['Cm7','Fm7','Abmaj7','Bbadd9'],wave:'sawtooth',harmonic:.18,cutoff:2600,resonance:.6,detune:5,attack:.002,decay:.045,sustain:.88,release:.1,level:1.05};
+ const pulseSidechain={depth:.95,attack:.004,releaseBeats:.85};
  function progression(kind){return progressions[kind]??progressions.stone;}
  const hits=(beats,gates,velocities,delays=[])=>beats.map((beat,i)=>({beat,duration:Array.isArray(gates)?gates[i]:gates,velocity:Array.isArray(velocities)?velocities[i]:velocities,delay:delays[i]??0}));
  const rhythms={
@@ -31,6 +33,7 @@
   furnace:{name:'休符と跳ねる掛け合い',description:'短い呼び掛けと返答の間に休符を置き、裏の和音を跳ねさせる。',events:hits([0,2/3,2,3+2/3,4,4+2/3,6,7+2/3],.24,[.9,.65,.8,.65,.9,.65,.8,.65])},
   conductor:{name:'軸を残す変化と解放',description:'前半の軸を保ちながら後半を細かく変え、最後は休符で解放する。',events:hits([0,1,2,3,4,4.5,5,5.5,5.75,6],[.45,.4,.4,.35,.3,.25,.2,.15,.12,.35],[.65,.65,.7,.7,.75,.8,.85,.9,1,.8])}
  };
+ rhythms.pulse={name:'持続コードとキックの呼吸',description:'2拍ずつ伸ばす和音。実際のKickに合わせて音量が沈み、拍の間で戻る。',events:hits([0,2,4,6],2,1)};
  function rhythm(kind){return rhythms[kind]??rhythms.stone;}
  const legacyRhythm=beats=>({name:'2拍ごとの持続和音',description:'保存された従来の伴奏。',events:hits([0,beats,beats*2,beats*3],beats,1)});
  function cleanSnapshot(value){
@@ -48,9 +51,10 @@
     const at=e.beat*60/value.bpm+e.delay;if(at<0||at>=loop*60/value.bpm||at<=previous)throw Error('コード伴奏の発音順序が不正です。');previous=at;return {beat:e.beat,duration:e.duration,velocity:e.velocity,delay:e.delay};});
    result.rhythm={name:r.name.slice(0,80),description:String(r.description??'').slice(0,240),events};
   }
+  if(value.sidechain!==undefined){const s=value.sidechain;if(!s||!finite(s.depth,0,.95)||!finite(s.attack,.001,.05)||!finite(s.releaseBeats,.05,2))throw Error('コード伴奏のサイドチェインが不正です。');result.sidechain={depth:s.depth,attack:s.attack,releaseBeats:s.releaseBeats};}
   return result;
  }
- function snapshot(kind,bpm){const {chords:ids,...tone}=progression(kind);return cleanSnapshot({version:1,bpm,chordBeats,chords:ids.map(id=>chords[id]),tone,rhythm:rhythm(kind)});}
+ function snapshot(kind,bpm){const {chords:ids,...tone}=progression(kind);return cleanSnapshot({version:1,bpm,chordBeats,chords:ids.map(id=>chords[id]),tone,rhythm:rhythm(kind),...(kind==='pulse'?{sidechain:pulseSidechain}:{})});}
  function timeline(value,duration=value.chordBeats*4*60/value.bpm){
   if(!Number.isFinite(duration)||duration<=0||duration>120)throw Error('コード伴奏の長さが不正です。');
   const s=cleanSnapshot(value),beat=60/s.bpm,loop=s.chordBeats*4,events=s.rhythm?.events??legacyRhythm(s.chordBeats).events,notes=[];
@@ -60,8 +64,29 @@
  }
  function create(ctx,output=ctx.destination,options={}){
   const every=options.setInterval??setInterval,cancel=options.clearInterval??clearInterval;
-  const bus=ctx.createGain();bus.gain.value=1;bus.connect(output);
+  const bus=ctx.createGain(),duck=ctx.createGain();bus.gain.value=1;duck.gain.value=1;bus.connect(duck);duck.connect(output);
   const active=new Set();let kind='stone',bpm=82,playing=false,muted=false,timer=null,origin=0,next=0,anchor=null,shown=-1,rotation=0,saved=null,sequenceEnd=Infinity;
+  let kicks=[];
+  function resetDuck(){kicks=[];duck.gain.cancelScheduledValues(ctx.currentTime);duck.gain.setValueAtTime(1,ctx.currentTime);}
+  function duckForKick(when=ctx.currentTime,volume=1){
+   const spec=saved?saved.sidechain:kind==='pulse'?pulseSidechain:null;
+   const at=Math.max(ctx.currentTime,when);
+   if(!spec||!playing||muted||!Number.isFinite(at)||!Number.isFinite(volume)||volume<=0||at<origin||at>=sequenceEnd)return false;
+   // Keep quieter backing/replay kicks capable of a pronounced pump.
+   kicks.push({at,low:1-spec.depth*Math.sqrt(Math.min(1,volume))});kicks.sort((a,b)=>a.at-b.at);
+   const attack=spec.attack,release=spec.releaseBeats*60/bpm;
+   const value=(e,t)=>!e?1:t<e.at+attack?e.from+(e.low-e.from)*Math.max(0,t-e.at)/attack:e.low+(1-e.low)*Math.min(1,(t-e.at-attack)/release);
+   let previous=null;for(const kick of kicks){kick.from=value(previous,kick.at);previous=kick;}
+   const now=ctx.currentTime,current=kicks.filter(k=>k.at<=now).at(-1);
+   duck.gain.cancelScheduledValues(now);duck.gain.setValueAtTime(value(current,now),now);
+   for(let i=0;i<kicks.length;i++){
+    const k=kicks[i],until=kicks[i+1]?.at??Infinity;
+    if(k.at>now)duck.gain.linearRampToValueAtTime(k.from,k.at);
+    if(k.at+attack>now&&k.at+attack<until)duck.gain.linearRampToValueAtTime(k.low,k.at+attack);
+    if(k.at+attack+release>now&&k.at+attack+release<until)duck.gain.linearRampToValueAtTime(1,k.at+attack+release);
+   }
+   return true;
+  }
   const chordAt=index=>saved?saved.chords[(rotation+index)%4]:chords[progression(kind).chords[(rotation+index)%4]];
   const chordSeconds=()=>(saved?.chordBeats??chordBeats)*60/bpm,pattern=()=>saved?(saved.rhythm??legacyRhythm(saved.chordBeats)):rhythm(kind);
   const event=index=>pattern().events[index%pattern().events.length];
@@ -71,9 +96,10 @@
    const spec=saved?.tone??progression(kind),chord=chordAt(chordIndex(index));
    const filter=ctx.createBiquadFilter(),amp=ctx.createGain(),sources=[],blends=[];
    filter.type='lowpass';filter.frequency.value=spec.cutoff;filter.Q.value=spec.resonance;filter.connect(amp);amp.connect(bus);
-   // A stronger sustained level keeps the chords present beneath live playing.
+   // +4.1 dB of chord gain and a fuller sustain keep accompaniment present
+   // beneath live playing, while preserving each hit's accent and release.
    const legacy=saved&&!saved.rhythm,attack=legacy?spec.attack:Math.min(spec.attack,length*.3),decay=legacy?spec.decay:Math.min(spec.decay,length*.3),release=legacy?spec.release:Math.min(spec.release,length*.4);
-   const peak=.105*spec.level*velocity/Math.sqrt(chord.notes.length),sustain=spec.sustain,attackEnd=start+attack,decayEnd=attackEnd+decay,hold=Math.max(decayEnd,start+length-(legacy ? .04 : release)),end=hold+release;
+   const peak=.168*spec.level*velocity/Math.sqrt(chord.notes.length),sustain=spec.sustain+(1-spec.sustain)*.15,attackEnd=start+attack,decayEnd=attackEnd+decay,hold=Math.max(decayEnd,start+length-(legacy ? .04 : release)),end=hold+release;
    amp.gain.setValueAtTime(0,start);amp.gain.linearRampToValueAtTime(peak,attackEnd);
    amp.gain.linearRampToValueAtTime(peak*sustain,decayEnd);amp.gain.setValueAtTime(peak*sustain,hold);amp.gain.linearRampToValueAtTime(0,end);
    const naturalEnd=end+.02;
@@ -112,11 +138,12 @@
    setSnapshot(value){const next=cleanSnapshot(value);api.stop();saved=next;kind='recorded';bpm=next.bpm;shown=-1;},
    start(start=ctx.currentTime+.06,end=Infinity){if(playing)return;playing=true;origin=start;sequenceEnd=end;next=0;anchor=null;shown=-1;rotation=0;timer=every(tick,25);tick();},
    align(start){if(!Number.isFinite(start)||start<ctx.currentTime-.15)return;if(!playing){api.start(start);return;}if(Math.abs(origin-start)<1e-6)return;anchor=start;stopVoices(start);tick();},
-   stop(){playing=false;if(timer!==null)cancel(timer);timer=null;anchor=null;stopVoices();},
+   stop(){playing=false;if(timer!==null)cancel(timer);timer=null;anchor=null;stopVoices();resetDuck();},
+   duckForKick,
    setMuted(value){
     value=!!value;if(value===muted)return;muted=value;
     bus.gain.setTargetAtTime(value?0:1,ctx.currentTime,.015);
-    if(value)stopVoices();
+    if(value){stopVoices();resetDuck();}
     else if(playing&&ctx.state==='running'&&ctx.currentTime+.01<sequenceEnd){
      if(ctx.currentTime<origin){next=0;tick();return;}
      let index=Math.max(0,Math.floor((ctx.currentTime-origin)/(4*chordSeconds()))*pattern().events.length);while(at(index+1)<=ctx.currentTime)index++;

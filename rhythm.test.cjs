@@ -1,6 +1,15 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const R=require('./rhythm.js');
 const notes=(times,type)=>times.map(t=>({t,type}));
 
+test('pulse rewards beat-anchoring kicks while preserving general timing and element evaluation',()=>{
+ const enemy={kind:'pulse',guard:.12},beat=60/78,duration=8*beat;
+ const on=R.analyze(notes(Array.from({length:8},(_,i)=>i*beat),'kick'),duration,78);
+ const off=R.analyze(notes(Array.from({length:8},(_,i)=>(i+.5)*beat),'kick'),duration,78);
+ const a=R.resolve(on,enemy),b=R.resolve(off,enemy);
+ assert.equal(on.element,'earth');assert.ok(a.calculation.rhythmStyle.multiplier>b.calculation.rhythmStyle.multiplier);
+ assert.match(a.calculation.rhythmStyle.label,/拍頭キック/);assert.ok(a.total>0&&b.total>0);
+});
+
 test('steady kicks stay earth and steady alternation stays wind across tempos, density and small timing errors',()=>{
  const G=require('./groove.js');
  for(const bpm of [82,100,108,120,150,180])for(const count of [8,16,32])for(const alternate of [false,true])for(const jitter of [0,.015]){

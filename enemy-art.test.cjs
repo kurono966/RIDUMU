@@ -10,7 +10,7 @@ test('all existing enemies have distinct sculptures with three colours and a sma
   const svg=Art.toSVG(enemy.kind);assert.match(svg,/role="img"/);assert(svg.includes(enemy.name));
   assert.doesNotMatch(svg,/<(?:image|filter|linearGradient|radialGradient|foreignObject|script)\b|href=|url\(|NaN|Infinity/);
   silhouettes.add(def.parts.flatMap(p=>p.shapes).map(s=>s.attrs.d).join(''));
- }assert.equal(silhouettes.size,8);
+ }assert.equal(silhouettes.size,9);
 });
 
 test('attacks, preparation and defence articulate each sculpture and always return to its base pose',()=>{

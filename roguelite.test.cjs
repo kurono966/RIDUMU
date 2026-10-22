@@ -77,6 +77,19 @@ test('equipment has hard caps, preserves analysis and recordings, and cannot pro
  assert.deepEqual([silent.attack,silent.shield,silent.heal,silent.pierce],[0,0,0,0]);
 });
 
+test('audio rewards appear beside rhythm gear and rank upgrades improve both sound and combat',()=>{
+ const audio=Run.gear.filter(g=>g.audio);assert.equal(audio.length,10);
+ assert(audio.some(g=>g.audio.target==='master'&&g.audio.type==='distortion'));assert(audio.some(g=>g.audio.target==='master'&&g.audio.type==='reverb'));
+ for(const target of ['bass','lead'])for(const type of ['chorus','flanger'])assert(audio.some(g=>g.audio.target===target&&g.audio.type===type));
+ for(let seed=1;seed<=25;seed++){const run=Run.create(roster,rng(seed)),offers=Run.rewardOffers(run,rng(seed));assert(offers.some(o=>Run.byId(o.id).audio));assert(offers.some(o=>!Run.byId(o.id).audio));}
+ const fixtures={...R.analyze(alternating),structure:{rest:.5,repetition:.8,development:.6},syncopation:.5,offbeat:.5,groove:{swing:.6,drunk:.6}};
+ const bass={sustain:.7,locked:3},lead={pitch:{points:[1,2,3,4],effects:{attack:.1}}},ensemble={selected:[{id:'response'},{id:'grooveLock'}]};
+ for(const g of audio){
+  const low=Run.effects([{id:g.id,rank:1}],fixtures,bass,lead,ensemble),high=Run.effects([{id:g.id,rank:2}],fixtures,bass,lead,ensemble);
+  assert.equal(low[g.kind],g.values[0],g.id);assert(high[g.kind]>low[g.kind],g.id);
+ }
+});
+
 test('review includes the exact equipment attack, shields and healing and normalizes comparisons to one rig',()=>{
  const packet={enemy:{kind:'stone',hp:1000,attack:88,guard:.2,intentId:'heavy'},bpm:120,duration:4,conditions:{hp:70,shield:0,enemyHp:1000},hats:notes(Array.from({length:16},(_,i)=>i*.25),'hat'),tracks:[{voice:'drums',notes:alternating},{voice:'bass',notes:notes([0,1,2,3]).map(n=>({...n,duration:.5,midi:36}))},{voice:'lead',notes:notes([.125,1.125,2.125,3.125]).map(n=>({...n,midi:60,duration:.2}))}],gear:[{id:'wind',rank:1},{id:'echo',rank:2},{id:'response',rank:1}]};
  const actual=Review.evaluate(packet),without=Review.evaluate(packet,{omit:'gear'}),expected=Run.effects(packet.gear,without.analysis,without.bass,without.lead,without.ensemble);

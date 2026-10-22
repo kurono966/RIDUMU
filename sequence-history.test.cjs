@@ -24,6 +24,21 @@ test('recorded accompaniment survives JSON/storage without aliasing current enem
  assert.throws(()=>H.validate({...e,accompaniment:{...e.accompaniment,tone:{...e.accompaniment.tone,level:Infinity}}}));
 });
 
+test('pulse sidechain survives sequence export/import and storage alongside its triggering drum notes',()=>{
+ const M=require('./enemy-music.js'),e=H.snapshot({...entry(),accompaniment:M.snapshot('pulse',120)});
+ let data;H.createStore({getItem:()=>null,setItem:(k,v)=>data=v}).add(e);
+ const restored=H.createStore({getItem:()=>data,setItem(){}}).list()[0];
+ assert.deepEqual(restored.accompaniment.sidechain,e.accompaniment.sidechain);
+ assert.equal(restored.tracks.find(t=>t.voice==='drums').notes[0].type,'kick');
+});
+
+test('audio equipment is copied and persisted; malformed or duplicate effect inventories are rejected',()=>{
+ const source=[{id:'masterRoom',rank:2},{id:'leadChorus',rank:1}],saved=H.snapshot({...entry(),audioGear:source});source[0].rank=1;
+ let data;H.createStore({getItem:()=>null,setItem:(k,v)=>data=v}).add(saved);const restored=H.createStore({getItem:()=>data,setItem(){}}).list()[0];
+ assert.deepEqual(restored.audioGear,[{id:'masterRoom',rank:2},{id:'leadChorus',rank:1}]);assert.equal(H.validate(entry()).audioGear,undefined);
+ for(const audioGear of [[{id:'sub',rank:1}],[{id:'masterRoom',rank:3}],[{id:'masterRoom',rank:1},{id:'masterRoom',rank:2}]])assert.throws(()=>H.validate({...entry(),audioGear}));
+});
+
 test('MIDI exports saved chord pitches on a dedicated channel at the original tempo',()=>{
  const M=require('./enemy-music.js'),e=H.snapshot({...entry(),accompaniment:M.snapshot('stone',120)}),parsed=parse(H.midi(e));
  assert.equal(parsed.tracks.length,7);const chords=parsed.tracks.at(-1).filter(n=>n.status===147);

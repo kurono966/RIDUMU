@@ -16,6 +16,18 @@
   {id:'develop',name:'展開シーケンサー',style:'変化',condition:'モチーフ変化・緊張と解放・前後半の掛け合いのいずれかを30%以上成立',effect:'攻撃 +12%',up:'攻撃 +18%',kind:'attack',values:[.12,.18]},
   {id:'sustain',name:'サステイン電源',style:'Bass長音',condition:'Bassを合計で演奏時間の45%以上伸ばす',effect:'盾 +6',up:'盾 +9',kind:'shield',values:[6,9]}
  ];
+ gear.push(
+  {id:'masterDrive',name:'灼熱マスター',style:'全体・歪み',condition:'Drumsを4打以上演奏',effect:'攻撃 +8%',up:'攻撃 +12%',kind:'attack',values:[.08,.12],audio:{target:'master',type:'distortion',description:'全体に温かい歪みと密度。強化で歪みが深くなる。'}},
+  {id:'masterRoom',name:'余白の大聖堂',style:'全体・リバーブ',condition:'Drumsを4打以上、休符の割合20%以上',effect:'盾 +4',up:'盾 +7',kind:'shield',values:[4,7],audio:{target:'master',type:'reverb',description:'全体に空間と残響。強化で残響が長く豊かになる。'}},
+  {id:'leadChorus',name:'双影のコーラス',style:'Lead・コーラス',condition:'Drumsを2打以上、Leadを3音以上演奏',effect:'攻撃 +8%',up:'攻撃 +12%',kind:'attack',values:[.08,.12],audio:{target:'lead',type:'chorus',description:'Leadに柔らかく揺らぐ厚み。強化で重なりが増える。'}},
+  {id:'bassChorus',name:'深海のコーラス',style:'Bass・コーラス',condition:'Drumsを2打以上、Bassで演奏時間の30%以上を伸ばす',effect:'盾 +4',up:'盾 +7',kind:'shield',values:[4,7],audio:{target:'bass',type:'chorus',description:'Bassにゆっくり揺らぐ厚み。強化で揺れが深くなる。'}},
+  {id:'leadFlanger',name:'銀翼フランジャー',style:'Lead・フランジャー',condition:'Drumsを4打以上、展開またはシンコペーション25%以上',effect:'装甲貫通 +8%',up:'装甲貫通 +12%',kind:'pierce',values:[.08,.12],audio:{target:'lead',type:'flanger',description:'Leadに金属的なうねり。強化でフィードバックが深まる。'}},
+  {id:'bassFlanger',name:'磁場フランジャー',style:'Bass・フランジャー',condition:'Drumsを4打以上、KickにBassを2回以上合わせるかGROOVE LOCK成立',effect:'攻撃 +8%',up:'攻撃 +12%',kind:'attack',values:[.08,.12],audio:{target:'bass',type:'flanger',description:'Bassに流れるようなうねり。強化で共鳴が強くなる。'}},
+  {id:'leadDelay',name:'応答のダブディレイ',style:'Lead・付点8分ディレイ',condition:'Drumsを4打以上、反復40%以上または掛け合い成立',effect:'攻撃 +8%',up:'攻撃 +12%',kind:'attack',values:[.08,.12],audio:{target:'lead',type:'delay',description:'LeadがBPMに同期して呼応。強化で反復が長く残る。'}},
+  {id:'bassWah',name:'裏路地オートワウ',style:'Bass・ワウ',condition:'Drumsを4打以上、裏拍またはシンコペーション30%以上',effect:'装甲貫通 +8%',up:'装甲貫通 +12%',kind:'pierce',values:[.08,.12],audio:{target:'bass',type:'wah',description:'Bassの明るさが半拍周期で開閉。強化で動きが深くなる。'}},
+  {id:'masterPhaser',name:'幻流フェイザー',style:'全体・フェイザー',condition:'Drumsを6打以上、SwingまたはDrunk35%以上',effect:'攻撃 +8%',up:'攻撃 +12%',kind:'attack',values:[.08,.12],audio:{target:'master',type:'phaser',description:'全体をゆっくり巡る位相の揺れ。強化でうねりが深くなる。'}},
+  {id:'leadTremolo',name:'瞬きのトレモロ',style:'Lead・トレモロ',condition:'Drumsを4打以上、Leadを4音以上、休符の割合10%以上',effect:'盾 +4',up:'盾 +7',kind:'shield',values:[4,7],audio:{target:'lead',type:'tremolo',description:'Leadの音量が8分音符で脈打つ。強化で刻みが深くなる。'}}
+ );
  const challenges=[
   {id:'repeat',name:'反復のセッション',text:'6打以上で前半の配置の半分以上を後半も繰り返す'},
   {id:'space',name:'余白のセッション',text:'4打以上で音の間の4分の1以上に休符を置く（16分3〜8個分）'}
@@ -44,7 +56,10 @@
  function rewardOffers(run,rng=Math.random){
   if(run.rewards)return run.rewards;
   const rank=run.current.kind==='elite'?2:1;
-  run.rewards=shuffle(gear.filter(g=>!run.gear.some(item=>item.id===g.id&&item.rank===2)),rng).slice(0,3).map(g=>({id:g.id,rank:run.gear.some(item=>item.id===g.id)?2:rank}));
+  const pool=shuffle(gear.filter(g=>!run.gear.some(item=>item.id===g.id&&item.rank===2)),rng),choices=pool.slice(0,3);
+  // Keep both sound-changing and rhythm-only equipment discoverable.
+  for(const audio of [true,false])if(!choices.some(g=>!!g.audio===audio)){const extra=pool.find(g=>!!g.audio===audio&&!choices.includes(g));if(extra)choices[choices.length-1]=extra;}
+  run.rewards=choices.map(g=>({id:g.id,rank:run.gear.some(item=>item.id===g.id)?2:rank}));
   return run.rewards;
  }
  function equip(run,offer,replaceId=null){
@@ -102,7 +117,17 @@
    swing:count>=6&&(a.groove?.swing??0)>=.5,
    spark:count>=4&&(a.syncopation??0)>=.4,
    develop:count>=4&&(form.development??0)>=.3,
-   sustain:count>=2&&(bass.sustain??0)>=.45
+   sustain:count>=2&&(bass.sustain??0)>=.45,
+   masterDrive:count>=4,
+   masterRoom:count>=4&&(form.rest??0)>=.2,
+   leadChorus:count>=2&&(lead.pitch?.points?.length??0)>=3,
+   bassChorus:count>=2&&(bass.sustain??0)>=.3,
+   leadFlanger:count>=4&&Math.max(form.development??0,a.syncopation??0)>=.25,
+   bassFlanger:count>=4&&((bass.locked??0)>=2||selected.has('grooveLock')),
+   leadDelay:count>=4&&((form.repetition??0)>=.4||selected.has('response')||selected.has('callResponse')),
+   bassWah:count>=4&&Math.max(a.offbeat??0,a.syncopation??0)>=.3,
+   masterPhaser:count>=6&&Math.max(a.groove?.swing??0,a.groove?.drunk??0)>=.35,
+   leadTremolo:count>=4&&(lead.pitch?.points?.length??0)>=4&&(form.rest??0)>=.1
   };
  }
  function effects(inventory,a,bass,lead,ensemble){

@@ -2,21 +2,47 @@
 (function(){
  const $=id=>document.getElementById(id),dialog=$('synthDialog'),inputs=new Map(),meters=new Map();
  let voice='bass',preview=null,previewTimer=null;
- const controls={cutoff:['Cutoff','Hz',true],resonance:['Resonance','',false],attack:['Attack','s',false],decay:['Decay','s',false],sustain:['Sustain','%',false],release:['Release','s',false],harmonic:['倍音（+1 octave）','%',false],toneDecay:['Filter Decay','s',false],toneSustain:['Filter Sustain','%',false]};
+ const controls={cutoff:['Cutoff','Hz',true],resonance:['Resonance','',false],attack:['Attack','s',false],decay:['Decay','s',false],sustain:['Sustain','%',false],release:['Release','s',false],harmonic:['倍音（+1 octave）','%',false],sub:['Sub（−1 octave）','%',false],detune:['Detune / 厚み','cent',false],osc2Mix:['OSC 2 Mix','%',false],osc2Tune:['OSC 2 Tune','半音',false],osc2Fine:['OSC 2 Fine','cent',false],toneDecay:['Filter Decay','s',false],toneSustain:['Filter Sustain','%',false],lfoRate:['LFO Rate','Hz',false],lfoPitch:['Vibrato / ピッチ','cent',false],lfoFilter:['Wobble / フィルター','cent',false],drive:['Drive / 飽和感','%',false]};
+ const sections={};
+ for(const [id,title,help] of [
+  ['osc','OSC 1 / 音の芯とレイヤー','基本波形、オクターブ上の倍音、下のSub、同じ波形のDetuneを重ねます。'],
+  ['osc2','OSC 2 / 第2の発振器','別の波形を独立して重ねます。Tuneは半音、Fineは微細な音程差。Mix 0%で無効。'],
+  ['filter','FILTER / 明るさと時間変化','Cutoffを起点に、Decayの時間でSustainの割合までフィルターが閉じます。'],
+  ['amp','AMP / 音量エンベロープ','Attack＝立ち上がり、Decay＝減衰、Sustain＝保持音量、Release＝離した後の余韻。'],
+  ['mod','LFO / 周期的な揺れ','音符ごとに始まる正弦波。Vibratoは音程、Wobbleは明るさを揺らします。各深さが0なら無効。'],
+  ['fx','DRIVE / 質感','滑らかな飽和をブレンドします。0%で原音。高くすると倍音と密度が増します。']
+ ]){const section=document.createElement('details'),summary=document.createElement('summary'),description=document.createElement('p'),body=document.createElement('div');section.id='synthGroup-'+id;section.className='synth-section';section.open=!['mod','fx'].includes(id);summary.textContent=title;description.textContent=help;description.className='synth-guide';body.className='synth-control-grid';section.append(summary,description,body);$('synthParameters').append(section);sections[id]=body;}
+ const sectionFor=key=>key.startsWith('osc2')?'osc2':key.startsWith('lfo')?'mod':['cutoff','resonance','toneDecay','toneSustain'].includes(key)?'filter':['attack','decay','sustain','release'].includes(key)?'amp':key==='drive'?'fx':'osc';
+ const factoryPanel=document.createElement('div');factoryPanel.className='synth-factory-presets';
+ const factoryLabel=document.createElement('label'),factoryList=document.createElement('select'),factoryHelp=document.createElement('p');
+ factoryList.id='synthFactoryPreset';factoryLabel.append('おすすめプリセット ',factoryList);factoryHelp.className='synth-guide';factoryHelp.id='synthFactoryDescription';factoryHelp.setAttribute('role','status');
+ factoryPanel.append(factoryLabel,factoryHelp);$('synthParameters').before(factoryPanel);
+ function renderFactory(){
+  factoryList.replaceChildren();const custom=document.createElement('option');custom.value='';custom.textContent='手動調整 / カスタム';factoryList.append(custom);
+  const p=Synth.current(voice).patch,items=Synth.factoryPresets[voice],match=items.find(item=>Object.keys(p).every(k=>p[k]===item.patch[k]));
+  for(const item of items){const option=document.createElement('option');option.value=item.id;option.textContent=item.name;factoryList.append(option);}
+  factoryList.value=match?.id??'';factoryHelp.textContent=match?.description??'プリセットを選ぶと、このパートに適用します。読み込んだ後も各項目を自由に調整できます。';
+ }
+ factoryList.onchange=()=>{if(factoryList.value){stopPreview();Synth.applyPreset(voice,factoryList.value);render();}};
  const waveLabel=document.createElement('label'),wave=document.createElement('select');wave.id='synth-wave';
  waveLabel.append('波形 ',wave);for(const [value,text] of [['sine','Sine'],['triangle','Triangle'],['sawtooth','Saw'],['square','Square']]){const option=document.createElement('option');option.value=value;option.textContent=text;wave.append(option);}
- wave.onchange=()=>Synth.setPatch(voice,{wave:wave.value});$('synthParameters').append(waveLabel);
- const curveLabel=document.createElement('label'),curve=document.createElement('select');curve.id='synth-curve';curveLabel.append('音量カーブ ',curve);for(const [value,text] of [['linear','Linear / 直線'],['exponential','Exponential / 以前のリード']]){const option=document.createElement('option');option.value=value;option.textContent=text;curve.append(option);}curve.onchange=()=>Synth.setPatch(voice,{curve:curve.value});$('synthParameters').append(curveLabel);
+ wave.onchange=()=>Synth.setPatch(voice,{wave:wave.value});sections.osc.append(waveLabel);
+ const osc2Label=document.createElement('label'),osc2Wave=document.createElement('select');osc2Wave.id='synth-osc2Wave';osc2Label.append('OSC 2 波形 ',osc2Wave);
+ for(const value of Synth.waves){const option=document.createElement('option');option.value=value;option.textContent=value;osc2Wave.append(option);}osc2Wave.onchange=()=>Synth.setPatch(voice,{osc2Wave:osc2Wave.value});sections.osc2.append(osc2Label);
+ const curveLabel=document.createElement('label'),curve=document.createElement('select');curve.id='synth-curve';curveLabel.append('音量カーブ ',curve);for(const [value,text] of [['linear','Linear / 直線'],['exponential','Exponential / 以前のリード']]){const option=document.createElement('option');option.value=value;option.textContent=text;curve.append(option);}curve.onchange=()=>Synth.setPatch(voice,{curve:curve.value});sections.amp.append(curveLabel);
  for(const [key,[name,unit,log]] of Object.entries(controls)){
   const label=document.createElement('label'),caption=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');
-  input.type='range';input.id='synth-'+key;input.min=log?0:Synth.ranges[key][0];input.max=log?1:Synth.ranges[key][1];input.step=log?.001:key==='resonance'?.1:.001;input.setAttribute('aria-label',name);output.htmlFor=input.id;
-  caption.append(name,output);label.append(caption,input);$('synthParameters').append(label);inputs.set(key,{input,output,unit,log});
+  input.type='range';input.id='synth-'+key;input.min=log?0:Synth.ranges[key][0];input.max=log?1:Synth.ranges[key][1];input.step=log?.001:['osc2Tune','lfoFilter'].includes(key)?1:['resonance','osc2Fine','lfoPitch'].includes(key)?.1:.001;input.setAttribute('aria-label',name);output.htmlFor=input.id;
+  caption.append(name,output);label.append(caption,input);sections[sectionFor(key)].append(label);inputs.set(key,{input,output,unit,log});
   input.oninput=()=>Synth.setPatch(voice,{[key]:log?80*Math.pow(200,Number(input.value)):Number(input.value)});
  }
  function render(){
-  const {patch:p,pad}=Synth.current(voice);wave.value=p.wave;curve.value=p.curve;$('synthReset').textContent=voice==='lead'?'以前のリードに戻す':'初期音色';
-  for(const [key,{input,output,unit,log}] of inputs){input.value=log?Math.log(p[key]/80)/Math.log(200):p[key];output.textContent=['sustain','harmonic','toneSustain'].includes(key)?Math.round(p[key]*100)+'%':key==='cutoff'?Math.round(p[key])+' Hz':p[key].toFixed(key==='resonance'?1:3)+(unit?' '+unit:'');}
-  $('synthEffects').textContent=`Cutoff ${Math.round(Synth.effectiveCutoff(p,pad))} → ${Math.round(Synth.effectiveCutoff(p,pad,p.toneDecay))} Hz / 音色は自由に調整できます。短音・長音の演奏との相性が戦闘スタイルに影響します。`;
+  const {patch:p,pad}=Synth.current(voice);wave.value=p.wave;osc2Wave.value=p.osc2Wave;curve.value=p.curve;$('synthReset').textContent=voice==='lead'?'以前のリードに戻す':'初期音色';
+  renderFactory();
+  for(const [key,{input,output,unit,log}] of inputs){input.value=log?Math.log(p[key]/80)/Math.log(200):p[key];output.textContent=['sustain','harmonic','sub','toneSustain','osc2Mix','drive'].includes(key)?Math.round(p[key]*100)+'%':key==='cutoff'?Math.round(p[key])+' Hz':p[key].toFixed(['resonance','detune','osc2Fine','lfoPitch'].includes(key)?1:key==='osc2Tune'||key==='lfoFilter'?0:3)+(unit?' '+unit:'');}
+  const bpm=timing().bpm,rows=$('synthCombatRows');rows.replaceChildren();$('synthCombatContext').textContent=`BPM ${bpm}での目安。攻撃欄はこのパートの寄与（他パートは補正なしと仮定）。実際の補正は録音後の結果の内訳で確認できます。`;$('synthShieldHeading').textContent=voice==='bass'?'Bass盾生成':'Bass元盾への支援';
+  for(const example of Synth.combatGuide(p,voice,bpm)){const row=document.createElement('tr');for(const text of [example.name,example.attack,example.shield]){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}rows.append(row);}
+  $('synthEffects').textContent=`OSC 1 + OSC 2 → Filter → Drive → AMP。Cutoff ${Math.round(Synth.effectiveCutoff(p,pad))} → ${Math.round(Synth.effectiveCutoff(p,pad,p.toneDecay))} Hz。`;
   const total=p.attack+p.decay+p.release+.6,x1=10+280*p.attack/total,x2=x1+280*p.decay/total,x3=x2+280*.6/total,y=80-65*p.sustain;
   $('synthEnvelopePath').setAttribute('d',p.curve==='exponential'?`M10 80 Q${x1} 80 ${x1} 15 Q${x1} ${y} ${x2} ${y} L${x3} ${y} Q${x3} 80 290 80`:`M10 80 L${x1} 15 L${x2} ${y} L${x3} ${y} L290 80`);
   $('synthStorage').textContent=Synth.persistent?'BASS / LEADの音色をこのブラウザに保存。録音にはその時の音色と操作を保存します。':'ブラウザへの音色保存ができません。このプレイ中は使用できます。';
@@ -37,12 +63,13 @@
  const deletePreset=document.createElement('button');deletePreset.type='button';deletePreset.textContent='削除';
  const presetMessage=document.createElement('p');presetMessage.className='synth-guide';presetMessage.setAttribute('role','status');
  presetRow.append(presetName,savePreset,presetList,loadPreset,deletePreset);
- const presetPanel=document.createElement('div');presetPanel.append(presetRow,presetMessage);
+ const presetPanel=document.createElement('details'),presetTitle=document.createElement('summary');presetTitle.textContent='自分の音色 / 保存・読み込み';presetPanel.className='synth-user-presets';presetPanel.append(presetTitle,presetRow,presetMessage);
  $('synthParameters').before(presetPanel);
  function refreshPresets(){
   const selected=presetList.value;
   presetList.replaceChildren();
   const matching=presets.map((preset,index)=>({...preset,index})).filter(p=>p.voice===voice);
+  if(matching.length)presetPanel.open=true;
   for(const item of matching){const option=document.createElement('option');option.value=String(item.index);option.textContent=item.name;presetList.append(option);}
   if(matching.some(p=>String(p.index)===selected))presetList.value=selected;
   loadPreset.disabled=deletePreset.disabled=!matching.length;
@@ -67,7 +94,7 @@
  loadPreset.onclick=()=>{
   const preset=presets[Number(presetList.value)];
   if(!preset||preset.voice!==voice)return;
-  stopPreview();Synth.setPatch(voice,preset.patch);presetMessage.textContent='「'+preset.name+'」を読み込みました。';
+  stopPreview();Synth.setPatch(voice,Synth.patch(preset.patch,voice));presetMessage.textContent='「'+preset.name+'」を読み込みました。';
  };
  deletePreset.onclick=()=>{
   const index=Number(presetList.value),preset=presets[index];

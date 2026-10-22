@@ -49,6 +49,11 @@
    part('baton',[38,-17],[{tag:'path',attrs:{d:'M38-17 111-107','stroke-width':4,'stroke-linecap':'square'},fill:null,stroke:2},path('M33-19 38-25 44-18 38-11Z',2)],{idle:{r:.6},guard:{r:-17,x:-4},prepare:{r:20,y:-2},attack:{r:-41,x:-2,y:4},hit:{r:7}})
   ]}
  };
+ definitions.pulse={name:'脈動の浮遊核',concept:'浮いた蛇腹の圧力室と菱形の振動核',palette:['#9bc8c1','#526d87','#e9bd79'],pulse:'diaphragm',idle:{y:1.8,r:.25,period:6},strike:{x:-10,y:3,r:-3},parts:[
+  part('bellows-left',[-26,0],[path('M-28-82-64-68-98-34-79-17-106 8-78 30-91 55-55 83-25 70-42 37-29 8-43-23Z'),path('M-64-68-79-17-106 8-58 0-43-23Z',1),path('M-78 30-91 55-55 83-42 37Z',1)],{guard:{x:9},prepare:{x:-7},attack:{x:15,r:4},hit:{x:-8,r:-5}}),
+  part('bellows-right',[26,0],[path('M28-82 64-68 98-34 79-17 106 8 78 30 91 55 55 83 25 70 42 37 29 8 43-23Z',1),path('M64-68 79-17 106 8 58 0 43-23Z'),path('M78 30 91 55 55 83 42 37Z')],{guard:{x:-9},prepare:{x:7},attack:{x:-15,r:-4},hit:{x:8,r:5}}),
+  part('diaphragm',[0,0],[path('M0-59 27 0 0 64-27 0Z',2),path('M0-59 0 64-27 0Z',1)],{guard:{sy:.8},prepare:{sy:1.12},attack:{sy:.7,sx:1.15},hit:{y:7,r:8}})
+ ]};
  const durations={hit:.28,weak:.38,dodge:.38,strike:.45,evaded:.38,stun:.75,burn:.65,guard:.38,poison:.5,heal:.7,buff:.6};
  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),rounded=n=>Math.round(n*1000)/1000;
  function transform(pivot,move){const {x=0,y=0,r=0,sx=1,sy=1}=move,[cx,cy]=pivot;return `translate(${rounded(x)} ${rounded(y)}) translate(${cx} ${cy}) rotate(${rounded(r)}) scale(${rounded(sx)} ${rounded(sy)}) translate(${-cx} ${-cy})`;}

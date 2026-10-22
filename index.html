@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="history.css?v=1">
     <link rel="stylesheet" href="grid-hazards.css?v=1">
     <link rel="stylesheet" href="combat.css?v=3">
-    <link rel="stylesheet" href="synth.css?v=3">
+    <link rel="stylesheet" href="synth.css?v=5">
     <link rel="stylesheet" href="ui.css?v=18">
     <link rel="stylesheet" href="pitch.css?v=1">
     <link rel="stylesheet" href="experience.css?v=1">
@@ -26,7 +26,7 @@
         <h1 id="titleHeading">RIDUMU<span class="dot">.</span></h1>
         <p>あなたのリズムで、道を切り拓け。</p>
         <div class="title-choices">
-          <button type="button" data-choose-mode="normal"><strong>通常モード</strong><span>8体に順番に挑戦。演奏を磨いて終奏の指揮者へ。</span></button>
+          <button type="button" data-choose-mode="normal"><strong>通常モード</strong><span>9体に順番に挑戦。演奏を磨いて終奏の指揮者へ。</span></button>
           <button type="button" data-choose-mode="roguelite"><strong>ローグライトモード</strong><span>機材を集め、演奏スタイルを育てる。敵と報酬を見て進路を選び、全8戦の終奏へ。</span></button>
         </div>
       </div>
@@ -59,7 +59,7 @@
       <section class="arena" id="arena">
         <div class="enemy-info">
           <div>
-            <p class="eyebrow" id="stage">ENCOUNTER 01 / 08</p>
+            <p class="eyebrow" id="stage">ENCOUNTER 01 / 09</p>
             <div class="enemy-title">
               <h2 id="enemyName"></h2>
               <span id="enemyBpm" class="enemy-bpm">BPM 82</span>
@@ -334,6 +334,8 @@
           </button>
         </div>
         <p class="setting-help">2音：反復と安定 / 4音：動きと安定 / 7音：跳躍も狙える / 9音：上のC・Dまで広がる。音数そのものに倍率はありません。</p>
+        <div id="drumSoundSettings" aria-label="ドラムの音色"></div>
+        <p class="setting-help">ドラムはパートごとに音色を選び、試聴できます。選択は次回の起動時にも引き継がれます。</p>
         <label class="feedback-switch"><input id="feedbackEffects" type="checkbox" checked> 演奏フィードバックの音響・視覚エフェクト</label>
         <p class="setting-help">元の音符・音色・戦闘計算は変えません。演奏中の表示は途中評価です。</p>
       </fieldset>
@@ -456,6 +458,16 @@
       <div class="synth-body">
         <div id="synthParameters" class="synth-parameters"></div>
         <div class="synth-character">
+          <section id="synthBattleImpact" aria-labelledby="synthCombatTitle">
+            <h3 id="synthCombatTitle">音色と戦闘の関係</h3>
+            <p class="synth-guide">AttackとRelease、演奏した音の長さから、攻撃・盾の小さな補正が決まります。</p>
+            <p id="synthCombatContext" class="synth-guide"></p>
+            <table class="synth-combat-table"><thead><tr><th>演奏例</th><th>攻撃への寄与</th><th id="synthShieldHeading">Bass盾生成</th></tr></thead><tbody id="synthCombatRows"></tbody></table>
+            <details><summary>補正に関わる項目・計算ルール</summary>
+              <p class="synth-guide">速いAttackで短く刻むと攻撃寄り、長音とReleaseは盾寄り。両者には小さなトレードオフがあります。OSC・Sub・Detune・Filter・LFO・Driveは音の質感を作る項目です。属性・敵の弱点・命中率への直接の倍率はありません。</p>
+              <p class="synth-guide">攻撃はBass・Leadを各1/2で合算。盾はBassの生成量に適用し、LeadはBass元盾の増減率を1/2で支援します。丸め処理・盾上限90があります。</p>
+            </details>
+          </section>
           <p class="eyebrow">TIMBRE / 音色の個性</p>
           
           <p id="synthEffects"></p>
@@ -470,12 +482,19 @@
     </dialog>
     <dialog id="debugDialog" class="damage-dialog debug-dialog">
       <div class="codex-heading">
-        <h2>DEV / 補正後の評価</h2>
+        <h2>DEV / 敵選択と評価</h2>
         <button id="closeDebug" class="small" type="button">
           閉じる
         </button>
       </div>
       <p>Drumsの演奏開始前に、3パートをまとめて自動入力できます。最大は曲頭のKick、低音の支え、旋律の応答と着地を持つ2小節の候補から、現在の敵に対する最高値を探索します。有効な敵にはレイドバック／ドランクを成立させます（理論上限ではありません）。最小は無音で0ダメージです。音色・エフェクトによって実際のダメージは変化します。</p>
+      <fieldset>
+        <legend>任意の敵と戦う</legend>
+        <label for="debugEnemy">敵 <select id="debugEnemy"></select></label>
+        <button id="debugFightEnemy" type="button">この敵と戦う</button>
+        <p>HPを全回復し、録音と戦闘状態をリセットして選んだ敵の演奏開始前に移動します。ローグライトからは通常戦に切り替わります。</p>
+        <p id="debugEnemyStatus" role="status"></p>
+      </fieldset>
       <button id="debugMaxDamage" type="button">最大ダメージ譜面を自動入力</button>
       <button id="debugMinDamage" type="button">最小ダメージ譜面を自動入力（無音）</button>
       <p id="debugAutoStatus" role="status"></p>
@@ -565,37 +584,39 @@
       <details id="element-help-fire"><summary>▲ 火</summary><p>後半に向かって音を増やす。短い連打や密度の集中も火につながります。</p></details>
       <details id="element-help-lightning"><summary>ϟ 雷</summary><p>裏拍やシンコペーションを使う。間隔の変化や再現された揺れも雷につながります。</p></details>
     </dialog>
-    <script src="rhythm.js?v=9"></script>
+    <script src="rhythm.js?v=10"></script>
     <script src="quantize.js?v=2"></script>
     <script src="groove.js?v=4"></script>
-    <script src="feedback.js?v=5"></script>
+    <script src="feedback.js?v=6"></script>
     <script src="element-meter.js?v=2"></script>
-    <script src="feedback-ui.js?v=7"></script>
+    <script src="feedback-ui.js?v=8"></script>
     <script src="grid-effects.js?v=2"></script>
     <script src="ensemble.js?v=3"></script>
     <script src="pitch-combat.js?v=3"></script>
     <script src="performance-combat.js?v=6"></script>
-    <script src="assets/drum-samples.js"></script>
-    <script src="drum-audio.js"></script>
+    <script src="assets/drum-samples.js?v=2"></script>
+    <script src="drum-audio.js?v=2"></script>
     <script src="bass-audio.js"></script>
-    <script src="synth.js?v=3"></script>
-    <script src="synth-audio.js?v=4"></script>
-    <script src="sequence-history.js?v=6"></script>
+    <script src="synth.js?v=5"></script>
+    <script src="synth-audio.js?v=7"></script>
+    <script src="roguelite.js?v=3"></script>
+    <script src="rogue-audio.js?v=1"></script>
+    <script src="sequence-history.js?v=7"></script>
     <script src="grid-hazards.js"></script>
     <script src="evaluation-debug.js?v=9"></script>
     <script src="battle-waveform.js?v=3"></script>
     <script src="performance-filter.js?v=2"></script>
-    <script src="enemy-music.js?v=8"></script>
-    <script src="roguelite.js?v=2"></script>
-    <script src="roguelite-ui.js?v=1"></script>
+    <script src="enemy-music.js?v=13"></script>
+    <script src="roguelite-ui.js?v=3"></script>
     <script src="performance-review.js?v=8"></script>
     <script src="feedback-audio.js?v=1"></script>
-    <script src="enemy-art.js?v=2"></script>
+    <script src="enemy-art.js?v=3"></script>
     <script src="enemy-state.js?v=1"></script>
-    <script src="game.js?v=38"></script>
-    <script src="synth-ui.js?v=5"></script>
-    <script src="history-ui.js?v=5"></script>
-    <script src="evaluation-debug-ui.js?v=2"></script>
+    <script src="game.js?v=42"></script>
+    <script src="drum-ui.js?v=1"></script>
+    <script src="synth-ui.js?v=7"></script>
+    <script src="history-ui.js?v=6"></script>
+    <script src="evaluation-debug-ui.js?v=3"></script>
     <script src="ui.js?v=9"></script>
     <script src="pitch-ui.js?v=2"></script>
     <script src="experience-ui.js?v=3"></script>

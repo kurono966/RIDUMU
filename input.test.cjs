@@ -24,6 +24,36 @@ test('automatic damage input is restricted to debug mode and Drums ready state',
  assert.equal(g.run('continuousRunning&&hatReady&&debugDamagePlan!==null'),true);
  g.run("stopContinuousInput()");assert.equal(g.run('debugDamagePlan'),null);
 });
+
+test('debug enemy jump is gated and resets encounter, recordings and hazards',()=>{
+ const g=game();g.run('document.body={dataset:{}}');
+ assert.equal(g.run("debugSelectEnemy('pulse')"),false);
+ g.run("location={search:'?debug=1'};state='attack'");assert.equal(g.run("debugSelectEnemy('pulse')"),false);
+ g.run("state='ready';hp=3;turn=8;shield=50;tracks.set('drums',[{type:'kick',t:0}]);hatReady=true;enemies[0].attack=999");
+ assert.equal(g.run("debugSelectEnemy('missing')"),false);assert.equal(g.run('hp'),3);
+ assert.equal(g.run("debugSelectEnemy('pulse')"),true);
+ assert.equal(g.run('enemies[stage].kind'),'pulse');assert.equal(g.run('enemyHp'),390);assert.equal(g.run('hp'),100);
+ assert.equal(g.run('timing().bpm'),78);assert.equal(g.run('timing().duration'),480/78);
+ assert.equal(g.run('state'),'ready');assert.equal(g.run('turn'),1);assert.equal(g.run('tracks.size'),0);assert.equal(g.run('shield'),0);assert.equal(g.run('hatReady'),false);assert.equal(g.run('enemies[0].attack'),88);
+ for(const kind of ['stone','fly','machine','plant','ghost','crystal','furnace','pulse','conductor'])assert.equal(g.run(`debugSelectEnemy('${kind}')`),true);
+ g.run("state='recording';phase='parts';continuousRunning=true;run=20;notes=[{type:'kick',t:0}]");
+ assert.equal(g.run("debugSelectEnemy('pulse')"),true);assert.equal(g.run('notes.length'),0);assert.ok(g.run('run')>20);assert.equal(g.run('continuousRunning'),false);
+});
+
+test('timbre results show the actual recorded contribution and remain independent of later edits',()=>{
+ const g=game();g.run(`
+ const testPatch=Synth.patch({attack:.003,release:.5},'bass');
+ tracks.set('bass',[{type:'kick',t:0,duration:.1}]);synthTracks.set('bass',{version:1,patch:testPatch,events:[]});
+ tracks.set('lead',[{type:'kick',t:0,duration:.8}]);synthTracks.set('lead',{version:1,patch:testPatch,events:[]});
+ cycleBass={rawShield:40,shield:39};showToneResult(['bass','lead']);
+ const recordedText=$('timbreResult').textContent;
+ Synth.setPatch('bass',{attack:1,release:3,osc2Mix:1,drive:1});showToneResult(['bass','lead']);
+ `);
+ assert.equal(g.run("$('timbreResult').textContent"),g.run('recordedText'));
+ assert.match(g.run('recordedText'),/BASS：攻撃への寄与/);assert.match(g.run('recordedText'),/LEAD：攻撃への寄与/);
+ assert.match(g.run('recordedText'),/合算した攻撃音色倍率 ×1\./);assert.match(g.run('recordedText'),/Bass -1/);
+ assert.doesNotMatch(g.run('recordedText'),/NaN|undefined/);
+});
 test('chord accompaniment is restricted to the live input window and never starts in idle or combat',()=>{
  const g=game();g.run("let musicStarts=[],musicStops=0;enemyMusic={start:at=>musicStarts.push(at),stop:()=>musicStops++,setEnemy(){},setMuted(){},state:{chord:'Cm7'}};EnemyMusic={progression:()=>({chords:['c']}),chords:{c:{name:'Cm7'}}};");
  for(const state of ['ready','countin','attack','enemyAttack','cleared','over'])g.run(`state='${state}';syncEnemyMusic()`);
@@ -290,8 +320,8 @@ test('bass and lead synthesize separate pitches at the requested audio time',()=
  const param={setTargetAtTime(){},setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{...param},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f,t){frequencies.push(f)}},connect(){},start(t){starts.push(t)},stop(){}}}};
  pitchedSound('kick',5,'bass');pitchedSound('snare',6,'lead');`);
- assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[5]'),311.127);
- assert.equal(g.run("starts.join(',')"),'5,5,5,5,5,6,6,6,6,6');
+ assert.equal(g.run('frequencies[0]'),65.406);assert.equal(g.run('frequencies[15]'),311.127);
+ assert.equal(g.run("starts.join(',')"),[...Array(15).fill(5),...Array(15).fill(6)].join());
 });
 test('Hat phase accepts only Hat, then replays its raw offsets in the parts phase',async()=>{
  const g=game();
@@ -406,7 +436,7 @@ test('sustained synth keeps oscillators running until release',()=>{
  const g=game();g.run(`let stops=[];const param={setTargetAtTime(){},setValueAtTime(){},exponentialRampToValueAtTime(){},linearRampToValueAtTime(){},cancelScheduledValues(){}};
  ctx={currentTime:10,destination:{},createGain(){return {gain:{...param},connect(){},disconnect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{...param},connect(){},disconnect(){}}},createOscillator(){return {frequency:param,connect(){},start(){},stop(t){stops.push(t)}}}};
  let voice=pitchedSound('kick',10,'bass',1,Infinity);`);
- assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),5);assert.ok(Math.abs(g.run('stops[0]')-11.645)<1e-9);
+ assert.equal(g.run('stops.length'),0);g.run('voice.release(11.5)');assert.equal(g.run('stops.length'),15);assert.ok(Math.abs(g.run('stops[0]')-11.645)<1e-9);
 });
 test('mix playback waits for sustained note tails without adding strikes',()=>{
  const timeline=require('./rhythm.js').mixTimeline([{voice:'lead',notes:[{type:'kick',rawT:3.5,t:3.5,duration:1}]}],'lead',[23],4);
@@ -443,7 +473,7 @@ test('seven-note synth uses the selected minor-scale pitch at each octave',()=>{
  ctx={currentTime:0,destination:{},createGain(){return {gain:{...param},connect(){}}},createWaveShaper(){return {connect(){}}},createDynamicsCompressor(){return {threshold:{},knee:{},ratio:{},attack:{},release:{},connect(){}}},createBiquadFilter(){return {frequency:param,Q:{...param},connect(){}}},createOscillator(){return {frequency:{setValueAtTime(f){frequencies.push(f)}},connect(){},start(){},stop(){}}}};
  pitchedSound('kick',0,'bass',1,.5,6);pitchedSound('kick',0,'lead',1,.5,6);`);
  assert.ok(Math.abs(g.run('frequencies[0]')-65.406*2**(10/12))<1e-8);
- assert.ok(Math.abs(g.run('frequencies[5]')-261.626*2**(10/12))<1e-8);
+ assert.ok(Math.abs(g.run('frequencies[15]')-261.626*2**(10/12))<1e-8);
 });
 test('note mode cannot change during a recording',()=>{
  const g=game();g.run("noteMode='seven';state='recording';$('noteMode').value='two';$('noteMode').onchange()");
@@ -492,32 +522,37 @@ test('attack reactions distinguish actual weakness damage from an evaded strike 
  assert.equal(g.run('reactions.length'),0);g.run('ctx.currentTime=.57;playbackTick()');assert.equal(g.run('reactions[0].kind'),'weak');assert.equal(g.run('reactions[0].element'),'earth');
  g.run('ctx.currentTime=2.07;playbackTick()');assert.equal(g.run('reactions[1].kind'),'dodge');g.run('ctx.currentTime=4.07;playbackTick()');await playback;
 });
-test('roster contains eight distinct enemies with stronger counterattacks',()=>{
- const g=game();assert.equal(g.run('enemies.length'),8);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),8);
+test('roster contains nine distinct enemies with stronger counterattacks',()=>{
+ const g=game();assert.equal(g.run('enemies.length'),9);assert.equal(g.run('new Set(enemies.map(e=>e.kind)).size'),9);
  assert.equal(g.run('enemies.slice(0,3).map(e=>e.attack).join()'),'88,96,104');
- g.run('stage=7;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 08 / 08');
+ g.run('stage=8;update()');assert.equal(g.run("$('stage').textContent"),'ENCOUNTER 09 / 09');
 });
-test('sixth and seventh enemies lead onward and only the eighth completes the run',async()=>{
- for(const [stage,expected] of [[2,'cleared'],[5,'cleared'],[6,'cleared'],[7,'over']]){
+test('late enemies lead onward and only the ninth completes the run',async()=>{
+ for(const [stage,expected] of [[2,'cleared'],[5,'cleared'],[6,'cleared'],[7,'cleared'],[8,'over']]){
   const g=game();g.run(`stage=${stage};enemyHp=0;notes=[];hatNotes=[];setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{};`);
   await g.run('finish()');assert.equal(g.run('state'),expected);
  }
 });
 
+test('roguelite completes at its eighth boss independently of the nine-enemy standard roster',()=>{
+ const g=game();g.run(`RogueRun={victory(run){run.phase='complete';return true;}};rogueRun={floor:8,total:8,phase:'battle'};stage=7;hp=80;enemyHp=0;completeBattle();`);
+ assert.equal(g.run('state'),'over');assert.equal(g.run('rogueRun.phase'),'complete');assert.equal(g.run("$('start').textContent"),'もう一度遊ぶ ↗');
+});
+
 test('late enemies have stable distinct forecasts across all three recording parts and restore cleanly',()=>{
  const g=game();
- for(const [stage,order] of [[6,['heavy','guard','pierce','heal','guard','special']],[7,['buff','pierce','guard','heavy','heal','special']]]){
+ for(const [stage,order] of [[6,['heavy','guard','pierce','heal','guard','special']],[7,['heavy','guard','buff','pierce','heal','special']],[8,['buff','pierce','guard','heavy','heal','special']]]){
   for(let round=0;round<6;round++)for(let part=0;part<3;part++){
    g.run(`stage=${stage};turn=${round*3+part+1}`);
    assert.equal(g.run('enemyIntent().id'),order[round]);assert.doesNotMatch(g.run('enemyIntent().name'),/undefined/);
   }
  }
  g.run("enemies[6].intentOrder[0]='buff'");assert.equal(g.run('standardEnemies[6].intentOrder[0]'),'heavy');
- g.run("document.body={dataset:{}};prepareMode('normal')");assert.equal(g.run('enemies[6].intentOrder[0]'),'heavy');assert.equal(g.run('enemies.length'),8);
+ g.run("document.body={dataset:{}};prepareMode('normal')");assert.equal(g.run('enemies[6].intentOrder[0]'),'heavy');assert.equal(g.run('enemies.length'),9);
 });
 
 test('both late enemies resolve complete two-note battles with their own counters and music',async()=>{
- for(const nextStage of [6,7]){
+ for(const nextStage of [6,7,8]){
   const g=game();g.run(`stage=${nextStage};enemyHp=enemies[stage].hp;muted=true;setTimeout=fn=>{fn();return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async r=>{enemyHp=Math.max(0,enemyHp-r.total)};notes=[0,4,8,12,16,20,24,28].map((q,i)=>({t:q*timing().step,rawT:q*timing().step,type:i%2?'snare':'kick'}));`);
   await g.run('finish()');
   g.run("notes=[0,8,16,28].map(q=>({t:q*timing().step,rawT:q*timing().step,type:'kick',midi:36,duration:timing().beat}))");await g.run('finish()');

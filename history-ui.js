@@ -12,6 +12,7 @@ globalThis.captureHistory=info=>{
 };
 globalThis.stopHistoryPlayback=()=>{
  globalThis.stopSavedMusic?.('history');
+ globalThis.stopSavedAudio?.('history');
  clearInterval(historyClock);historyClock=null;
  historyHandles.forEach(handle=>handle?.release?.());historyHandles=[];
  const wasPlaying=historyPlaying;historyPlaying=null;if(wasPlaying&&typeof clearFilterPlayback==='function')clearFilterPlayback();if(wasPlaying&&$('historyDialog').open)renderHistory();
@@ -23,6 +24,7 @@ async function playHistory(entry){
  if(historyPlaying!==entry.id)return;
  if(typeof playFilterAutomation==='function')playFilterAutomation(entry.tracks.map(t=>({voice:t.voice,events:t.effects??[]})));
  const timeline=typeof soundTimeline==='function'?soundTimeline(entry.tracks,null,[],entry.duration):Rhythm.mixTimeline(entry.tracks,null,[],entry.duration),origin=ctx.currentTime+.06;
+ globalThis.startSavedAudio?.(entry.audioGear??[],entry.bpm,origin-timeline.offset,'history');
  const end=Math.max(timeline.duration,...timeline.events.filter(event=>!entry.tracks.find(t=>t.voice===event.voice)?.synth).map(event=>event.at+(event.voice==='drums'||event.voice==='hat'?(DrumAudio.duration(event.voice==='hat'?'hat':event.type)||.2):(event.duration??(event.voice==='bass'?.15:event.voice==='chord'?.32:.17))+Math.max(.25,entry.tracks.find(t=>t.voice===event.voice)?.synth?.patch.release??0))));
  if(entry.accompaniment)globalThis.startSavedMusic?.(entry.accompaniment,origin-timeline.offset,origin-timeline.offset+entry.duration,'history');
  let index=0;
@@ -33,7 +35,7 @@ async function playHistory(entry){
    const handle=sound(event.type,Math.max(ctx.currentTime,origin+event.at),event.voice,event.voice==='chord'?.9:.8,event.duration,event.pitch,event.midi,event.pitches,entry.tracks.find(t=>t.voice===event.voice)?.synth?{snapshot:entry.tracks.find(t=>t.voice===event.voice).synth,noteTime:event.time}:undefined);
    if(handle?.release)historyHandles.push(handle);
   }
-  if(elapsed>=end)stopHistoryPlayback();
+  if(elapsed>=end+(globalThis.RogueAudio?.tailSeconds(entry.audioGear??[],entry.bpm)??0))stopHistoryPlayback();
  }
  historyClock=setInterval(tick,20);tick();
 }
@@ -54,6 +56,7 @@ function renderHistory(){
   const names={hat:'Hat',drums:'Drums',bass:'Bass',lead:'Lead',chord:'Chords'};
   meta.textContent=`${when} · ${entry.enemy} · ${entry.bpm} BPM · TURN ${entry.turn} / `+entry.tracks.filter(t=>t.notes.length).map(t=>names[t.voice]).join(' + ');
   meta.textContent+=entry.accompaniment?' / コード：'+entry.accompaniment.chords.map(c=>c.name).join(' → '):' / コード情報なし';
+  if(entry.audioGear?.length)meta.textContent+=' / 音響機材：'+entry.audioGear.map(item=>RogueRun.byId(item.id).name+(item.rank===2?'＋':'')).join('・');
   for(const [label,action] of [[historyPlaying===entry.id?'■ 停止':'▶ 再生',()=>playHistory(entry)],['MIDI保存',()=>downloadSequence(entry,'mid')],['JSON保存',()=>downloadSequence(entry,'json')],['削除',()=>{if(historyPlaying===entry.id)stopHistoryPlayback();sequenceStore.remove(entry.id);renderHistory();}]]){
    const button=document.createElement('button');button.type='button';button.className='small';button.textContent=label;button.onclick=action;actions.append(button);
   }

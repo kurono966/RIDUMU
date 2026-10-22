@@ -2,6 +2,7 @@
 (function(root){
 if(!root.Synth&&typeof require==='function')root.Synth=require('./synth.js');
 if(!root.EnemyMusic&&typeof require==='function')root.EnemyMusic=require('./enemy-music.js');
+if(!root.RogueAudio&&typeof require==='function')root.RogueAudio=require('./rogue-audio.js');
 const key='ridumu.sequence-history.v1',limit=50,voices=['drums','hat','bass','lead','chord'];
 const finite=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max;
 function cleanTracks(tracks){
@@ -32,6 +33,7 @@ function validate(value){
  const tracks=cleanTracks(value.tracks);if(!tracks.some(t=>t.notes.length))throw Error('ノートがありません。');
  const entry={version:1,id:typeof value.id==='string'?value.id.slice(0,100):makeId(),createdAt:typeof value.createdAt==='string'&&!Number.isNaN(Date.parse(value.createdAt))?new Date(value.createdAt).toISOString():new Date().toISOString(),title:String(value.title??'演奏シーケンス').slice(0,100),enemy:String(value.enemy??'').slice(0,80),bpm:value.bpm,duration:value.duration,turn:Number.isInteger(value.turn)?value.turn:1,kind:value.kind==='defense'?'defense':'attack',tracks,rawTracks:value.rawTracks?cleanTracks(value.rawTracks):[]};
  if(value.accompaniment!==undefined){entry.accompaniment=root.EnemyMusic.cleanSnapshot(value.accompaniment);if(entry.accompaniment.bpm!==entry.bpm)throw Error('伴奏と演奏のテンポが一致しません。');}
+ if(value.audioGear!==undefined)entry.audioGear=root.RogueAudio.cleanInventory(value.audioGear);
  return entry;
 }
 function makeId(){return root.crypto?.randomUUID?.()??Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);}

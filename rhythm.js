@@ -137,6 +137,7 @@ function resolve(a,enemy){
  if(enemy.kind==='crystal'){affinity=a.element==='earth'?1.25:a.element==='lightning'?.85:1;affinity*=.9+.3*a.alternation;}
  if(enemy.kind==='furnace'){affinity=a.element==='wind'?1.55:a.element==='fire'?.8:a.element==='lightning'?.85:1;affinity*=.9+.3*(a.structure?.rest??0);}
  if(enemy.kind==='conductor'){affinity=a.element==='fire'?1.6:a.element==='lightning'?.65:1;affinity*=.9+.25*(a.structure?.variation??0)+.15*(a.structure?.tensionRelease??0);}
+ if(enemy.kind==='pulse')affinity=a.element==='earth'?1.3:1;
  // Lightning trades neutral coverage for its machine/ghost specialization.
  if(a.element==='lightning'&&['stone','fly','plant'].includes(enemy.kind))affinity*=.85;
  // A perfectly even Kick/Snare alternation is one viable style, not a universal
@@ -152,6 +153,7 @@ function resolve(a,enemy){
   furnace:{label:'炉心への休符・掛け合い',fit:clamp(.55*(a.structure?.rest??0)+.45*(a.structure?.dialogue??0)),straightPenalty:0},
   conductor:{label:'終奏へのモチーフ変化・解放',fit:clamp(.6*(a.structure?.variation??0)+.4*(a.structure?.tensionRelease??0)),straightPenalty:0}
  };
+ motifs.pulse={label:'浮遊核への拍頭キック・余白',fit:clamp(.75*clamp((a.grid??[]).filter(n=>n.type==='kick'&&n.q%4===0).length/8)+.25*(a.structure?.rest??0)),straightPenalty:0};
  const motif=motifs[enemy.kind];
  const form=a.structure??{},development=enemy.kind==='plant'?form.tensionRelease:enemy.kind==='machine'?form.variation:enemy.kind==='ghost'?form.dialogue:enemy.kind==='stone'?form.rest:enemy.kind==='furnace'?form.dialogue:enemy.kind==='conductor'?Math.max(form.variation??0,form.tensionRelease??0):form.repetition;
  const evolution=(a.structure?.anchoredVariation??0)*(a.structure?.phrasePrecision??0);

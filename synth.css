@@ -110,3 +110,28 @@ main>.console .filter-head select{font-size:10px;padding:3px}
 .synth-preset-row select{flex:2 1 130px;min-width:0;padding:8px;background:#182018;color:#eef7e8;border:1px solid #647657;border-radius:6px}
 .synth-preset-row button{padding:8px 10px;border:1px solid #647657;border-radius:6px;cursor:pointer}
 .synth-preset-row button:disabled{opacity:.45;cursor:default}
+.synth-factory-presets,.synth-user-presets{min-width:0}
+.synth-factory-presets label{display:grid;gap:8px;font-size:13px;color:#d4f77d}
+.synth-factory-presets select{width:100%;min-width:0;max-width:100%;padding:10px}
+.synth-factory-presets .synth-guide{min-height:3em}
+.synth-parameters{grid-template-columns:minmax(0,1fr)}
+.synth-section{min-width:0;border:1px solid #45533b;border-radius:8px;padding:10px}
+.synth-section summary{cursor:pointer;font-size:12px;color:#d4f77d;font-weight:700;padding:3px 0}
+.synth-control-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.synth-control-grid label{min-width:0}
+.synth-control-grid select{width:100%;min-width:0}
+.synth-control-grid output{white-space:nowrap;font-size:11px}
+#synthBattleImpact{padding:12px;border:1px solid #72884a;border-radius:8px;background:#222c20}
+#synthBattleImpact h3{font-size:15px;margin:0 0 10px}
+.synth-combat-table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+.synth-combat-table th,.synth-combat-table td{padding:8px 3px;border-bottom:1px solid #48553e;text-align:left}
+.synth-combat-table td:not(:first-child){color:#d4f77d;white-space:nowrap}
+#timbreResult{white-space:pre-line;font-variant-numeric:tabular-nums;line-height:1.7!important}
+@media(max-width:540px){
+ .synth-parameters{grid-template-columns:minmax(0,1fr)}
+ .synth-factory-presets{order:-4}
+ #synthBattleImpact{order:-3}
+ .synth-user-presets{order:-2}
+ .synth-character>.eyebrow{display:none}
+ .synth-control-grid{gap:12px 8px}
+}

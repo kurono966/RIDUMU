@@ -3,6 +3,11 @@
  const enabled=new URLSearchParams(location.search).get('debug')==='1'||location.hash==='#debug';
  const button=document.getElementById('openDebug');button.hidden=!enabled;
  if(!enabled)return;
+ for(const enemy of standardEnemies){const option=document.createElement('option');option.value=enemy.kind;option.textContent=enemy.name+' / BPM '+enemy.bpm;$('debugEnemy').append(option);}
+ $('debugFightEnemy').onclick=()=>{
+  if(globalThis.debugSelectEnemy?.($('debugEnemy').value)){$('debugDialog').close();const settings=$('playSettingsDialog');if(settings.open)settings.close();$('start').focus();}
+  else $('debugEnemyStatus').textContent='攻撃・反撃の再生が終わってから切り替えてください。';
+ };
  for(const [id,mode] of [['debugMaxDamage','max'],['debugMinDamage','min']])$(id).onclick=()=>{
   if(globalThis.autoInputDamageChart?.(mode)){$('debugDialog').close();$('debugAutoStatus').textContent='';}
   else $('debugAutoStatus').textContent='Drumsの演奏開始前（READY）に実行してください。';
@@ -40,6 +45,6 @@
    line.textContent=voice.toUpperCase()+'\n'+Array.from({length:32},(_,q)=>(q%4===0?' ': '')+(slots.has(q)?'●':'·')).join('');container.append(line);
   }
  }
- button.onclick=()=>{refresh();$('debugDialog').showModal();};
+ button.onclick=()=>{refresh();$('debugEnemy').value=enemies[stage].kind;$('debugEnemyStatus').textContent='';$('debugDialog').showModal();};
  $('closeDebug').onclick=()=>$('debugDialog').close();$('debugPreset').onchange=refresh;
 })();

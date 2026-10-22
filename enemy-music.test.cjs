@@ -7,8 +7,8 @@ function setup(){
  return {ctx,music,starts,frequencies,timers,tick(time){ctx.currentTime=time;for(const fn of [...timers.values()])fn();}};
 }
 test('each enemy has a distinct two-bar progression in the player key',()=>{
- assert.equal(Object.keys(Music.progressions).length,8);
- assert.equal(new Set(Object.values(Music.progressions).map(p=>p.chords.join(','))).size,8);
+ assert.equal(Object.keys(Music.progressions).length,9);
+ assert.equal(new Set(Object.values(Music.progressions).map(p=>p.chords.join(','))).size,9);
  for(const p of Object.values(Music.progressions))for(const id of p.chords){assert(Music.chords[id]);for(const n of Music.chords[id].notes)assert([0,2,3,5,7,8,10].includes(n%12));}
 });
 
@@ -34,7 +34,7 @@ test('finite playback never schedules the first chord of the next loop, includin
 
 test('enemy timbres differ in waveform, envelope or harmonic layer rather than only filter brightness',()=>{
  const tones=Object.values(Music.progressions).map(p=>JSON.stringify([p.wave,p.harmonic??0,p.attack,p.decay,p.sustain,p.release]));
- assert.equal(new Set(tones).size,8);
+ assert.equal(new Set(tones).size,9);
 });
 test('chords are polyphonic and scheduled from the audio clock at the enemy BPM',()=>{
  const f=setup();f.music.setEnemy('stone',120);f.music.start(.06);assert.equal(f.starts.length,4);
@@ -71,7 +71,7 @@ test('a saved progression and tone play independently of the current enemy prese
 
 test('rhythm patterns demonstrate enemy-specific placement, space and development',()=>{
  const r=Music.rhythms;
- assert.equal(new Set(Object.values(r).map(p=>JSON.stringify(p.events))).size,8);
+ assert.equal(new Set(Object.values(r).map(p=>JSON.stringify(p.events))).size,9);
  assert.ok(r.stone.events.some(e=>e.delay>0));assert.ok(r.stone.events.every(e=>e.duration>=1));
  assert.ok(r.machine.events.every(e=>e.beat%1===.5&&e.duration<.5));
  assert.ok(r.fly.events.every((e,i)=>e.beat===i));
@@ -99,4 +99,16 @@ test('saved rhythm survives preset changes and malformed articulation is rejecte
  for(const event of [{beat:1,duration:1,velocity:2,delay:0},{beat:0,duration:1,velocity:1,delay:-.01},{beat:8,duration:1,velocity:1,delay:0}])assert.throws(()=>Music.cleanSnapshot({...clean,rhythm:{...clean.rhythm,events:[event]}}));
  assert.throws(()=>Music.cleanSnapshot({...clean,rhythm:{...clean.rhythm,events:[]}}));
  const legacy=Music.snapshot('stone',120);delete legacy.rhythm;const f=setup();f.music.setSnapshot(legacy);f.music.start(.06);f.tick(.96);assert(f.starts.slice(4).every(t=>t===1.06));assert.equal(Music.timeline(legacy,4).length,4);
+});
+
+test('sidechain snapshots are independent and validated; only the active pulse accompaniment accepts kicks',()=>{
+ const original=Music.snapshot('pulse',124),saved=Music.cleanSnapshot(JSON.parse(JSON.stringify(original)));
+ original.sidechain.depth=0;assert.equal(saved.sidechain.depth,.95);
+ for(const sidechain of [null,{...saved.sidechain,depth:1},{...saved.sidechain,attack:NaN},{...saved.sidechain,releaseBeats:-1}])assert.throws(()=>Music.cleanSnapshot({...saved,sidechain}));
+ const f=setup();f.music.setEnemy('pulse',124);assert.equal(f.music.duckForKick(.2),false);
+ f.music.start(.06,4);assert.equal(f.music.duckForKick(.2),true);assert.equal(f.music.duckForKick(4),false);assert.equal(f.music.duckForKick(.3,0),false);
+ f.music.setMuted(true);assert.equal(f.music.duckForKick(.3),false);f.music.setMuted(false);
+ f.music.stop();assert.equal(f.music.duckForKick(.3),false);
+ f.music.setEnemy('stone',124);f.music.start(.06,4);assert.equal(f.music.duckForKick(.3),false);
+ f.music.setSnapshot(saved);f.music.start(.06,4);assert.equal(f.music.duckForKick(.3),true);
 });

@@ -3,23 +3,23 @@
  'use strict';
  const R=root.RogueRun,el=id=>document.getElementById(id);
  const labels={normal:'通常戦',elite:'強敵戦',session:'セッション戦',boss:'最終戦'};
- const fits={stone:'重いKick・間',fly:'風・交互の刻み',machine:'雷・裏拍',plant:'火・後半の展開',ghost:'雷・揺れるノリ',crystal:'土・交互の刻み',furnace:'風・休符と掛け合い',conductor:'火・モチーフの変化'};
+ const fits={stone:'重いKick・間',fly:'風・交互の刻み',machine:'雷・裏拍',plant:'火・後半の展開',ghost:'雷・揺れるノリ',crystal:'土・交互の刻み',furnace:'風・休符と掛け合い',pulse:'土・拍頭のKickと余白',conductor:'火・モチーフの変化'};
  function node(tag,text,className){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;}
  const effectText=(item,rank=item.rank)=>rank===2?R.byId(item.id).up:R.byId(item.id).effect;
- function gearCard(item){const g=R.byId(item.id);return {id:g.id,kicker:g.style+' · '+(item.rank===2?'強化済み':'機材'),title:g.name+(item.rank===2?' ＋':''),text:g.condition,detail:'成立した演奏の戦闘再生前に '+effectText(item)};}
+ function gearCard(item){const g=R.byId(item.id);return {id:g.id,kicker:g.style+' · '+(item.rank===2?'強化済み':'機材'),title:g.name+(item.rank===2?' ＋':''),text:(g.audio?'音：'+g.audio.description+'\n戦闘条件：':'')+g.condition,detail:'成立した演奏の戦闘再生前に '+effectText(item)+(g.audio?' / 音響は装備中に常時有効':'')};}
  function render(run,{hp=100,shield=0}={}){
   const rack=el('rogueRack');if(!rack)return;rack.hidden=!run;if(!run)return;
   el('modeBadge').textContent=`ROGUELITE · ${run.floor} / ${run.total}`;
   el('rogueProgress').replaceChildren(...Array.from({length:run.total},(_,i)=>{const n=node('span',String(i+1),i+1<run.floor?'passed':i+1===run.floor?'current':'');if(i+1===run.floor)n.setAttribute('aria-current','step');n.title=i===run.total-1?'終奏の指揮者':'第'+(i+1)+'戦';return n;}));
   el('rogueRigCount').textContent=`機材 ${run.gear.length} / 4`;
   const gearNodes=run.gear.map(item=>{const g=R.byId(item.id),card=node('details',undefined,'rig-item'),summary=node('summary',g.name+(item.rank===2?' ＋':''));
-   const proc=run.lastEffects.find(t=>t.id===item.id);card.dataset.active=String(!!proc&&proc.value>0);summary.append(node('small',proc?proc.value>0?'発動':'上限':'待機'));card.append(summary,node('p',g.condition),node('p',effectText(item),'rig-effect'));return card;});
+   const proc=run.lastEffects.find(t=>t.id===item.id);card.dataset.active=String(!!proc&&proc.value>0);summary.append(node('small',proc?proc.value>0?'発動':'上限':g.audio?'音響ON':'待機'));card.append(summary,...(g.audio?[node('p','音：'+g.audio.description)]:[]),node('p',g.condition),node('p',effectText(item),'rig-effect'));return card;});
   el('rogueGear').replaceChildren(...(gearNodes.length?gearNodes:[node('p','最初の演奏前に機材を1つ選びます。','rig-empty')]));
   const texts={starter:'出発機材を選んで、演奏スタイルを決めよう。',reward:'勝利。機材を選び、次の進路へ。',route:'敵と報酬を見比べて、次の進路を選ぼう。',bonus:'セッション成功。機材を1つ強化できます。',complete:'全8戦クリア！ 今回の機材で終奏を奏で切った。',over:'周回終了。新しい機材と進路で再挑戦しよう。'};
   el('rogueRunStatus').textContent=texts[run.phase]??`${labels[run.current.kind]} · ${run.current.kind==='elite'?'勝利で強化済み機材から3択':'勝利で機材から3択'}${run.skipReward?'（休憩と交換済み）':''}`;
   el('rogueChallenge').hidden=!run.challenge;
   if(run.challenge)el('rogueChallenge').textContent=`${run.challenge.done?'✓ 達成':'◇ 課題'} · ${run.challenge.name}：${run.challenge.text}。達成して勝利 → 所持機材を1つ強化。`;
-  el('rogueProc').textContent=run.lastSummary??'機材は各演奏で1回。攻撃＋25%・盾＋18・HP＋6まで。貫通はLeadと合計30%まで。勝利でHP18回復。';
+  el('rogueProc').textContent=run.lastSummary??'音響機材は装備中に常時ON。戦闘強化は条件成立時に各演奏1回。攻撃＋25%・盾＋18・HP＋6まで。貫通はLeadと合計30%まで。勝利でHP18回復。';
   el('rogueResources').textContent=`HP ${hp} / 100 · SHIELD ${shield} / 90`;
  }
  function choose({title,text,cards,footer='あとで選ぶ'}){
@@ -47,7 +47,7 @@
   while(!['battle','over','complete'].includes(run.phase)){
    resources.refresh();
    if(run.phase==='starter'||run.phase==='reward'){
-    const offers=R.rewardOffers(run),id=await choose({title:run.phase==='starter'?'最初の機材を選ぶ':'勝利報酬を選ぶ',text:'機材は4枠・この周回中に有効。条件を満たす演奏で毎回発動します。同じ機材は一度だけ強化できます。勝利でHP18回復。',cards:[...offers.map(item=>{const card=gearCard(item),owned=run.gear.some(g=>g.id===item.id);return {...card,kicker:owned?'所持機材の強化':card.kicker,detail:(owned?'強化後：':'')+card.detail};}),{id:'skip',kicker:'報酬を辞退',title:'今の構成を維持する',text:'機材を取らずに進みます。',detail:'回復や追加効果はありません。'}]});
+    const offers=R.rewardOffers(run),id=await choose({title:run.phase==='starter'?'最初の機材を選ぶ':'勝利報酬を選ぶ',text:'機材は4枠・この周回中に有効。音響機材は装備中に常時音を変え、戦闘強化は条件成立時に発動します。同じ機材は一度だけ強化できます。勝利でHP18回復。',cards:[...offers.map(item=>{const card=gearCard(item),owned=run.gear.some(g=>g.id===item.id);return {...card,kicker:owned?'所持機材の強化':card.kicker,detail:(owned?'強化後：':'')+card.detail};}),{id:'skip',kicker:'報酬を辞退',title:'今の構成を維持する',text:'機材を取らずに進みます。',detail:'回復や追加効果はありません。'}]});
     if(id===null)return false;
     if(id==='skip'){R.skip(run);continue;}
     const offer=offers.find(g=>g.id===id);let replacement=null;

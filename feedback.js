@@ -12,6 +12,7 @@ function matchups(a,enemy){
  if(enemy.kind==='ghost'&&a.element==='lightning')add('lightning',1.3);
  if(enemy.kind==='crystal'){if(a.element==='earth')add('earth',1.25);add('chain',.9+.3*a.alternation);}
  if(enemy.kind==='furnace'&&a.element==='wind')add('wind',1.55);
+ if(enemy.kind==='pulse'&&a.element==='earth')add('earth',1.3);
  if(enemy.kind==='conductor'&&a.element==='fire')add('fire',1.6);
  for(const bonus of grooveEngine.affinity(a.groove,enemy.kind))add(bonus.id,bonus.multiplier);
  return list;
@@ -78,6 +79,7 @@ function explain(a,result,enemy,voice='drums'){
  else if(enemy.kind==='ghost'&&(!hitCount||a.element==='earth'))hint='揺れる輪郭を捉えにくい。同じズレ方を繰り返すノリも試そう。';
  else if(enemy.kind==='crystal'&&a.alternation<.34)hint='同じ音だけでは晶殻に響きにくい。低音と高音を交互に試そう。';
  else if(enemy.kind==='furnace')hint='風の刻みに休符を置こう。低音と高音の受け渡し、強打へのBass準備も有効。';
+ else if(enemy.kind==='pulse')hint='拍頭のKickで和音を沈め、その間の余白を活かそう。Bassの長音で強打にも備えよう。';
  else if(enemy.kind==='conductor')hint='火の展開とモチーフの部分変化を試そう。回復には加速、貫通にはSnareで応えよう。';
  else if(!hitCount)hint='今回はダメージなし。一定の間隔や反復で攻撃効率を高めよう。';
  else if(effective.length)hint='この叩き方は敵に有効。違う刻みとも比べてみよう。';
