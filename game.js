@@ -212,8 +212,8 @@ function anticipateTrackInput(type,source,pitch){
  playInput(type,source,event,pitch,target.voice,target.recordAt+timing().duration);
  return true;
 }
-let autoHat=false;
-try{autoHat=localStorage.getItem('ridumu-auto-hat')==='true';}catch{}
+let autoHat=true;
+try{autoHat=localStorage.getItem('ridumu-auto-hat')!=='false';}catch{}
 const autoHatControl=$('autoHat');
 if(autoHatControl){
  autoHatControl.checked=autoHat;
@@ -846,6 +846,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
 }
 function completeBattle(){
  if(hp>0&&enemyHp>0)return false;
+ if(['cleared','over'].includes(state))return true;
  attackMusicWindow=null;
  enemyMusic?.stop();
  releaseAllInputs();pendingTrackInput=null;
@@ -855,7 +856,9 @@ function completeBattle(){
  if(rogueRun){if(hp<=0)rogueRun.phase='over';else if(RogueRun.victory(rogueRun)){const before=hp;hp=Math.min(100,hp+18);rogueRun.lastSummary=`勝利回復：HP ＋${hp-before} / `+(rogueRun.lastSummary??'');update();}renderRogueRun();}
  $('status').textContent=hp<=0?'TRY ANOTHER RHYTHM':state==='cleared'?'ENEMY DEFEATED':'ALL ENCOUNTERS CLEAR';
  $('hint').textContent=hp<=0?'力尽きた。次はBassの置き方や長さも変えてみよう。':'撃破。あなたの演奏が道を開いた。';
- $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?(rogueRun?'機材と進路を選ぶ ↗':'次の敵へ ↗'):'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();return true;
+ $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?(rogueRun?'機材と進路を選ぶ ↗':'次の敵へ ↗'):'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();
+ if(hp>0)globalThis.VictoryUI?.show({enemy:enemies[stage].name,round:battleRound(),hp,final:state==='over',rogue:!!rogueRun,context:ctx,output:masterOutput,muted});
+ return true;
 }
 function applyRogueEquipment(a){
  if(!rogueRun||rogueRun.phase!=='battle')return a;
@@ -963,17 +966,30 @@ $('replay').onclick=()=>{
  },event.at*1000)));
  replayTimers.push(setTimeout(stopReplay,(timeline.duration+(globalThis.RogueAudio?.tailSeconds(lastAudioGear,lastBpm)??0))*1000));
 };
-function drawGridHazards(w,h){
+function drawGridHazards(w,h,startX=22){
  for(const hazard of gridHazards.active(turn)){
   if(hazard.type!=='poison')continue;
   for(const slot of hazard.slots){
-   const left=22+(w-24)*Math.max(0,slot-hazard.radiusSlots)/32,right=22+(w-24)*Math.min(32,slot+hazard.radiusSlots)/32;
+   const left=startX+(w-startX-2)*Math.max(0,slot-hazard.radiusSlots)/32,right=startX+(w-startX-2)*Math.min(32,slot+hazard.radiusSlots)/32;
    paint.fillStyle='#ae64d947';paint.fillRect(left,0,right-left,h);
-   paint.strokeStyle='#d394ef';paint.beginPath();paint.moveTo(22+(w-24)*slot/32,0);paint.lineTo(22+(w-24)*slot/32,h);paint.stroke();
+   paint.strokeStyle='#d394ef';paint.beginPath();paint.moveTo(startX+(w-startX-2)*slot/32,0);paint.lineTo(startX+(w-startX-2)*slot/32,h);paint.stroke();
   }
  }
 }
 const canvas=$('scope'),paint=canvas.getContext('2d');
+const timelineDesktop=window.matchMedia('(min-width:760px)');
+function performanceTimelineView(){
+ const live=['countin','recording'].includes(state);
+ let duration=attackPlayhead!==null||replaying?lastDuration:timing().duration,mix=attackPlayhead!==null||replaying?lastMix:null;
+ if(typeof historyPlaying!=='undefined'&&historyPlaying){const entry=sequenceStore.list().find(e=>e.id===historyPlaying);if(entry){duration=entry.duration;mix=entry.tracks;}}
+ return {duration,lanes:PerformanceTimeline.model({tracks,hats:hatNotes,notes,voice:instrumentForTurn(turn).id,phase,live:live&&!mix,mix,render:ns=>Quantize.render(ns,timing().bpm,duration)})};
+}
+function syncTimelineLayout(){
+ const stacked=timelineDesktop.matches&&!!globalThis.PerformanceTimeline;
+ canvas.parentElement.classList.toggle('five-lanes',stacked);
+ canvas.setAttribute('aria-label',stacked?'HAT・KICK・SNARE・BASS・LEADの5レーン。丸は現在の入力、四角は録音済み。横軸は2小節、音の高さと横棒は音程と長押し。':'入力したKickとSnareのタイムライン');
+}
+ timelineDesktop.addEventListener('change',syncTimelineLayout);syncTimelineLayout();
 function draw(){
  globalThis.ElementMeterUI?.observe();
  const artBeat=attackPlayhead!==null?attackPlayhead/(60/lastBpm):ctx&&recordAudioAt!==null&&['countin','recording'].includes(state)?(ctx.currentTime-recordAudioAt)/(60/timing().bpm):null;
@@ -981,31 +997,37 @@ function draw(){
  const box=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
  if(canvas.width!==Math.round(box.width*ratio)||canvas.height!==Math.round(box.height*ratio)){canvas.width=Math.round(box.width*ratio);canvas.height=Math.round(box.height*ratio);}
  paint.setTransform(ratio,0,0,ratio,0,0);const w=box.width,h=box.height;
- const duration=attackPlayhead!==null?lastDuration:timing().duration;
+ const stacked=timelineDesktop.matches&&!!globalThis.PerformanceTimeline,view=stacked?performanceTimelineView():null;
+ const duration=view?.duration??(attackPlayhead!==null?lastDuration:timing().duration),startX=stacked?PerformanceTimeline.left:22;
  paint.clearRect(0,0,w,h);
  if(['ready','countin','recording'].includes(state)){
-  drawGridHazards(w,h);
+  drawGridHazards(w,h,startX);
  }
  // Neutral line weights separate sixteenths, beats and bars from colored effects.
  for(let i=0;i<=32;i++){
-  const x=22+(w-24)*i/32,bar=i%16===0,beat=i%4===0;
+  const x=startX+(w-startX-2)*i/32,bar=i%16===0,beat=i%4===0;
   paint.lineWidth=bar?3:beat?2:1;
   paint.strokeStyle=bar?'#d0d2cb':beat?'#90958b':'#363c32';
   paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();
  }
  paint.lineWidth=1;
  if(instrumentForTurn(turn).id==='bass'&&enemyIntent().power&&['ready','countin','recording'].includes(state)){
-  const x=22+(w-24)*(PerformanceCombat.attackBeat(enemyIntent())-1)/8;
+  const x=startX+(w-startX-2)*(PerformanceCombat.attackBeat(enemyIntent())-1)/8;
   paint.strokeStyle='#8edcdd';paint.setLineDash([4,3]);paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();paint.setLineDash([]);
   paint.fillStyle='#8edcdd';paint.font='10px sans-serif';paint.fillText('防御',Math.min(w-24,x+3),11);
  }
+ if(stacked){
+  PerformanceTimeline.draw(paint,w,h,{...view,held:[...heldInputs.values()],now:ctx?.currentTime??0,recordAt:recordAudioAt??0,midi:(n,voice)=>PitchCombat.midi(n,voice),selected:globalThis.PitchUI?.selection});
+ }else{
  const displayNotes=['countin','recording'].includes(state)?(phase==='hat'?hatNotes:[...phaseHatPlayback,...notes]):attackPlayhead!==null?(lastMix??[]).flatMap(track=>track.notes):[...lastHat,...last];
  for(const n of displayNotes){const x=22+(w-24)*n.t/duration;paint.fillStyle=n.type==='hat'?'#e5cb82':n.type==='kick'?'#d4f77d':'#efa568';const held=[...heldInputs.values()].find(v=>v.note===n);const gate=n.duration??(held?Math.min(ctx.currentTime,recordAudioAt+duration)-held.at:0);if(gate>0){paint.fillRect(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8)-2,Math.min(w-x,(w-24)*gate/duration),4);}paint.beginPath();paint.arc(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8),3,0,Math.PI*2);paint.fill();}
- globalThis.PitchUI?.draw(paint,w,h);
+ }
+ globalThis.PitchUI?.draw(paint,w,h,{stacked});
  if(state==='recording'||attackPlayhead!==null){
   const elapsed=attackPlayhead!==null?Math.min(duration,attackPlayhead):Math.max(0,Math.min(duration,ctx.currentTime-recordAudioAt));
-  $('timer').textContent=Math.max(0,duration-elapsed).toFixed(2);paint.strokeStyle='#eff1e9';const x=22+(w-24)*elapsed/duration;paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();
+  $('timer').textContent=Math.max(0,duration-elapsed).toFixed(2);paint.strokeStyle='#eff1e9';const x=startX+(w-startX-2)*elapsed/duration;paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();
  }
+ if(stacked&&savedMusicWindow&&ctx){const elapsed=Math.max(0,Math.min(duration,ctx.currentTime-savedMusicWindow.start)),x=startX+(w-startX-2)*elapsed/duration;paint.strokeStyle='#fff';paint.beginPath();paint.moveTo(x,0);paint.lineTo(x,h);paint.stroke();}
  document.querySelectorAll('#beatLights i').forEach((light,i)=>light.classList.toggle('on',i===visualBeat));
  requestAnimationFrame(draw);
 }

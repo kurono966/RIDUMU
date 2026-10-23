@@ -29,7 +29,7 @@ const {chromium}=require('playwright');
  await page.click('#closeLayout');
  const readyState=await page.evaluate(()=>state);await page.click('#openMenu');await page.click('#openLayout');await page.keyboard.press('a');await page.keyboard.press('h');assert.equal(await page.evaluate(()=>state),readyState);await page.keyboard.press('Escape');
  assert(await page.locator('#elementMeter').isVisible());
- assert(await page.evaluate(()=>document.querySelector('.console').getBoundingClientRect().left<document.getElementById('arena').getBoundingClientRect().left));
+ assert(await page.evaluate(()=>document.querySelector('.enemy-info').getBoundingClientRect().left>document.getElementById('enemyState').getBoundingClientRect().left));
  await page.reload();await page.click('[data-choose-mode="normal"]');
  assert(await page.locator('#elementMeter').isVisible());
  assert.equal(await page.locator('#mobileMoveSlot').evaluate(e=>getComputedStyle(e).order),'0');

@@ -18,6 +18,7 @@
    el('hat').disabled=!hat;
   }
   el('partTitle').textContent=model.title;el('nextAction').textContent=model.instruction;el('phraseProgress').value=model.progress;document.body.dataset.playState=state;
+  el('nextPartLabel').textContent='次 → '+({hat:'ドラム',drums:'ベース',bass:'リード',lead:'ドラム'}[model.step]||'ドラム');
   if(continuousRunning&&state==='recording')el('nextAction').textContent=model.instruction+' · 2小節で次へ / Escで停止';
   const upcoming=upcomingInputTrack();
   if(upcoming)el('nextAction').textContent='次の '+upcoming.voice.toUpperCase()+' も先行入力できます';

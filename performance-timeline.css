@@ -1,0 +1,11 @@
+.timeline-key { display:none; }
+/* The caption has its own row; feedback never covers recorded notes. */
+#game .timeline.five-lanes { padding-top:18px; padding-bottom:6px; min-height:80px; }
+.timeline.five-lanes .timeline-key { display:block; position:absolute; top:2px; left:7px; font-size:10px; line-height:14px; color:#b5c0ab; }
+.timeline.five-lanes .timeline-key b { color:var(--lime); font-weight:normal; }
+.timeline.five-lanes .timeline-key span { margin-left:12px; }
+#game .timeline.five-lanes>.lane { display:none; }
+.timeline.five-lanes .melody-trend { width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.timeline.five-lanes .performance-cue { top:0; bottom:auto; left:auto; right:6px; padding:1px 4px; max-width:calc(100% - 215px); height:17px; font-size:10px; line-height:14px; transform:none; border-top:0; border-bottom:0; }
+.timeline.five-lanes .performance-cue small { font-size:9px; }
+@media(min-width:760px) and (max-height:679px){#game .timeline.five-lanes{min-height:64px;}}

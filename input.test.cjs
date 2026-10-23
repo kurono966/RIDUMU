@@ -187,7 +187,7 @@ test('automatic damage chart fills three parts and stops after one combat',async
  assert.equal(g.run('tracks.size'),3);
 });
 test('continuous cycle records each part once, resolves combat once and starts the next Hat automatically',async()=>{
- const g=game();g.run("continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
+ const g=game();g.run("autoHat=false;continuousRunning=true;ctx.currentTime=0;ctx.resume=()=>Promise.resolve();let tickContinuous,attacksContinuous=0,countersContinuous=0;setInterval=fn=>{tickContinuous=fn;return 1};renderReport=()=>{};sequence=()=>{};annotateSequence=()=>{};playbackAttack=async()=>{attacksContinuous++};enemyCounter=async()=>{countersContinuous++};");
  await g.run("countIn('hat')");
  for(let part=0;part<4;part++){
   g.run("ctx.currentTime=recordAudioAt+.01;tickContinuous();input(phase==='hat'?'hat':'kick');ctx.currentTime=recordAudioAt+timing().duration+.001;tickContinuous()");
@@ -349,7 +349,7 @@ test('hat space input works without restarting the turn or invoking the browser 
 });
 test('Hat is recorded once, reused for bass and lead, then reset at the next drum turn',async()=>{
  const g=game();
- g.run("let launched=[];countIn=async next=>{launched.push(next)};turn=1;");
+ g.run("autoHat=false;let launched=[];countIn=async next=>{launched.push(next)};turn=1;");
  await g.run('startTurn()');
  assert.equal(g.run('hatReady'),false);
  g.run("hatNotes=[{type:'hat',t:.035,rawT:.035}];hatReady=true;turn=2");
