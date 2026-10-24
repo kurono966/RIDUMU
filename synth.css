@@ -135,3 +135,11 @@ main>.console .filter-head select{font-size:10px;padding:3px}
  .synth-character>.eyebrow{display:none}
  .synth-control-grid{gap:12px 8px}
 }
+/* A single-cycle preview belongs to the oscillator editor, not the game HUD. */
+.synth-wave-editor { grid-column:1/-1; min-width:0; }
+#synthWaveGraph { display:block; width:100%; height:120px; margin:10px 0; background:#10160f; border:1px solid #405039; border-radius:7px; }
+#synthWaveGraph path { fill:none; }
+#synthWaveGraph .wave-guide { stroke:#394334; stroke-width:1; }
+#synthWaveGraph .wave-base { stroke:#aab69e; stroke-width:1.5; stroke-dasharray:4 3; }
+#synthWaveGraph .wave-edited { stroke:#d4f77d; stroke-width:2; }
+#synthWaveReset { margin-top:10px; min-height:36px; }

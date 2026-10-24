@@ -4,13 +4,21 @@
  const voices=['bass','lead'],waves=['sine','triangle','sawtooth','square'];
  const ranges={cutoff:[80,16000],resonance:[0,12],attack:[.003,2],decay:[.01,2],sustain:[0,1],release:[.02,3],harmonic:[0,.5],toneDecay:[0,2],toneSustain:[.05,1],sub:[0,.7],detune:[0,30]};
  const defaults={bass:{wave:'triangle',cutoff:950,resonance:.7,attack:.009,decay:.09,sustain:.78,release:.12,harmonic:0,toneDecay:0,toneSustain:1,curve:'linear'},lead:{wave:'triangle',cutoff:3600,resonance:.8,attack:.008,decay:.072,sustain:.65,release:.12,harmonic:.18,toneDecay:.12,toneSustain:.5,curve:'exponential'}};
- const extended={osc2Mix:0,osc2Tune:0,osc2Fine:0,lfoRate:4,lfoPitch:0,lfoFilter:0,drive:0};
+ const shapeKeys=Array.from({length:7},(_,i)=>'shape'+(i+2));
+ const shapeDefaults=Object.fromEntries(shapeKeys.map(k=>[k,0]));
+ Object.assign(ranges,Object.fromEntries(shapeKeys.map(k=>[k,[-.5,.5]])));
+ const extended={...shapeDefaults,osc2Mix:0,osc2Tune:0,osc2Fine:0,lfoRate:4,lfoPitch:0,lfoFilter:0,drive:0};
  Object.assign(ranges,{osc2Mix:[0,1],osc2Tune:[-24,24],osc2Fine:[-50,50],lfoRate:[.1,12],lfoPitch:[0,70],lfoFilter:[0,2400],drive:[0,1]});
  for(const voice of voices)Object.assign(defaults[voice],{sub:0,detune:0,osc2Wave:'sawtooth',...extended});
  function patch(value={},voice='lead'){
   const base=defaults[voice]??defaults.lead,result={wave:waves.includes(value.wave)?value.wave:base.wave,osc2Wave:waves.includes(value.osc2Wave)?value.osc2Wave:base.osc2Wave,curve:['linear','exponential'].includes(value.curve)?value.curve:base.curve};
   for(const [key,[lo,hi]] of Object.entries(ranges))result[key]=clamp(Number.isFinite(value[key])?value[key]:base[key],lo,hi);
   return result;
+ }
+ function waveform(value,phase){
+  const p=patch(value),angle=2*Math.PI*phase;
+  const base=p.wave==='sine'?Math.sin(angle):p.wave==='triangle'?2/Math.PI*Math.asin(Math.sin(angle)):p.wave==='square'?(Math.sin(angle)>=0?1:-1):2*((phase+.5)%1)-1;
+  return (base+shapeKeys.reduce((sum,key)=>sum+p[key]*Math.sin(Number(key.slice(5))*angle),0))/Math.sqrt(1+shapeKeys.reduce((sum,key)=>sum+p[key]**2,0));
  }
  function pad(value={}){return {amount:clamp(Number.isFinite(value.amount)?value.amount:0),mode:value.mode==='highpass'?'highpass':'lowpass',volume:clamp(Number.isFinite(value.volume)?value.volume:1)};}
  function effectiveCutoff(p,xy={},age=0){const x=pad(xy),sweep=p.toneDecay>0?Math.pow(p.toneSustain,clamp(age/p.toneDecay)):1;return clamp(p.cutoff*sweep*Math.pow(x.mode==='lowpass'?.025:3,x.amount),40,18000);}
@@ -112,6 +120,6 @@
   ['lead','detuned-saw',{osc2Wave:'square',osc2Mix:.18,osc2Fine:-8,lfoRate:.6,lfoFilter:120,drive:.12}]
  ])Object.assign(factoryPresets[voice].find(p=>p.id===id).patch,value);
  function applyPreset(voice,id){const selected=factoryPresets[voice]?.find(p=>p.id===id);if(!selected)return false;setPatch(voice,selected.patch);return true;}
- const api={voices,waves,ranges,defaults,factoryPresets,applyPreset,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,noteTime,monoNotes,profile,modifiers,style,combine,describe,percent,combatGuide,combatText,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
+ const api={voices,waves,ranges,shapeKeys,waveform,defaults,factoryPresets,applyPreset,patch,pad,effectiveCutoff,traits,cleanSnapshot,at,noteTime,monoNotes,profile,modifiers,style,combine,describe,percent,combatGuide,combatText,envelopeChanged,labels,setPatch,setPad,current,engine,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},get persistent(){return persistent;}};
  root.Synth=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -3,6 +3,24 @@ const S=require('./synth.js'),H=require('./sequence-history.js');
 const snapshot=(p=S.patch(),events=[])=>({version:1,patch:p,events});
 const point=(t,p,xy={})=>({t,patch:p,pad:S.pad(xy)});
 
+test('base waveform edits persist signed harmonics and old recordings remain unmodified',()=>{
+ const p=S.patch({wave:'sine',shape2:.18,shape3:-.12,shape8:.04});
+ const saved=S.cleanSnapshot(snapshot(p,[point(.25,{...p,shape3:.2})]));
+ assert.equal(saved.patch.shape3,-.12);assert.equal(saved.events[0].patch.shape3,.2);
+ const legacy={...p};for(const key of S.shapeKeys)delete legacy[key];
+ const restored=S.cleanSnapshot(snapshot(legacy));for(const key of S.shapeKeys)assert.equal(restored.patch[key],0);
+ assert.throws(()=>S.cleanSnapshot(snapshot({...p,shape2:.51})));
+ assert.throws(()=>S.cleanSnapshot(snapshot({...p,shape3:NaN})));
+ for(const wave of S.waves){
+  const original=S.patch({wave});
+  const values=Array.from({length:64},(_,i)=>S.waveform(original,i/64));
+  assert(values.every(Number.isFinite));
+  assert(values.some((v,i)=>Math.abs(v-S.waveform({...original,shape2:.2},i/64))>.01));
+ }
+ const notes=[{t:0,duration:.2}];
+ assert.deepEqual(S.style(snapshot(p),notes,4),S.style(snapshot({...p,shape2:0,shape3:0,shape8:0}),notes,4));
+});
+
 test('playback timbre follows the original input time when notes are quantized',()=>{
  assert.equal(S.noteTime({inputT:.09,time:.125,rawT:.125,t:.125}),.09);
  assert.equal(S.noteTime({time:-.02,t:0}),-.02);
@@ -111,7 +129,7 @@ test('recorded audio schedules waveform/cutoff/volume changes at the audio clock
  S.engine(ctx).play('lead',440,2,1,.2,{snapshot:data,noteTime:0});
  assert(calls.some(c=>c[0]==='target'&&c[1]===.4&&c[2]===2.1));assert(calls.some(c=>c[0]==='target'&&c[1]===1&&c[2]===2.1));
  // Releasing during attack starts at the actual envelope, never the full sustain.
- assert(calls.some(c=>c[0]==='set'&&Math.abs(c[1]-.024)<1e-9&&c[2]===2.2));assert.equal(stops.length,15);assert(Math.abs(stops[0]-2.525)<1e-9);
+ assert(calls.some(c=>c[0]==='set'&&Math.abs(c[1]-.024)<1e-9&&c[2]===2.2));assert.equal(stops.length,15+S.shapeKeys.length);assert(Math.abs(stops[0]-2.525)<1e-9);
 });
 
 test('monophonic gates use last-note priority, including same-time notes, without mutating the source',()=>{
@@ -125,12 +143,12 @@ test('scheduled monophonic note stealing cuts only its own part at note onset an
  const node=()=>{const n={gain:param(),frequency:param(),Q:param(),connect(){},disconnect(){}};nodes.push(n);return n;};
  const ctx={currentTime:0,destination:{},createGain:node,createBiquadFilter:node,createDynamicsCompressor:()=>({...node(),threshold:{},ratio:{},knee:{}}),createOscillator:()=>{const n={...node(),start(){},stops:[],stop(t){this.stops.push(t)}};oscillators.push(n);return n;}};
  const engine=S.engine(ctx),first=engine.play('bass',110,1,1,Infinity),lead=engine.play('lead',440,1,1,Infinity);
- const before=nodes.length;engine.play('bass',220,2,1,Infinity);
- assert(oscillators.slice(0,15).every(o=>o.stops.at(-1)===2.025));assert(oscillators.slice(15,30).every(o=>!o.stops.length));
+ const perVoice=15+S.shapeKeys.length,before=nodes.length;engine.play('bass',220,2,1,Infinity);
+ assert(oscillators.slice(0,perVoice).every(o=>o.stops.at(-1)===2.025));assert(oscillators.slice(perVoice,perVoice*2).every(o=>!o.stops.length));
  const gate=nodes.slice(0,before).find(n=>n.gain.calls.some(c=>c[0]==='ramp'&&c[1]===0&&c[2]===2));assert(gate);assert(gate.gain.calls.some(c=>c[0]==='set'&&c[1]===1&&c[2]===1.997));
- first.release(2.5);assert(oscillators.slice(0,15).every(o=>o.stops.at(-1)<=2.025));
+ first.release(2.5);assert(oscillators.slice(0,perVoice).every(o=>o.stops.at(-1)<=2.025));
  S.setPad('bass',{amount:.7,volume:1});assert.equal(gate.gain.calls.at(-1)[1],0);
- lead.release(3);assert(oscillators.slice(15,30).every(o=>o.stops.length));
+ lead.release(3);assert(oscillators.slice(perVoice,perVoice*2).every(o=>o.stops.length));
 });
 
 

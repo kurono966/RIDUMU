@@ -12,7 +12,7 @@
   ['mod','LFO / 周期的な揺れ','音符ごとに始まる正弦波。Vibratoは音程、Wobbleは明るさを揺らします。各深さが0なら無効。'],
   ['fx','DRIVE / 質感','滑らかな飽和をブレンドします。0%で原音。高くすると倍音と密度が増します。']
  ]){const section=document.createElement('details'),summary=document.createElement('summary'),description=document.createElement('p'),body=document.createElement('div');section.id='synthGroup-'+id;section.className='synth-section';section.open=!['mod','fx'].includes(id);summary.textContent=title;description.textContent=help;description.className='synth-guide';body.className='synth-control-grid';section.append(summary,description,body);$('synthParameters').append(section);sections[id]=body;}
- const sectionFor=key=>key.startsWith('osc2')?'osc2':key.startsWith('lfo')?'mod':['cutoff','resonance','toneDecay','toneSustain'].includes(key)?'filter':['attack','decay','sustain','release'].includes(key)?'amp':key==='drive'?'fx':'osc';
+ const sectionFor=key=>key.startsWith('shape')?'shape':key.startsWith('osc2')?'osc2':key.startsWith('lfo')?'mod':['cutoff','resonance','toneDecay','toneSustain'].includes(key)?'filter':['attack','decay','sustain','release'].includes(key)?'amp':key==='drive'?'fx':'osc';
  const factoryPanel=document.createElement('div');factoryPanel.className='synth-factory-presets';
  const factoryLabel=document.createElement('label'),factoryList=document.createElement('select'),factoryHelp=document.createElement('p');
  factoryList.id='synthFactoryPreset';factoryLabel.append('おすすめプリセット ',factoryList);factoryHelp.className='synth-guide';factoryHelp.id='synthFactoryDescription';factoryHelp.setAttribute('role','status');
@@ -27,6 +27,17 @@
  const waveLabel=document.createElement('label'),wave=document.createElement('select');wave.id='synth-wave';
  waveLabel.append('波形 ',wave);for(const [value,text] of [['sine','Sine'],['triangle','Triangle'],['sawtooth','Saw'],['square','Square']]){const option=document.createElement('option');option.value=value;option.textContent=text;wave.append(option);}
  wave.onchange=()=>Synth.setPatch(voice,{wave:wave.value});sections.osc.append(waveLabel);
+ // Harmonic offsets change OSC 1 itself; the original base remains visible.
+ const shapePanel=document.createElement('details'),shapeTitle=document.createElement('summary'),shapeHelp=document.createElement('p'),shapeBody=document.createElement('div');
+ shapePanel.id='synthWaveEditor';shapePanel.className='synth-section synth-wave-editor';shapePanel.open=true;shapeTitle.textContent='基本波形を変形 / 倍音エディター';
+ shapeHelp.className='synth-guide';shapeHelp.textContent='第2〜8倍音を足す・引くことで、基本波形を少し変えられます。まず第2・第3倍音を±10〜20%程度で試してください。破線が元の波形、実線が編集後です。';
+ const svgNS='http://www.w3.org/2000/svg',shapeGraph=document.createElementNS(svgNS,'svg');shapeGraph.id='synthWaveGraph';shapeGraph.setAttribute('viewBox','0 0 360 100');shapeGraph.setAttribute('role','img');shapeGraph.setAttribute('aria-label','基本波形と編集後の1周期。フィルター前の形を表示');
+ const guide=document.createElementNS(svgNS,'path');guide.setAttribute('d','M8 50 H352 M180 8 V92');guide.setAttribute('class','wave-guide');
+ const basePath=document.createElementNS(svgNS,'path'),editPath=document.createElementNS(svgNS,'path');basePath.id='synthBaseWavePath';editPath.id='synthEditedWavePath';basePath.setAttribute('class','wave-base');editPath.setAttribute('class','wave-edited');shapeGraph.append(guide,basePath,editPath);
+ const resetShape=document.createElement('button');resetShape.type='button';resetShape.id='synthWaveReset';resetShape.className='small';resetShape.textContent='波形の変形だけ元に戻す';resetShape.onclick=()=>Synth.setPatch(voice,Object.fromEntries(Synth.shapeKeys.map(k=>[k,0])));
+ shapeBody.className='synth-control-grid';shapePanel.append(shapeTitle,shapeHelp,shapeGraph,shapeBody,resetShape);sections.osc.append(shapePanel);sections.shape=shapeBody;
+ for(const key of Synth.shapeKeys)controls[key]=['第'+key.slice(5)+'倍音 / 加減','%',false];
+
  const osc2Label=document.createElement('label'),osc2Wave=document.createElement('select');osc2Wave.id='synth-osc2Wave';osc2Label.append('OSC 2 波形 ',osc2Wave);
  for(const value of Synth.waves){const option=document.createElement('option');option.value=value;option.textContent=value;osc2Wave.append(option);}osc2Wave.onchange=()=>Synth.setPatch(voice,{osc2Wave:osc2Wave.value});sections.osc2.append(osc2Label);
  const curveLabel=document.createElement('label'),curve=document.createElement('select');curve.id='synth-curve';curveLabel.append('音量カーブ ',curve);for(const [value,text] of [['linear','Linear / 直線'],['exponential','Exponential / 以前のリード']]){const option=document.createElement('option');option.value=value;option.textContent=text;curve.append(option);}curve.onchange=()=>Synth.setPatch(voice,{curve:curve.value});sections.amp.append(curveLabel);
@@ -39,7 +50,11 @@
  function render(){
   const {patch:p,pad}=Synth.current(voice);wave.value=p.wave;osc2Wave.value=p.osc2Wave;curve.value=p.curve;$('synthReset').textContent=voice==='lead'?'以前のリードに戻す':'初期音色';
   renderFactory();
-  for(const [key,{input,output,unit,log}] of inputs){input.value=log?Math.log(p[key]/80)/Math.log(200):p[key];output.textContent=['sustain','harmonic','sub','toneSustain','osc2Mix','drive'].includes(key)?Math.round(p[key]*100)+'%':key==='cutoff'?Math.round(p[key])+' Hz':p[key].toFixed(['resonance','detune','osc2Fine','lfoPitch'].includes(key)?1:key==='osc2Tune'||key==='lfoFilter'?0:3)+(unit?' '+unit:'');}
+  const original={...p,...Object.fromEntries(Synth.shapeKeys.map(k=>[k,0]))},baseSamples=Array.from({length:193},(_,i)=>Synth.waveform(original,i/192)),editSamples=Array.from({length:193},(_,i)=>Synth.waveform(p,i/192));
+  const scale=Math.max(1,...baseSamples.map(Math.abs),...editSamples.map(Math.abs));
+  const plot=values=>values.map((v,i)=>(i?'L':'M')+(8+i/192*344).toFixed(2)+' '+(50-v/scale*39).toFixed(2)).join(' ');
+  basePath.setAttribute('d',plot(baseSamples));editPath.setAttribute('d',plot(editSamples));
+  for(const [key,{input,output,unit,log}] of inputs){input.value=log?Math.log(p[key]/80)/Math.log(200):p[key];output.textContent=(Synth.shapeKeys.includes(key)||['sustain','harmonic','sub','toneSustain','osc2Mix','drive'].includes(key))?Math.round(p[key]*100)+'%':key==='cutoff'?Math.round(p[key])+' Hz':p[key].toFixed(['resonance','detune','osc2Fine','lfoPitch'].includes(key)?1:key==='osc2Tune'||key==='lfoFilter'?0:3)+(unit?' '+unit:'');}
   const bpm=timing().bpm,rows=$('synthCombatRows');rows.replaceChildren();$('synthCombatContext').textContent=`BPM ${bpm}での目安。攻撃欄はこのパートの寄与（他パートは補正なしと仮定）。実際の補正は録音後の結果の内訳で確認できます。`;$('synthShieldHeading').textContent=voice==='bass'?'Bass盾生成':'Bass元盾への支援';
   for(const example of Synth.combatGuide(p,voice,bpm)){const row=document.createElement('tr');for(const text of [example.name,example.attack,example.shield]){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}rows.append(row);}
   $('synthEffects').textContent=`OSC 1 + OSC 2 → Filter → Drive → AMP。Cutoff ${Math.round(Synth.effectiveCutoff(p,pad))} → ${Math.round(Synth.effectiveCutoff(p,pad,p.toneDecay))} Hz。`;
