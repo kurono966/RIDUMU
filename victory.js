@@ -35,8 +35,8 @@
  const api={fanfare};root.VictoryUI=api;if(typeof module!=='undefined')module.exports=api;
  if(!root.document)return;
  const el=id=>document.getElementById(id),dialog=el('victoryDialog');
- let stopSound=()=>{};
- api.show=({enemy,round,hp,final,rogue,context,output,muted})=>{
+ let stopSound=()=>{},revealTimer;
+ api.show=({enemy,round,hp,kind,final,rogue,context,output,muted})=>{
   if(dialog.open)return;
   el('victoryKicker').textContent=final?'ALL ENCOUNTERS CLEAR':'ENEMY DEFEATED';
   el('victoryTitle').textContent=final?'完全勝利！':'撃破！';
@@ -48,10 +48,14 @@
   dialog.querySelector('details').open=false;
   el('victoryContinue').textContent=final?'もう一度遊ぶ ↗':rogue?'機材と進路を選ぶ ↗':'次の敵へ ↗';
   stopSound();stopSound=fanfare(context,output,{muted,final});
-  dialog.showModal();el('victoryContinue').focus();
+  const delay=root.StageFX?.defeat(kind)??0;
+  dialog.classList.toggle('cinematic-entry',delay>0);el('victoryContinue').disabled=delay>0;
+  dialog.showModal();
+  if(delay)revealTimer=setTimeout(()=>{el('victoryContinue').disabled=false;if(dialog.open)el('victoryContinue').focus();},delay);
+  else el('victoryContinue').focus();
  };
  el('victoryContinue').onclick=()=>{dialog.close();el('start').click();};
  el('victoryDismiss').onclick=()=>dialog.close();
- dialog.addEventListener('close',()=>{stopSound();el('start').focus();});
+ dialog.addEventListener('close',()=>{clearTimeout(revealTimer);el('victoryContinue').disabled=false;stopSound();el('start').focus();});
  el('sound').addEventListener('click',()=>{if(el('sound').getAttribute('aria-pressed')==='false')stopSound();});
 })(globalThis);

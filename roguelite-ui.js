@@ -50,16 +50,16 @@
     const offers=R.rewardOffers(run),id=await choose({title:run.phase==='starter'?'最初の機材を選ぶ':'勝利報酬を選ぶ',text:'機材の所持数に制限はなく、この周回中はすべて有効。音響機材は装備中に常時音を変え、戦闘強化は条件成立時に発動します。同じ機材を選ぶと何度でもレベルアップします。勝利でHP18回復。',cards:[...offers.map(item=>{const card=gearCard(item),owned=run.gear.some(g=>g.id===item.id);return {...card,kicker:owned?'所持機材 → Lv.'+item.rank:card.kicker,detail:(owned?'強化後：':'')+card.detail};}),{id:'skip',kicker:'報酬を辞退',title:'今の構成を維持する',text:'機材を取らずに進みます。',detail:'回復や追加効果はありません。'}]});
     if(id===null)return false;
     if(id==='skip'){R.skip(run);continue;}
-    R.claim(run,id);
+    if(R.claim(run,id)){resources.refresh();root.StageFX?.gear(R.byId(id),run.gear.find(g=>g.id===id).rank);}
    }else if(run.phase==='bonus'){
     const upgrades=run.gear,id=await choose({title:'セッション成功',text:upgrades.length?'所持機材を1つレベルアップします。':'機材がないため、代わりにHPを15回復します。',cards:upgrades.length?upgrades.map(g=>gearCard({...g,rank:g.rank+1})):[{id:'heal',title:'HPを15回復',text:'通常の勝利報酬も、この後に受け取れます。'}]});
-    if(id===null)return false;const result=R.bonus(run,id);if(result)resources.heal(result.heal);
+    if(id===null)return false;const result=R.bonus(run,id);if(result){resources.heal(result.heal);resources.refresh();if(id!=='heal')root.StageFX?.gear(R.byId(id),run.gear.find(g=>g.id===id).rank);}
    }else if(run.phase==='route'){
     const options=R.routes(run,roster),id=await choose({title:'次の進路を選ぶ',text:`第${run.floor}戦を突破。敵・テンポ・報酬を見て、機材に合う道を選ぼう。${run.skipReward?' 次の機材報酬は休憩と交換済みです。':''}`,cards:options.map(o=>routeCard(o,run))});
     if(id===null)return false;const option=options.find(o=>o.id===id);
     if(option.kind==='rest'){
      const action=await choose({title:'休憩所',text:'回復か機材強化を選びます。利用すると次の勝利の機材報酬を失います。',cards:[{id:'heal',title:'HPを35回復',text:`現在HP ${resources.hp()} / 100`,detail:`実際の回復量：${Math.min(35,100-resources.hp())}`},...run.gear.map(g=>gearCard({...g,rank:g.rank+1}))],footer:'進路の選択に戻る'});
-     if(action!==null){const result=R.rest(run,action);if(result)resources.heal(result.heal);}continue;
+     if(action!==null){const result=R.rest(run,action);if(result){resources.heal(result.heal);resources.refresh();if(action!=='heal')root.StageFX?.gear(R.byId(action),run.gear.find(g=>g.id===action).rank);}}continue;
     }
     let challenge=null;
     if(option.kind==='session'){

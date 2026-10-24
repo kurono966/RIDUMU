@@ -10,6 +10,7 @@
   if(!enabled)return;const now=performance.now(),key=event.kind+':'+event.q;if(key===lastCue&&now-lastCueAt<160)return;lastCue=key;lastCueAt=now;
   const node=el('performanceCue'),content=document.createElement('span'),certainty=document.createElement('small');content.textContent=(event.strength>.66?'▰▰▰ ':event.strength>.33?'▰▰ ':'▰ ')+event.label;certainty.textContent=event.provisional?'途中':'確定';node.replaceChildren(content,certainty);node.title=event.label+(event.provisional?'（途中評価）':'（実益あり）');node.dataset.kind=event.kind;node.style.setProperty('--strength',String(event.strength));node.hidden=false;clearTimeout(cueTimer);cueTimer=setTimeout(()=>{node.hidden=true;},2500);
   root.FeedbackAudio?.apply(handle,event,at);
+  if(event.cells){const duration=state==='recording'?timing().duration:lastDuration,parts=new Map([...tracks].map(([voice,ns])=>[voice,Quantize.render(ns,state==='recording'?timing().bpm:lastBpm,duration)]));if(state==='recording'&&phase==='parts')parts.set(instrumentForTurn(turn).id,notes);root.StageFX?.link(event,parts,duration);}
  }
  function input(note,voice,handle){
   if(!enabled||!note||state!=='recording'||phase!=='parts')return;inputQueue={note,voice,handle,turn,run};if(queued)return;queued=true;
@@ -59,7 +60,7 @@
   if(!enabled||!pending?.matches)return;const v=pending.review.actual,step=60/pending.packet.bpm/4,q=Math.max(0,Math.min(31,Math.round((event.inputT??event.time)/step)));
   if(pending.review.all.some(f=>f.id==='ensemble'))for(const s of v.ensemble.selected){if(!pending.review.ensembleBenefits.includes(s.id)||!['grooveLock','bassLaidBack','response'].includes(s.id)||!s.cells.some(c=>c.voice===event.voice&&c.q===q))continue;
    root.FeedbackAudio?.apply(handle,{kind:s.id==='response'?'response':'lock',strength:s.score},at);
-   const owner=pending;setTimeout(()=>{if(pending===owner)cue({kind:s.id==='response'?'response':'lock',strength:s.score,label:s.id==='grooveLock'?'◎ Kick + Bass → 連携が効いた':s.id==='bassLaidBack'?'◎ Bassの後ノリ → 連携が効いた':'↔ Drums → Lead → 支援が効いた',q,provisional:false},null,at);},Math.max(0,(at-ctx.currentTime)*1000));
+   const owner=pending;setTimeout(()=>{if(pending===owner)cue({kind:s.id==='response'?'response':'lock',strength:s.score,label:s.id==='grooveLock'?'◎ Kick + Bass → 連携が効いた':s.id==='bassLaidBack'?'◎ Bassの後ノリ → 連携が効いた':'↔ Drums → Lead → 支援が効いた',q,cells:s.cells,provisional:false},null,at);},Math.max(0,(at-ctx.currentTime)*1000));
   }
  }
  function hit(damage){

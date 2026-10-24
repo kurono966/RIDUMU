@@ -18,6 +18,12 @@
   const span=Math.max(1,width-left-2),row=height/5;
   return {left,row,x:time=>left+span*Math.max(0,Math.min(1,time/duration)),center:index=>(index+.5)*row};
  }
+ function noteY(lane,index,g,n,midi=value=>value.midi,range=null){
+  const center=g.center(index);if(!['bass','lead'].includes(lane.id))return center;
+  const pitches=range?null:lane.notes.map(value=>midi(value,lane.id)).filter(Number.isFinite),[low,high]=range??[Math.min(...pitches),Math.max(...pitches)];
+  const register=Number.isFinite(n.register)?n.register-.5:high>low?(midi(n,lane.id)-low)/(high-low)-.5:0;
+  return center-register*Math.max(0,g.row-9)*.75;
+ }
  function draw(p,width,height,{lanes,duration,held=[],now=0,recordAt=0,midi=n=>n.midi,selected=null}={}){
   const g=geometry(width,height,duration);
   p.save();
@@ -29,9 +35,7 @@
    if(lane.active){p.fillStyle=lane.color;p.fillRect(0,top,3,g.row);}
    p.font=(lane.active?'bold ':'')+'9px Arial';p.fillStyle=lane.active?lane.color:lane.notes.length?'#b5c0ab':'#67715f';p.fillText(lane.label,7,center+3);
    p.save();p.beginPath();p.rect(left,top,width-left,g.row);p.clip();
-   const melodic=['bass','lead'].includes(lane.id),pitched=lane.notes.map(n=>midi(n,lane.id)).filter(Number.isFinite);
-   const low=Math.min(...pitched),high=Math.max(...pitched);
-   const y=n=>melodic?center-(Number.isFinite(n.register)?n.register-.5:high>low?(midi(n,lane.id)-low)/(high-low)-.5:0)*Math.max(0,g.row-9)*.75:center;
+   const melodic=['bass','lead'].includes(lane.id),pitches=melodic?lane.notes.map(n=>midi(n,lane.id)).filter(Number.isFinite):[],range=[Math.min(...pitches),Math.max(...pitches)],y=n=>noteY(lane,index,g,n,midi,range);
    p.globalAlpha=lane.active?1:.55;
    if(melodic){
     p.strokeStyle=lane.color;p.lineWidth=1;p.setLineDash(lane.active?[]:[2,3]);
@@ -50,5 +54,5 @@
    });p.restore();
   });p.restore();return g;
  }
- const api={model,geometry,draw,left};root.PerformanceTimeline=api;if(typeof module!=='undefined')module.exports=api;
+ const api={model,geometry,noteY,draw,left};root.PerformanceTimeline=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

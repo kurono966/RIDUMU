@@ -1,6 +1,14 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const Art=require('./enemy-art.js'),roster=JSON.parse(JSON.stringify(require('./scripts/audit-game.cjs').create().roster()));
 
+test('expressive telegraphs distinguish enemy actions without changing geometry or reduced motion',()=>{
+ const original=JSON.stringify(Art.definitions),base={time:.12,charge:1,expressive:true};
+ const poses=['heavy','heal','buff','pierce'].map(intent=>Art.sample('stone',{...base,intent}).root);
+ assert.equal(new Set(poses).size,4);
+ assert.deepEqual(Art.sample('stone',{...base,reduced:true,intent:'heavy'}),Art.sample('stone',{...base,reduced:true,intent:'heal'}));
+ assert.equal(JSON.stringify(Art.definitions),original);
+});
+
 test('all existing enemies have distinct sculptures with three colours and a small geometry budget',()=>{
  assert.deepEqual(Object.keys(Art.definitions).sort(),roster.map(e=>e.kind).sort());
  const silhouettes=new Set();

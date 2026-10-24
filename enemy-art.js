@@ -65,6 +65,12 @@
   const guard=clamp((options.guard??0)+(reaction==='guard'?envelope:0)),charge=clamp(options.charge??0),attack=!reduced&&reaction==='strike'?envelope:0;
   const impact=!reduced&&['hit','weak','burn','poison','stun'].includes(reaction)?envelope*(reaction==='weak'?1:.65):0;
   const rootPose={x:0,y:reduced?0:def.idle.y*wave,r:reduced?0:def.idle.r*wave,sx:1,sy:1};accumulate(rootPose,def.strike,attack);
+  if(options.expressive&&!reduced&&charge){
+   if(options.intent==='heavy'||options.intent==='special'){rootPose.y+=5*charge;rootPose.sx+=.035*charge;rootPose.sy-=.035*charge;}
+   if(options.intent==='heal'){const pulse=Math.sin(time*Math.PI*4)*.018*charge;rootPose.sx+=pulse;rootPose.sy+=pulse;}
+   if(options.intent==='buff'){rootPose.y-=4*charge;rootPose.sy+=.025*charge;}
+   if(options.intent==='pierce')rootPose.r-=5*charge;
+  }
   if(!reduced&&reaction==='heal')rootPose.y-=envelope*3;
   if(!reduced&&reaction==='buff'){rootPose.sy+=envelope*.025;rootPose.y-=envelope*2;}
   if(!reduced){rootPose.x+=impact*4*Math.cos(p*Math.PI*3);rootPose.y-=impact*2;if(reaction==='dodge'||reaction==='evaded'){rootPose.x+=envelope*(reaction==='dodge'?15:-12);rootPose.r+=envelope*4;}if(reaction==='stun')rootPose.r+=Math.sin(p*Math.PI*6)*1.2*envelope;}

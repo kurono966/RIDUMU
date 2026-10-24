@@ -28,4 +28,8 @@ test('all five lanes share time coordinates and long notes stay within the phras
  const g=T.geometry(1280,150,4);
  assert.equal(g.x(0),64);assert.equal(g.x(4),1278);assert.equal(g.x(6),1278);assert.equal(g.x(-1),64);
  assert.deepEqual([0,1,2,3,4].map(g.center),[15,45,75,105,135]);
+ const lane={id:'bass',notes:[{midi:36},{midi:48}]};
+ assert.equal(T.noteY(lane,3,g,lane.notes[0]),112.875);
+ assert.equal(T.noteY(lane,3,g,lane.notes[1]),97.125);
+ assert.equal(T.noteY(lane,3,g,lane.notes[1],n=>n.midi,[36,48]),97.125);
 });

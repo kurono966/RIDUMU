@@ -16,6 +16,7 @@ const copyEnemy=enemy=>({...enemy,...(enemy.intentOrder?{intentOrder:[...enemy.i
 const standardEnemies=enemies.map(copyEnemy);
 let gameMode='normal',rogueRun=null,rogueChoosing=false;
 function prepareMode(mode){
+ globalThis.StageFX?.reset();
  globalThis.ExperienceUI?.clearAdvice?.();
  gameMode=mode==='roguelite'?'roguelite':'normal';
  recordingAudioGear=null;lastAudioGear=[];savedAudioRig=null;
@@ -46,6 +47,7 @@ async function chooseRogueReward(){
  const advanced=await RogueUI.progress(run,standardEnemies,{hp:()=>hp,heal:amount=>{hp=Math.min(100,hp+amount);update();},refresh:renderRogueRun});
  if(!advanced||rogueRun!==run)return false;
  if(run.floor!==oldFloor){
+  globalThis.StageFX?.reset();
   stage=run.floor-1;enemies[stage]=copyEnemy(run.current.enemy);enemyHp=enemies[stage].hp;
   turn=1;shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;
   tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];
@@ -346,6 +348,7 @@ function updatePhaseUI(){
  const isHat=phase==='hat';document.querySelector('.console').classList.toggle('hat-phase',isHat);
  $('phaseLabel').textContent=isHat?'1 / 2 · HI-HAT':instrumentForTurn(turn).name+' / '+({drums:'攻撃',bass:'シールド',lead:'支援'}[instrumentForTurn(turn).id]);
  $('hat').disabled=!isHat;
+ globalThis.StageFX?.phase(isHat?'hat':instrumentForTurn(turn).id);
 }
 async function countIn(nextPhase='hat',continuationAt=null){
  globalThis.ExperienceUI?.reset();
@@ -665,7 +668,7 @@ $('start').onclick=()=>{
  if(rogueRun&&rogueRun.phase!=='battle')return;
  if(continuousRunning&&['countin','recording','attack','enemyAttack'].includes(state)){stopContinuousInput();return;}
  audio();stopReplay();
- if(['over','cleared'].includes(state)){shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
+ if(['over','cleared'].includes(state)){globalThis.StageFX?.reset();shield=0;cycleBass=null;cycleLead=null;cycleEnsemble=null;}
  if(state==='over'){if(gameMode==='roguelite')prepareMode('roguelite');else{enemies.splice(0,enemies.length,...standardEnemies.map(copyEnemy));resetGridHazards();tracks.clear();lastMix=null;hatNotes=[];hatReady=false;lastHat=[];stage=0;hp=100;turn=1;enemyHp=enemies[0].hp;$('result').hidden=true;update();}}
  else if(state==='cleared'){if(gameMode==='roguelite')return;resetGridHazards();stage++;enemyHp=enemies[stage].hp;hp=Math.min(100,hp+28);turn=1;update();}
  else if(state!=='ready')return;
@@ -732,7 +735,7 @@ async function enemyCounter(a,report,result){
  const tactic=a.tactics??PerformanceCombat.tactics(a,cycleBass,cycleLead,intent);
  const tacticalText=tactic.value>.05?`${tactic.label} ${Math.round(tactic.value*100)}% / `:'';
  $('status').textContent='ENEMY / '+intent.name;$('hint').textContent=intent.hint;
- $('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');
+ globalThis.StageFX?.intent(intent.id,true);$('enemy').classList.add('enemy-charge');await wait(550);$('enemy').classList.remove('enemy-charge');globalThis.StageFX?.intent(intent.id,false);
  if(intent.power){reactEnemy('strike');battleWaveform?.trigger('enemy');$('arena').dataset.attack=enemies[stage].kind;$('arena').classList.add('enemy-impact');enemyAttackSound(enemies[stage].kind);}
  else reactEnemy(intent.id);
  await wait(180);
@@ -771,7 +774,7 @@ async function enemyCounter(a,report,result){
  const specialCounter=intent.id==='special'&&!intent.poison&&leadDown>=.05?.25:0;
  const received=PerformanceCombat.counterAttack(hp,shield,enemyIntentDamage(intent)*(1-specialCounter),intent,reduction,tactic),piercing=received.pierce;
  globalThis.EnemyState?.record(enemies[stage],{type:intent.id,received});
- shield=received.shield;renderBattlePlan();
+ shield=received.shield;renderBattlePlan();globalThis.StageFX?.guard(received);
  $('impact').style.color='#8edcdd';$('impact').textContent=received.absorbed?'SHIELD −'+received.absorbed:'';
  if(received.absorbed){$('arena').classList.add('guard-flash');await wait(260);}
  hp=received.hp;update();$('impact').style.color='#ffa26d';$('impact').textContent=received.damage?'−'+received.damage+' HP':'BLOCK';
@@ -823,6 +826,7 @@ async function playbackAttack(result,color,attackVoice=lastInstrument){
      if(damage>0){
       battleWaveform?.trigger('hit',{element,groove:activeReport?.groove,amount:Math.min(1,.35+damage/100)});
       globalThis.ExperienceUI?.hit(damage);
+      globalThis.StageFX?.hit({type:event.type,weak:!!activeReport?.weaknesses.length,damage,color});
      }
      $('damage').textContent=total;
      $('impact').style.color=color;$('impact').textContent=damage;
@@ -857,7 +861,7 @@ function completeBattle(){
  $('status').textContent=hp<=0?'TRY ANOTHER RHYTHM':state==='cleared'?'ENEMY DEFEATED':'ALL ENCOUNTERS CLEAR';
  $('hint').textContent=hp<=0?'力尽きた。次はBassの置き方や長さも変えてみよう。':'撃破。あなたの演奏が道を開いた。';
  $('start').textContent=hp<=0?'再挑戦 ↗':state==='cleared'?(rogueRun?'機材と進路を選ぶ ↗':'次の敵へ ↗'):'もう一度遊ぶ ↗';$('start').disabled=false;syncQuantizeControl();renderBattlePlan();
- if(hp>0)globalThis.VictoryUI?.show({enemy:enemies[stage].name,round:battleRound(),hp,final:state==='over',rogue:!!rogueRun,context:ctx,output:masterOutput,muted});
+ if(hp>0)globalThis.VictoryUI?.show({enemy:enemies[stage].name,round:battleRound(),hp,kind:enemies[stage].kind,final:state==='over',rogue:!!rogueRun,context:ctx,output:masterOutput,muted});
  return true;
 }
 function applyRogueEquipment(a){
@@ -896,7 +900,7 @@ async function finish(continuationAt=null){
  if(lastInstrument==='bass'){
   feedbackCarryShield=shield;
   cycleBass=PerformanceCombat.bass(notes,tracks.get('drums')??[],lastBpm,lastDuration,zones,enemyIntent(),{references:{hat:hatNotes}});
-  cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(playerShieldCapacity(),shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(playerShieldCapacity(),before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before)battleWaveform?.trigger('shield');renderBattlePlan();
+  cycleBass.rawShield=cycleBass.shield;const tone=Synth.style(synthTracks.get('bass'),tracks.get('bass')??[],lastDuration);cycleBass.shield=Math.round(cycleBass.shield*tone.shield);const before=shield;shield=Math.min(playerShieldCapacity(),shield+cycleBass.shield);cycleBass.pitchShieldApplied=shield-Math.min(playerShieldCapacity(),before+Math.round((cycleBass.rhythmShield??cycleBass.rawShield)*tone.shield));if(shield>before){battleWaveform?.trigger('shield');globalThis.StageFX?.shield(shield-before);}renderBattlePlan();
   const causes=[`Bassの配置と長さ → シールド +${shield-before}`];
   if(cycleBass.placement?.style==='behind')causes.push(`Kickより平均${Math.round(cycleBass.placement.delayMs)}ms後ろを保った → 後ノリの防壁`);
   else if(cycleBass.locked)causes.push('KickとBassが重なった → シールド増加');
@@ -913,7 +917,7 @@ async function finish(continuationAt=null){
   cycleLead=Ensemble.support(PerformanceCombat.lead(notes,lastBpm,lastDuration,zones,{references:{hat:hatNotes,drums:tracks.get('drums')??[],bass:tracks.get('bass')??[]}}),cycleEnsemble);
   const toneShield=Math.round((cycleBass?.rawShield??0)*(Synth.style(synthTracks.get('lead'),tracks.get('lead')??[],lastDuration).shield-1)*.5);
   const bonus=toneShield+Math.round((cycleBass?.shield??0)*(cycleLead.shieldEfficiency+cycleEnsemble.bonus.shieldEfficiency))+cycleEnsemble.bonus.shield;
-  const beforeLeadShield=shield;shield=Math.max(0,Math.min(playerShieldCapacity(),shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');}renderBattlePlan();
+  const beforeLeadShield=shield;shield=Math.max(0,Math.min(playerShieldCapacity(),shield+bonus));if(shield>beforeLeadShield){battleWaveform?.trigger('shield');globalThis.ExperienceUI?.shield(shield-beforeLeadShield,'lead');globalThis.StageFX?.shield(shield-beforeLeadShield);}renderBattlePlan();
   const drums=tracks.get('drums')??[],rendered=Quantize.render(drums,lastBpm,lastDuration);
   const groove=Groove.analyzeRelations(drums,hatNotes,lastBpm,lastDuration);
   let a=Ensemble.attack(PerformanceCombat.enhance(Groove.enrich(Rhythm.analyze(rendered,lastDuration,lastBpm),groove),drums,lastBpm,zones,cycleLead),cycleEnsemble);
@@ -992,8 +996,11 @@ function syncTimelineLayout(){
  timelineDesktop.addEventListener('change',syncTimelineLayout);syncTimelineLayout();
 function draw(){
  globalThis.ElementMeterUI?.observe();
+ const bassHolds=[...heldInputs.values()].filter(v=>v.voice==='bass');
+ globalThis.StageFX?.prepare(state==='recording'&&bassHolds.length?Math.max(...bassHolds.map(v=>ctx.currentTime-v.at))/(beatSeconds()*2):0);
+ globalThis.StageFX?.intent(enemyIntent().id,$('enemy').classList.contains('enemy-charge'));
  const artBeat=attackPlayhead!==null?attackPlayhead/(60/lastBpm):ctx&&recordAudioAt!==null&&['countin','recording'].includes(state)?(ctx.currentTime-recordAudioAt)/(60/timing().bpm):null;
- globalThis.EnemyArt?.update($('enemy'),{kind:enemies[stage].kind,time:performance.now()/1000,bpm:timing().bpm,beat:artBeat,phase:state,intent:enemyIntent().id,armor:enemies[stage].guard??0,charging:$('enemy').classList.contains('enemy-charge'),reduced:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false});
+ if(!globalThis.StageFX?.isFrozen())globalThis.EnemyArt?.update($('enemy'),{kind:enemies[stage].kind,time:performance.now()/1000,bpm:timing().bpm,beat:artBeat,phase:state,expressive:globalThis.ExperienceUI?.enabled!==false,intent:enemyIntent().id,armor:enemies[stage].guard??0,charging:$('enemy').classList.contains('enemy-charge'),reduced:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches??false});
  const box=canvas.getBoundingClientRect(),ratio=window.devicePixelRatio||1;
  if(canvas.width!==Math.round(box.width*ratio)||canvas.height!==Math.round(box.height*ratio)){canvas.width=Math.round(box.width*ratio);canvas.height=Math.round(box.height*ratio);}
  paint.setTransform(ratio,0,0,ratio,0,0);const w=box.width,h=box.height;
@@ -1018,6 +1025,7 @@ function draw(){
  }
  if(stacked){
   PerformanceTimeline.draw(paint,w,h,{...view,held:[...heldInputs.values()],now:ctx?.currentTime??0,recordAt:recordAudioAt??0,midi:(n,voice)=>PitchCombat.midi(n,voice),selected:globalThis.PitchUI?.selection});
+  globalThis.StageFX?.drawLinks(paint,w,h,duration,view.lanes);
  }else{
  const displayNotes=['countin','recording'].includes(state)?(phase==='hat'?hatNotes:[...phaseHatPlayback,...notes]):attackPlayhead!==null?(lastMix??[]).flatMap(track=>track.notes):[...lastHat,...last];
  for(const n of displayNotes){const x=22+(w-24)*n.t/duration;paint.fillStyle=n.type==='hat'?'#e5cb82':n.type==='kick'?'#d4f77d':'#efa568';const held=[...heldInputs.values()].find(v=>v.note===n);const gate=n.duration??(held?Math.min(ctx.currentTime,recordAudioAt+duration)-held.at:0);if(gate>0){paint.fillRect(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8)-2,Math.min(w-x,(w-24)*gate/duration),4);}paint.beginPath();paint.arc(x,h*(n.type==='hat'?.15:n.type==='kick'?.48:.8),3,0,Math.PI*2);paint.fill();}
